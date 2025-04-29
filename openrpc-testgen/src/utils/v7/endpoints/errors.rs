@@ -5,8 +5,8 @@ use crate::{
         conversions::errors::ConversionsError,
         v7::{
             accounts::{
-                account::AccountError, errors::CreationError,
-                single_owner::SignError as SingleOwnerSignError, utils::mint::MintError,
+                account::AccountError, errors::CreationError, single_owner::SignError as SingleOwnerSignError,
+                utils::mint::MintError,
             },
             providers::provider::ProviderError,
             signers::local_wallet::SignError,
@@ -38,17 +38,13 @@ pub enum OpenRpcTestGenError {
     #[error(transparent)]
     GetPublicKeyError(#[from] crate::utils::v7::signers::local_wallet::Infallible),
     #[error(transparent)]
-    AccountError_(
-        #[from] AccountError<crate::utils::v7::accounts::single_owner::SignError<SignError>>,
-    ),
+    AccountError_(#[from] AccountError<crate::utils::v7::accounts::single_owner::SignError<SignError>>),
     #[error(transparent)]
     SingleOwnerSignError(#[from] SingleOwnerSignError<SignError>),
     #[error(transparent)]
     AccountError(#[from] AccountError<SignError>),
     #[error(transparent)]
-    AccountFactoryError(
-        #[from] crate::utils::v7::accounts::factory::AccountFactoryError<SignError>,
-    ),
+    AccountFactoryError(#[from] crate::utils::v7::accounts::factory::AccountFactoryError<SignError>),
     #[error(transparent)]
     ProviderError(#[from] ProviderError),
     #[error(transparent)]
@@ -92,9 +88,7 @@ pub enum OpenRpcTestGenError {
     #[error("Unexpected error occured: {0}")]
     Other(String),
     #[error("One or more tests failed: {failed_tests:?}")]
-    TestSuiteFailure {
-        failed_tests: HashMap<String, String>,
-    },
+    TestSuiteFailure { failed_tests: HashMap<String, String> },
     #[error(transparent)]
     Proof(#[from] ProofError),
 }

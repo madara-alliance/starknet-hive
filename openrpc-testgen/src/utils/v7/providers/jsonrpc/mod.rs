@@ -1,25 +1,21 @@
 pub mod transports;
 use super::provider::{Provider, ProviderError, ProviderImplError};
-use crate::utils::v8::types::{
-    ContractStorageKeysItem, GetStorageProofParams, GetStorageProofResult,
-};
+use crate::utils::v8::types::{ContractStorageKeysItem, GetStorageProofParams, GetStorageProofResult};
 use serde::{de::DeserializeOwned, Deserialize, Serialize};
 use starknet_types_core::felt::Felt as FeltPrimitive;
 use starknet_types_rpc::{
     v0_7_1::{
         AddDeclareTransactionParams, AddDeployAccountTransactionParams, AddInvokeTransactionParams,
-        AddInvokeTransactionResult, BlockHashAndNumber, BlockHashAndNumberParams, BlockId,
-        BlockNumberParams, BroadcastedTxn, CallParams, ChainIdParams, ClassAndTxnHash,
-        ContractAndTxnHash, ContractClass, EstimateFeeParams, EstimateMessageFeeParams,
-        EventFilterWithPageRequest, EventsChunk, FeeEstimate, FunctionCall,
-        GetBlockTransactionCountParams, GetBlockWithTxHashesParams, GetBlockWithTxsParams,
-        GetClassAtParams, GetClassHashAtParams, GetClassParams, GetEventsParams, GetNonceParams,
-        GetStateUpdateParams, GetStorageAtParams, GetTransactionByBlockIdAndIndexParams,
-        GetTransactionByHashParams, GetTransactionReceiptParams, GetTransactionStatusParams,
-        MaybePendingBlockWithTxHashes, MaybePendingBlockWithTxs, MaybePendingStateUpdate,
-        MsgFromL1, SimulateTransactionsParams, SimulateTransactionsResult, SimulationFlag,
-        SpecVersionParams, SyncingParams, SyncingStatus, TraceBlockTransactionsParams,
-        TraceBlockTransactionsResult, TraceTransactionParams, TransactionTrace, Txn,
+        AddInvokeTransactionResult, BlockHashAndNumber, BlockHashAndNumberParams, BlockId, BlockNumberParams,
+        BroadcastedTxn, CallParams, ChainIdParams, ClassAndTxnHash, ContractAndTxnHash, ContractClass,
+        EstimateFeeParams, EstimateMessageFeeParams, EventFilterWithPageRequest, EventsChunk, FeeEstimate,
+        FunctionCall, GetBlockTransactionCountParams, GetBlockWithTxHashesParams, GetBlockWithTxsParams,
+        GetClassAtParams, GetClassHashAtParams, GetClassParams, GetEventsParams, GetNonceParams, GetStateUpdateParams,
+        GetStorageAtParams, GetTransactionByBlockIdAndIndexParams, GetTransactionByHashParams,
+        GetTransactionReceiptParams, GetTransactionStatusParams, MaybePendingBlockWithTxHashes,
+        MaybePendingBlockWithTxs, MaybePendingStateUpdate, MsgFromL1, SimulateTransactionsParams,
+        SimulateTransactionsResult, SimulationFlag, SpecVersionParams, SyncingParams, SyncingStatus,
+        TraceBlockTransactionsParams, TraceBlockTransactionsResult, TraceTransactionParams, TransactionTrace, Txn,
         TxnFinalityAndExecutionStatus, TxnHash, TxnReceipt,
     },
     BlockWithReceipts, GetBlockWithReceiptsParams,
@@ -193,19 +189,12 @@ where
         P: Serialize + Send + Sync,
         R: DeserializeOwned,
     {
-        match self
-            .transport
-            .send_request(method, params)
-            .await
-            .map_err(JsonRpcClientError::Transport)?
-        {
+        match self.transport.send_request(method, params).await.map_err(JsonRpcClientError::Transport)? {
             JsonRpcResponse::Success { result, .. } => Ok(result),
-            JsonRpcResponse::Error { error, .. } => {
-                Err(match TryInto::<StarknetError>::try_into(&error) {
-                    Ok(error) => ProviderError::StarknetError(error),
-                    Err(_) => JsonRpcClientError::<T::Error>::JsonRpc(error).into(),
-                })
-            }
+            JsonRpcResponse::Error { error, .. } => Err(match TryInto::<StarknetError>::try_into(&error) {
+                Ok(error) => ProviderError::StarknetError(error),
+                Err(_) => JsonRpcClientError::<T::Error>::JsonRpc(error).into(),
+            }),
         }
     }
 }
@@ -216,8 +205,7 @@ where
 {
     /// Returns the version of the Starknet JSON-RPC specification being used
     async fn spec_version(&self) -> Result<String, ProviderError> {
-        self.send_request(JsonRpcMethod::SpecVersion, SpecVersionParams {})
-            .await
+        self.send_request(JsonRpcMethod::SpecVersion, SpecVersionParams {}).await
     }
 
     /// Get block information with transaction hashes given the block id
@@ -225,11 +213,7 @@ where
         &self,
         block_id: BlockId<FeltPrimitive>,
     ) -> Result<MaybePendingBlockWithTxHashes<FeltPrimitive>, ProviderError> {
-        self.send_request(
-            JsonRpcMethod::GetBlockWithTxHashes,
-            GetBlockWithTxHashesParams { block_id },
-        )
-        .await
+        self.send_request(JsonRpcMethod::GetBlockWithTxHashes, GetBlockWithTxHashesParams { block_id }).await
     }
 
     /// Get block information with full transactions given the block id
@@ -237,22 +221,14 @@ where
         &self,
         block_id: BlockId<FeltPrimitive>,
     ) -> Result<MaybePendingBlockWithTxs<FeltPrimitive>, ProviderError> {
-        self.send_request(
-            JsonRpcMethod::GetBlockWithTxs,
-            GetBlockWithTxsParams { block_id },
-        )
-        .await
+        self.send_request(JsonRpcMethod::GetBlockWithTxs, GetBlockWithTxsParams { block_id }).await
     }
 
     async fn get_block_with_receipts(
         &self,
         block_id: BlockId<FeltPrimitive>,
     ) -> Result<BlockWithReceipts<FeltPrimitive>, ProviderError> {
-        self.send_request(
-            JsonRpcMethod::GetBlockWithReceipts,
-            GetBlockWithTxsParams { block_id },
-        )
-        .await
+        self.send_request(JsonRpcMethod::GetBlockWithReceipts, GetBlockWithTxsParams { block_id }).await
     }
 
     /// Get the information about the result of executing the requested block
@@ -260,11 +236,7 @@ where
         &self,
         block_id: BlockId<FeltPrimitive>,
     ) -> Result<MaybePendingStateUpdate<FeltPrimitive>, ProviderError> {
-        self.send_request(
-            JsonRpcMethod::GetStateUpdate,
-            GetStateUpdateParams { block_id },
-        )
-        .await
+        self.send_request(JsonRpcMethod::GetStateUpdate, GetStateUpdateParams { block_id }).await
     }
 
     /// Get the value of the storage at the given address and key
@@ -277,11 +249,7 @@ where
         Ok(self
             .send_request::<_, Felt>(
                 JsonRpcMethod::GetStorageAt,
-                GetStorageAtParams {
-                    contract_address,
-                    key: key.to_hex_string(),
-                    block_id,
-                },
+                GetStorageAtParams { contract_address, key: key.to_hex_string(), block_id },
             )
             .await?
             .0)
@@ -296,12 +264,7 @@ where
     ) -> Result<GetStorageProofResult, ProviderError> {
         self.send_request(
             JsonRpcMethod::GetStorageProof,
-            GetStorageProofParams {
-                block_id,
-                class_hashes,
-                contract_addresses,
-                contracts_storage_keys,
-            },
+            GetStorageProofParams { block_id, class_hashes, contract_addresses, contracts_storage_keys },
         )
         .await
     }
@@ -312,11 +275,7 @@ where
         &self,
         transaction_hash: FeltPrimitive,
     ) -> Result<TxnFinalityAndExecutionStatus, ProviderError> {
-        self.send_request(
-            JsonRpcMethod::GetTransactionStatus,
-            GetTransactionStatusParams { transaction_hash },
-        )
-        .await
+        self.send_request(JsonRpcMethod::GetTransactionStatus, GetTransactionStatusParams { transaction_hash }).await
     }
 
     /// Get the details and status of a submitted transaction
@@ -324,11 +283,7 @@ where
         &self,
         transaction_hash: FeltPrimitive,
     ) -> Result<Txn<FeltPrimitive>, ProviderError> {
-        self.send_request(
-            JsonRpcMethod::GetTransactionByHash,
-            GetTransactionByHashParams { transaction_hash },
-        )
-        .await
+        self.send_request(JsonRpcMethod::GetTransactionByHash, GetTransactionByHashParams { transaction_hash }).await
     }
 
     /// Get the details of a transaction by a given block id and index
@@ -348,11 +303,7 @@ where
         &self,
         transaction_hash: TxnHash<FeltPrimitive>,
     ) -> Result<TxnReceipt<FeltPrimitive>, ProviderError> {
-        self.send_request(
-            JsonRpcMethod::GetTransactionReceipt,
-            GetTransactionReceiptParams { transaction_hash },
-        )
-        .await
+        self.send_request(JsonRpcMethod::GetTransactionReceipt, GetTransactionReceiptParams { transaction_hash }).await
     }
 
     /// Get the contract class definition in the given block associated with the given hash
@@ -361,14 +312,7 @@ where
         block_id: BlockId<FeltPrimitive>,
         class_hash: FeltPrimitive,
     ) -> Result<ContractClass<FeltPrimitive>, ProviderError> {
-        self.send_request(
-            JsonRpcMethod::GetClass,
-            GetClassParams {
-                block_id,
-                class_hash,
-            },
-        )
-        .await
+        self.send_request(JsonRpcMethod::GetClass, GetClassParams { block_id, class_hash }).await
     }
 
     /// Get the contract class hash in the given block for the contract deployed at the given address
@@ -378,13 +322,7 @@ where
         contract_address: FeltPrimitive,
     ) -> Result<FeltPrimitive, ProviderError> {
         Ok(self
-            .send_request::<_, Felt>(
-                JsonRpcMethod::GetClassHashAt,
-                GetClassHashAtParams {
-                    block_id,
-                    contract_address,
-                },
-            )
+            .send_request::<_, Felt>(JsonRpcMethod::GetClassHashAt, GetClassHashAtParams { block_id, contract_address })
             .await?
             .0)
     }
@@ -395,26 +333,12 @@ where
         block_id: BlockId<FeltPrimitive>,
         contract_address: FeltPrimitive,
     ) -> Result<ContractClass<FeltPrimitive>, ProviderError> {
-        self.send_request(
-            JsonRpcMethod::GetClassAt,
-            GetClassAtParams {
-                block_id,
-                contract_address,
-            },
-        )
-        .await
+        self.send_request(JsonRpcMethod::GetClassAt, GetClassAtParams { block_id, contract_address }).await
     }
 
     /// Get the number of transactions in a block given a block id
-    async fn get_block_transaction_count(
-        &self,
-        block_id: BlockId<FeltPrimitive>,
-    ) -> Result<u64, ProviderError> {
-        self.send_request(
-            JsonRpcMethod::GetBlockTransactionCount,
-            GetBlockTransactionCountParams { block_id },
-        )
-        .await
+    async fn get_block_transaction_count(&self, block_id: BlockId<FeltPrimitive>) -> Result<u64, ProviderError> {
+        self.send_request(JsonRpcMethod::GetBlockTransactionCount, GetBlockTransactionCountParams { block_id }).await
     }
 
     /// Call a starknet function without creating a Starknet transaction
@@ -423,10 +347,7 @@ where
         request: FunctionCall<FeltPrimitive>,
         block_id: BlockId<FeltPrimitive>,
     ) -> Result<Vec<FeltPrimitive>, ProviderError> {
-        Ok(self
-            .send_request::<_, FeltArray>(JsonRpcMethod::Call, CallParams { request, block_id })
-            .await?
-            .0)
+        Ok(self.send_request::<_, FeltArray>(JsonRpcMethod::Call, CallParams { request, block_id }).await?.0)
     }
 
     /// Estimate the fee for a given Starknet transaction
@@ -437,15 +358,7 @@ where
         block_id: BlockId<FeltPrimitive>,
     ) -> Result<Vec<FeeEstimate<FeltPrimitive>>, ProviderError> {
         //ERROR HERE
-        self.send_request(
-            JsonRpcMethod::EstimateFee,
-            EstimateFeeParams {
-                request,
-                simulation_flags,
-                block_id,
-            },
-        )
-        .await
+        self.send_request(JsonRpcMethod::EstimateFee, EstimateFeeParams { request, simulation_flags, block_id }).await
     }
 
     /// Estimate the L2 fee of a message sent on L1
@@ -454,42 +367,27 @@ where
         message: MsgFromL1<FeltPrimitive>,
         block_id: BlockId<FeltPrimitive>,
     ) -> Result<FeeEstimate<FeltPrimitive>, ProviderError> {
-        self.send_request(
-            JsonRpcMethod::EstimateMessageFee,
-            EstimateMessageFeeParams { message, block_id },
-        )
-        .await
+        self.send_request(JsonRpcMethod::EstimateMessageFee, EstimateMessageFeeParams { message, block_id }).await
     }
 
     /// Get the most recent accepted block number
     async fn block_number(&self) -> Result<u64, ProviderError> {
-        self.send_request(JsonRpcMethod::BlockNumber, BlockNumberParams {})
-            .await
+        self.send_request(JsonRpcMethod::BlockNumber, BlockNumberParams {}).await
     }
 
     /// Get the most recent accepted block hash and number
-    async fn block_hash_and_number(
-        &self,
-    ) -> Result<BlockHashAndNumber<FeltPrimitive>, ProviderError> {
-        self.send_request(
-            JsonRpcMethod::BlockHashAndNumber,
-            BlockHashAndNumberParams {},
-        )
-        .await
+    async fn block_hash_and_number(&self) -> Result<BlockHashAndNumber<FeltPrimitive>, ProviderError> {
+        self.send_request(JsonRpcMethod::BlockHashAndNumber, BlockHashAndNumberParams {}).await
     }
 
     /// Return the currently configured Starknet chain id
     async fn chain_id(&self) -> Result<FeltPrimitive, ProviderError> {
-        Ok(self
-            .send_request::<_, Felt>(JsonRpcMethod::ChainId, ChainIdParams {})
-            .await?
-            .0)
+        Ok(self.send_request::<_, Felt>(JsonRpcMethod::ChainId, ChainIdParams {}).await?.0)
     }
 
     /// Returns an object about the sync status, or false if the node is not synching
     async fn syncing(&self) -> Result<SyncingStatus<FeltPrimitive>, ProviderError> {
-        self.send_request(JsonRpcMethod::Syncing, SyncingParams {})
-            .await
+        self.send_request(JsonRpcMethod::Syncing, SyncingParams {}).await
     }
 
     /// Returns all events matching the given filter
@@ -497,8 +395,7 @@ where
         &self,
         filter: EventFilterWithPageRequest<FeltPrimitive>,
     ) -> Result<EventsChunk<FeltPrimitive>, ProviderError> {
-        self.send_request(JsonRpcMethod::GetEvents, GetEventsParams { filter })
-            .await
+        self.send_request(JsonRpcMethod::GetEvents, GetEventsParams { filter }).await
     }
 
     /// Get the nonce associated with the given address in the given block
@@ -510,10 +407,7 @@ where
         Ok(self
             .send_request::<_, Felt>(
                 JsonRpcMethod::GetNonce,
-                GetNonceParams::<FeltPrimitive> {
-                    block_id,
-                    contract_address,
-                },
+                GetNonceParams::<FeltPrimitive> { block_id, contract_address },
             )
             .await?
             .0)
@@ -524,11 +418,7 @@ where
         &self,
         invoke_transaction: BroadcastedTxn<FeltPrimitive>,
     ) -> Result<AddInvokeTransactionResult<FeltPrimitive>, ProviderError> {
-        self.send_request(
-            JsonRpcMethod::AddInvokeTransaction,
-            AddInvokeTransactionParams { invoke_transaction },
-        )
-        .await
+        self.send_request(JsonRpcMethod::AddInvokeTransaction, AddInvokeTransactionParams { invoke_transaction }).await
     }
 
     /// Submit a new transaction to be added to the chain
@@ -536,13 +426,8 @@ where
         &self,
         declare_transaction: BroadcastedTxn<FeltPrimitive>,
     ) -> Result<ClassAndTxnHash<FeltPrimitive>, ProviderError> {
-        self.send_request(
-            JsonRpcMethod::AddDeclareTransaction,
-            AddDeclareTransactionParams {
-                declare_transaction,
-            },
-        )
-        .await
+        self.send_request(JsonRpcMethod::AddDeclareTransaction, AddDeclareTransactionParams { declare_transaction })
+            .await
     }
 
     /// Submit a new deploy account transaction
@@ -552,9 +437,7 @@ where
     ) -> Result<ContractAndTxnHash<FeltPrimitive>, ProviderError> {
         self.send_request(
             JsonRpcMethod::AddDeployAccountTransaction,
-            AddDeployAccountTransactionParams {
-                deploy_account_transaction,
-            },
+            AddDeployAccountTransactionParams { deploy_account_transaction },
         )
         .await
     }
@@ -565,11 +448,8 @@ where
         &self,
         transaction_hash: FeltPrimitive,
     ) -> Result<TransactionTrace<FeltPrimitive>, ProviderError> {
-        self.send_request(
-            JsonRpcMethod::TraceTransaction,
-            TraceTransactionParams::<FeltPrimitive> { transaction_hash },
-        )
-        .await
+        self.send_request(JsonRpcMethod::TraceTransaction, TraceTransactionParams::<FeltPrimitive> { transaction_hash })
+            .await
     }
 
     /// Simulate a given sequence of transactions on the requested state, and generate the execution
@@ -586,11 +466,7 @@ where
     ) -> Result<Vec<SimulateTransactionsResult<FeltPrimitive>>, ProviderError> {
         self.send_request(
             JsonRpcMethod::SimulateTransactions,
-            SimulateTransactionsParams::<FeltPrimitive> {
-                block_id,
-                transactions,
-                simulation_flags,
-            },
+            SimulateTransactionsParams::<FeltPrimitive> { block_id, transactions, simulation_flags },
         )
         .await
     }
@@ -614,9 +490,7 @@ where
         simulation_flags: Vec<String>,
         block_id: BlockId<FeltPrimitive>,
     ) -> Result<FeeEstimate<FeltPrimitive>, ProviderError> {
-        let mut result = self
-            .estimate_fee(vec![request], simulation_flags, block_id)
-            .await?;
+        let mut result = self.estimate_fee(vec![request], simulation_flags, block_id).await?;
 
         if result.len() == 1 {
             Ok(result.pop().unwrap())
@@ -632,9 +506,7 @@ where
         transaction: BroadcastedTxn<FeltPrimitive>,
         simulation_flags: Vec<SimulationFlag>,
     ) -> Result<SimulateTransactionsResult<FeltPrimitive>, ProviderError> {
-        let mut result = self
-            .simulate_transactions(block_id, vec![transaction], simulation_flags)
-            .await?;
+        let mut result = self.simulate_transactions(block_id, vec![transaction], simulation_flags).await?;
         if result.len() == 1 {
             Ok(result.pop().unwrap())
         } else {
@@ -655,30 +527,24 @@ impl<'de> Deserialize<'de> for JsonRpcRequest {
             params: serde_json::Value,
         }
 
-        let error_mapper =
-            |err| serde::de::Error::custom(format!("unable to decode params: {}", err));
+        let error_mapper = |err| serde::de::Error::custom(format!("unable to decode params: {}", err));
 
         let raw_request = RawRequest::deserialize(deserializer)?;
         let request_data = match raw_request.method {
             JsonRpcMethod::SpecVersion => JsonRpcRequestData::SpecVersion(
-                serde_json::from_value::<SpecVersionParams>(raw_request.params)
-                    .map_err(error_mapper)?,
+                serde_json::from_value::<SpecVersionParams>(raw_request.params).map_err(error_mapper)?,
             ),
             JsonRpcMethod::GetBlockWithTxHashes => JsonRpcRequestData::GetBlockWithTxHashes(
-                serde_json::from_value::<GetBlockWithTxHashesParams<FeltPrimitive>>(
-                    raw_request.params,
-                )
-                .map_err(error_mapper)?,
+                serde_json::from_value::<GetBlockWithTxHashesParams<FeltPrimitive>>(raw_request.params)
+                    .map_err(error_mapper)?,
             ),
             JsonRpcMethod::GetBlockWithTxs => JsonRpcRequestData::GetBlockWithTxs(
                 serde_json::from_value::<GetBlockWithTxsParams<FeltPrimitive>>(raw_request.params)
                     .map_err(error_mapper)?,
             ),
             JsonRpcMethod::GetBlockWithReceipts => JsonRpcRequestData::GetBlockWithReceipts(
-                serde_json::from_value::<GetBlockWithReceiptsParams<FeltPrimitive>>(
-                    raw_request.params,
-                )
-                .map_err(error_mapper)?,
+                serde_json::from_value::<GetBlockWithReceiptsParams<FeltPrimitive>>(raw_request.params)
+                    .map_err(error_mapper)?,
             ),
             JsonRpcMethod::GetStateUpdate => JsonRpcRequestData::GetStateUpdate(
                 serde_json::from_value::<GetStateUpdateParams<FeltPrimitive>>(raw_request.params)
@@ -693,131 +559,90 @@ impl<'de> Deserialize<'de> for JsonRpcRequest {
                     .map_err(error_mapper)?,
             ),
             JsonRpcMethod::GetTransactionStatus => JsonRpcRequestData::GetTransactionStatus(
-                serde_json::from_value::<GetTransactionStatusParams<FeltPrimitive>>(
-                    raw_request.params,
-                )
-                .map_err(error_mapper)?,
+                serde_json::from_value::<GetTransactionStatusParams<FeltPrimitive>>(raw_request.params)
+                    .map_err(error_mapper)?,
             ),
             JsonRpcMethod::GetTransactionByHash => JsonRpcRequestData::GetTransactionByHash(
-                serde_json::from_value::<GetTransactionByHashParams<FeltPrimitive>>(
-                    raw_request.params,
-                )
-                .map_err(error_mapper)?,
-            ),
-            JsonRpcMethod::GetTransactionByBlockIdAndIndex => {
-                JsonRpcRequestData::GetTransactionByBlockIdAndIndex(
-                    serde_json::from_value::<GetTransactionByBlockIdAndIndexParams<FeltPrimitive>>(
-                        raw_request.params,
-                    )
+                serde_json::from_value::<GetTransactionByHashParams<FeltPrimitive>>(raw_request.params)
                     .map_err(error_mapper)?,
-                )
-            }
+            ),
+            JsonRpcMethod::GetTransactionByBlockIdAndIndex => JsonRpcRequestData::GetTransactionByBlockIdAndIndex(
+                serde_json::from_value::<GetTransactionByBlockIdAndIndexParams<FeltPrimitive>>(raw_request.params)
+                    .map_err(error_mapper)?,
+            ),
             JsonRpcMethod::GetTransactionReceipt => JsonRpcRequestData::GetTransactionReceipt(
-                serde_json::from_value::<GetTransactionReceiptParams<FeltPrimitive>>(
-                    raw_request.params,
-                )
-                .map_err(error_mapper)?,
+                serde_json::from_value::<GetTransactionReceiptParams<FeltPrimitive>>(raw_request.params)
+                    .map_err(error_mapper)?,
             ),
             JsonRpcMethod::GetClass => JsonRpcRequestData::GetClass(
-                serde_json::from_value::<GetClassParams<FeltPrimitive>>(raw_request.params)
-                    .map_err(error_mapper)?,
+                serde_json::from_value::<GetClassParams<FeltPrimitive>>(raw_request.params).map_err(error_mapper)?,
             ),
             JsonRpcMethod::GetClassHashAt => JsonRpcRequestData::GetClassHashAt(
                 serde_json::from_value::<GetClassHashAtParams<FeltPrimitive>>(raw_request.params)
                     .map_err(error_mapper)?,
             ),
             JsonRpcMethod::GetClassAt => JsonRpcRequestData::GetClassAt(
-                serde_json::from_value::<GetClassAtParams<FeltPrimitive>>(raw_request.params)
+                serde_json::from_value::<GetClassAtParams<FeltPrimitive>>(raw_request.params).map_err(error_mapper)?,
+            ),
+            JsonRpcMethod::GetBlockTransactionCount => JsonRpcRequestData::GetBlockTransactionCount(
+                serde_json::from_value::<GetBlockTransactionCountParams<FeltPrimitive>>(raw_request.params)
                     .map_err(error_mapper)?,
             ),
-            JsonRpcMethod::GetBlockTransactionCount => {
-                JsonRpcRequestData::GetBlockTransactionCount(
-                    serde_json::from_value::<GetBlockTransactionCountParams<FeltPrimitive>>(
-                        raw_request.params,
-                    )
-                    .map_err(error_mapper)?,
-                )
-            }
             JsonRpcMethod::Call => JsonRpcRequestData::Call(
-                serde_json::from_value::<CallParams<FeltPrimitive>>(raw_request.params)
-                    .map_err(error_mapper)?,
+                serde_json::from_value::<CallParams<FeltPrimitive>>(raw_request.params).map_err(error_mapper)?,
             ),
             JsonRpcMethod::EstimateFee => JsonRpcRequestData::EstimateFee(
-                serde_json::from_value::<EstimateFeeParams<FeltPrimitive>>(raw_request.params)
-                    .map_err(error_mapper)?,
+                serde_json::from_value::<EstimateFeeParams<FeltPrimitive>>(raw_request.params).map_err(error_mapper)?,
             ),
             JsonRpcMethod::EstimateMessageFee => JsonRpcRequestData::EstimateMessageFee(
-                serde_json::from_value::<EstimateMessageFeeParams<FeltPrimitive>>(
-                    raw_request.params,
-                )
-                .map_err(error_mapper)?,
+                serde_json::from_value::<EstimateMessageFeeParams<FeltPrimitive>>(raw_request.params)
+                    .map_err(error_mapper)?,
             ),
             JsonRpcMethod::BlockNumber => JsonRpcRequestData::BlockNumber(
-                serde_json::from_value::<BlockNumberParams>(raw_request.params)
-                    .map_err(error_mapper)?,
+                serde_json::from_value::<BlockNumberParams>(raw_request.params).map_err(error_mapper)?,
             ),
             JsonRpcMethod::BlockHashAndNumber => JsonRpcRequestData::BlockHashAndNumber(
-                serde_json::from_value::<BlockHashAndNumberParams>(raw_request.params)
-                    .map_err(error_mapper)?,
+                serde_json::from_value::<BlockHashAndNumberParams>(raw_request.params).map_err(error_mapper)?,
             ),
             JsonRpcMethod::ChainId => JsonRpcRequestData::ChainId(
-                serde_json::from_value::<ChainIdParams>(raw_request.params)
-                    .map_err(error_mapper)?,
+                serde_json::from_value::<ChainIdParams>(raw_request.params).map_err(error_mapper)?,
             ),
             JsonRpcMethod::Syncing => JsonRpcRequestData::Syncing(
-                serde_json::from_value::<SyncingParams>(raw_request.params)
-                    .map_err(error_mapper)?,
+                serde_json::from_value::<SyncingParams>(raw_request.params).map_err(error_mapper)?,
             ),
             JsonRpcMethod::GetEvents => JsonRpcRequestData::GetEvents(
-                serde_json::from_value::<GetEventsParams<FeltPrimitive>>(raw_request.params)
-                    .map_err(error_mapper)?,
+                serde_json::from_value::<GetEventsParams<FeltPrimitive>>(raw_request.params).map_err(error_mapper)?,
             ),
             JsonRpcMethod::GetNonce => JsonRpcRequestData::GetNonce(
-                serde_json::from_value::<GetNonceParams<FeltPrimitive>>(raw_request.params)
-                    .map_err(error_mapper)?,
+                serde_json::from_value::<GetNonceParams<FeltPrimitive>>(raw_request.params).map_err(error_mapper)?,
             ),
             JsonRpcMethod::AddInvokeTransaction => JsonRpcRequestData::AddInvokeTransaction(
-                serde_json::from_value::<AddInvokeTransactionParams<FeltPrimitive>>(
-                    raw_request.params,
-                )
-                .map_err(error_mapper)?,
+                serde_json::from_value::<AddInvokeTransactionParams<FeltPrimitive>>(raw_request.params)
+                    .map_err(error_mapper)?,
             ),
             JsonRpcMethod::AddDeclareTransaction => JsonRpcRequestData::AddDeclareTransaction(
-                serde_json::from_value::<AddDeclareTransactionParams<FeltPrimitive>>(
-                    raw_request.params,
-                )
-                .map_err(error_mapper)?,
-            ),
-            JsonRpcMethod::AddDeployAccountTransaction => {
-                JsonRpcRequestData::AddDeployAccountTransaction(
-                    serde_json::from_value::<AddDeployAccountTransactionParams<FeltPrimitive>>(
-                        raw_request.params,
-                    )
+                serde_json::from_value::<AddDeclareTransactionParams<FeltPrimitive>>(raw_request.params)
                     .map_err(error_mapper)?,
-                )
-            }
+            ),
+            JsonRpcMethod::AddDeployAccountTransaction => JsonRpcRequestData::AddDeployAccountTransaction(
+                serde_json::from_value::<AddDeployAccountTransactionParams<FeltPrimitive>>(raw_request.params)
+                    .map_err(error_mapper)?,
+            ),
             JsonRpcMethod::TraceTransaction => JsonRpcRequestData::TraceTransaction(
                 serde_json::from_value::<TraceTransactionParams<FeltPrimitive>>(raw_request.params)
                     .map_err(error_mapper)?,
             ),
             JsonRpcMethod::SimulateTransactions => JsonRpcRequestData::SimulateTransactions(
-                serde_json::from_value::<SimulateTransactionsParams<FeltPrimitive>>(
-                    raw_request.params,
-                )
-                .map_err(error_mapper)?,
+                serde_json::from_value::<SimulateTransactionsParams<FeltPrimitive>>(raw_request.params)
+                    .map_err(error_mapper)?,
             ),
             JsonRpcMethod::TraceBlockTransactions => JsonRpcRequestData::TraceBlockTransactions(
-                serde_json::from_value::<TraceBlockTransactionsParams<FeltPrimitive>>(
-                    raw_request.params,
-                )
-                .map_err(error_mapper)?,
+                serde_json::from_value::<TraceBlockTransactionsParams<FeltPrimitive>>(raw_request.params)
+                    .map_err(error_mapper)?,
             ),
         };
 
-        Ok(Self {
-            id: raw_request.id,
-            data: request_data,
-        })
+        Ok(Self { id: raw_request.id, data: request_data })
     }
 }
 
@@ -862,20 +687,14 @@ impl TryFrom<&JsonRpcError> for StarknetError {
             34 => Ok(StarknetError::TooManyKeysInFilter),
             40 => {
                 let data = ContractErrorData::deserialize(
-                    value
-                        .data
-                        .as_ref()
-                        .ok_or(JsonRpcErrorConversionError::MissingData)?,
+                    value.data.as_ref().ok_or(JsonRpcErrorConversionError::MissingData)?,
                 )
                 .map_err(|_| JsonRpcErrorConversionError::DataParsingFailure)?;
                 Ok(StarknetError::ContractError(data))
             }
             41 => {
                 let data = TransactionExecutionErrorData::deserialize(
-                    value
-                        .data
-                        .as_ref()
-                        .ok_or(JsonRpcErrorConversionError::MissingData)?,
+                    value.data.as_ref().ok_or(JsonRpcErrorConversionError::MissingData)?,
                 )
                 .map_err(|_| JsonRpcErrorConversionError::DataParsingFailure)?;
                 Ok(StarknetError::TransactionExecutionError(data))
@@ -885,13 +704,8 @@ impl TryFrom<&JsonRpcError> for StarknetError {
             53 => Ok(StarknetError::InsufficientMaxFee),
             54 => Ok(StarknetError::InsufficientAccountBalance),
             55 => {
-                let data = String::deserialize(
-                    value
-                        .data
-                        .as_ref()
-                        .ok_or(JsonRpcErrorConversionError::MissingData)?,
-                )
-                .map_err(|_| JsonRpcErrorConversionError::DataParsingFailure)?;
+                let data = String::deserialize(value.data.as_ref().ok_or(JsonRpcErrorConversionError::MissingData)?)
+                    .map_err(|_| JsonRpcErrorConversionError::DataParsingFailure)?;
                 Ok(StarknetError::ValidationFailure(data))
             }
             56 => Ok(StarknetError::CompilationFailed),
@@ -902,21 +716,13 @@ impl TryFrom<&JsonRpcError> for StarknetError {
             61 => Ok(StarknetError::UnsupportedTxVersion),
             62 => Ok(StarknetError::UnsupportedContractClassVersion),
             63 => {
-                let data = String::deserialize(
-                    value
-                        .data
-                        .as_ref()
-                        .ok_or(JsonRpcErrorConversionError::MissingData)?,
-                )
-                .map_err(|_| JsonRpcErrorConversionError::DataParsingFailure)?;
+                let data = String::deserialize(value.data.as_ref().ok_or(JsonRpcErrorConversionError::MissingData)?)
+                    .map_err(|_| JsonRpcErrorConversionError::DataParsingFailure)?;
                 Ok(StarknetError::UnexpectedError(data))
             }
             10 => {
                 let data = NoTraceAvailableErrorData::deserialize(
-                    value
-                        .data
-                        .as_ref()
-                        .ok_or(JsonRpcErrorConversionError::MissingData)?,
+                    value.data.as_ref().ok_or(JsonRpcErrorConversionError::MissingData)?,
                 )
                 .map_err(|_| JsonRpcErrorConversionError::DataParsingFailure)?;
                 Ok(StarknetError::NoTraceAvailable(data))
@@ -941,11 +747,7 @@ impl Display for JsonRpcError {
                 )
             }
             None => {
-                write!(
-                    f,
-                    "JSON-RPC error: code={}, message=\"{}\"",
-                    self.code, self.message
-                )
+                write!(f, "JSON-RPC error: code={}, message=\"{}\"", self.code, self.message)
             }
         }
     }
@@ -1057,14 +859,18 @@ impl StarknetError {
             Self::TransactionExecutionError(_) => "Transaction execution error",
             Self::ClassAlreadyDeclared => "Class already declared",
             Self::InvalidTransactionNonce => "Invalid transaction nonce",
-            Self::InsufficientMaxFee => "Max fee is smaller than the minimal transaction cost (validation plus fee transfer)",
+            Self::InsufficientMaxFee => {
+                "Max fee is smaller than the minimal transaction cost (validation plus fee transfer)"
+            }
             Self::InsufficientAccountBalance => "Account balance is smaller than the transaction's max_fee",
             Self::ValidationFailure(_) => "Account validation failed",
             Self::CompilationFailed => "Compilation failed",
             Self::ContractClassSizeIsTooLarge => "Contract class size it too large",
             Self::NonAccount => "Sender address in not an account contract",
             Self::DuplicateTx => "A transaction with the same hash already exists in the mempool",
-            Self::CompiledClassHashMismatch => "the compiled class hash did not match the one supplied in the transaction",
+            Self::CompiledClassHashMismatch => {
+                "the compiled class hash did not match the one supplied in the transaction"
+            }
             Self::UnsupportedTxVersion => "the transaction version is not supported",
             Self::UnsupportedContractClassVersion => "the contract class version is not supported",
             Self::UnexpectedError(_) => "An unexpected error occurred",

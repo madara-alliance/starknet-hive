@@ -12,8 +12,7 @@ use crate::{
             contract::factory::ContractFactory,
             endpoints::{
                 declare_contract::{
-                    extract_class_hash_from_error, get_compiled_contract,
-                    parse_class_hash_from_error, RunnerError,
+                    extract_class_hash_from_error, get_compiled_contract, parse_class_hash_from_error, RunnerError,
                 },
                 errors::{CallError, OpenRpcTestGenError},
                 utils::{get_selector_from_name, wait_for_sent_transaction},
@@ -62,12 +61,10 @@ impl RunnableTrait for TestCase {
                 if sign_error.to_string().contains("is already declared") {
                     Ok(parse_class_hash_from_error(&sign_error.to_string())?)
                 } else {
-                    Err(OpenRpcTestGenError::RunnerError(
-                        RunnerError::AccountFailure(format!(
-                            "Transaction execution error: {}",
-                            sign_error
-                        )),
-                    ))
+                    Err(OpenRpcTestGenError::RunnerError(RunnerError::AccountFailure(format!(
+                        "Transaction execution error: {}",
+                        sign_error
+                    ))))
                 }
             }
 
@@ -75,12 +72,10 @@ impl RunnableTrait for TestCase {
                 if starkneterror.to_string().contains("is already declared") {
                     Ok(parse_class_hash_from_error(&starkneterror.to_string())?)
                 } else {
-                    Err(OpenRpcTestGenError::RunnerError(
-                        RunnerError::AccountFailure(format!(
-                            "Transaction execution error: {}",
-                            starkneterror
-                        )),
-                    ))
+                    Err(OpenRpcTestGenError::RunnerError(RunnerError::AccountFailure(format!(
+                        "Transaction execution error: {}",
+                        starkneterror
+                    ))))
                 }
             }
             Err(e) => {
@@ -96,19 +91,13 @@ impl RunnableTrait for TestCase {
             }
         }?;
 
-        let factory = ContractFactory::new(
-            declaration_hash,
-            test_input.random_paymaster_account.random_accounts()?,
-        );
+        let factory = ContractFactory::new(declaration_hash, test_input.random_paymaster_account.random_accounts()?);
 
         let mut salt_buffer = [0u8; 32];
         let mut rng = StdRng::from_entropy();
         rng.fill_bytes(&mut salt_buffer[1..]);
 
-        let deployment_result = factory
-            .deploy_v3(vec![], Felt::from_bytes_be(&salt_buffer), true)
-            .send()
-            .await?;
+        let deployment_result = factory.deploy_v3(vec![], Felt::from_bytes_be(&salt_buffer), true).send().await?;
 
         wait_for_sent_transaction(
             deployment_result.transaction_hash,
@@ -125,23 +114,16 @@ impl RunnableTrait for TestCase {
         let contract_address_erc20 = match deployment_receipt_erc20 {
             TxnReceipt::Deploy(receipt) => receipt.contract_address,
             TxnReceipt::Invoke(receipt) => {
-                if let Some(contract_address) = receipt
-                    .common_receipt_properties
-                    .events
-                    .first()
-                    .and_then(|event| event.data.first())
+                if let Some(contract_address) =
+                    receipt.common_receipt_properties.events.first().and_then(|event| event.data.first())
                 {
                     *contract_address
                 } else {
-                    return Err(OpenRpcTestGenError::CallError(
-                        CallError::UnexpectedReceiptType,
-                    ));
+                    return Err(OpenRpcTestGenError::CallError(CallError::UnexpectedReceiptType));
                 }
             }
             _ => {
-                return Err(OpenRpcTestGenError::CallError(
-                    CallError::UnexpectedReceiptType,
-                ));
+                return Err(OpenRpcTestGenError::CallError(CallError::UnexpectedReceiptType));
             }
         };
 
@@ -149,26 +131,16 @@ impl RunnableTrait for TestCase {
             to: contract_address_erc20,
             selector: get_selector_from_name("mint")?,
             calldata: vec![
-                test_input
-                    .random_executable_account
-                    .random_accounts()?
-                    .address(),
+                test_input.random_executable_account.random_accounts()?.address(),
                 Felt::from_hex("0x1234")?,
                 Felt::ZERO,
             ],
         };
 
-        let res = test_input
-            .random_paymaster_account
-            .execute_v3(vec![erc20_mint_call])
-            .send()
-            .await?;
+        let res = test_input.random_paymaster_account.execute_v3(vec![erc20_mint_call]).send().await?;
 
-        wait_for_sent_transaction(
-            res.transaction_hash,
-            &test_input.random_paymaster_account.random_accounts()?,
-        )
-        .await?;
+        wait_for_sent_transaction(res.transaction_hash, &test_input.random_paymaster_account.random_accounts()?)
+            .await?;
 
         let account_erc20_receiver_address =
             Felt::from_hex("0x78662e7352d062084b0010068b99288486c2d8b914f6e2a55ce945f8792c8b1")?;
@@ -177,23 +149,15 @@ impl RunnableTrait for TestCase {
         let erc20_transfer_call = Call {
             to: contract_address_erc20,
             selector: get_selector_from_name("transfer")?,
-            calldata: vec![
-                account_erc20_receiver_address,
-                amount_to_transfer[0],
-                amount_to_transfer[1],
-            ],
+            calldata: vec![account_erc20_receiver_address, amount_to_transfer[0], amount_to_transfer[1]],
         };
 
-        let timestamp =
-            get_current_timestamp(test_input.random_paymaster_account.provider()).await?;
+        let timestamp = get_current_timestamp(test_input.random_paymaster_account.provider()).await?;
 
         let nonce = test_input
             .random_paymaster_account
             .provider()
-            .get_nonce(
-                BlockId::Tag(BlockTag::Latest),
-                test_input.random_paymaster_account.address(),
-            )
+            .get_nonce(BlockId::Tag(BlockTag::Latest), test_input.random_paymaster_account.address())
             .await?;
 
         let outside_execution = OutsideExecution {
@@ -206,24 +170,14 @@ impl RunnableTrait for TestCase {
 
         let calldata_to_executable_account_call = prepare_outside_execution(
             &outside_execution,
-            test_input
-                .random_executable_account
-                .random_accounts()?
-                .address(),
+            test_input.random_executable_account.random_accounts()?.address(),
             test_input.executable_private_key,
-            test_input
-                .random_paymaster_account
-                .provider()
-                .chain_id()
-                .await?,
+            test_input.random_paymaster_account.provider().chain_id().await?,
         )
         .await?;
 
         let call_to_executable_account = Call {
-            to: test_input
-                .random_executable_account
-                .random_accounts()?
-                .address(),
+            to: test_input.random_executable_account.random_accounts()?.address(),
             selector: get_selector_from_name("execute_from_outside_v2")?,
             calldata: calldata_to_executable_account_call,
         };
@@ -231,10 +185,7 @@ impl RunnableTrait for TestCase {
         let exec_balance_before_transfer = felts_slice_to_biguint(
             get_balance(
                 &test_input.random_paymaster_account.provider(),
-                test_input
-                    .random_executable_account
-                    .random_accounts()?
-                    .address(),
+                test_input.random_executable_account.random_accounts()?.address(),
                 contract_address_erc20,
                 BlockId::Tag(BlockTag::Pending),
             )
@@ -244,13 +195,8 @@ impl RunnableTrait for TestCase {
         let paymaster_balance_before = felts_slice_to_biguint(
             get_balance(
                 test_input.random_paymaster_account.provider(),
-                test_input
-                    .random_paymaster_account
-                    .random_accounts()?
-                    .address(),
-                Felt::from_hex(
-                    "0x04718f5a0fc34cc1af16a1cdee98ffb20c31f5cd61d6ab07201858f4287c938d",
-                )?,
+                test_input.random_paymaster_account.random_accounts()?.address(),
+                Felt::from_hex("0x04718f5a0fc34cc1af16a1cdee98ffb20c31f5cd61d6ab07201858f4287c938d")?,
                 BlockId::Tag(BlockTag::Pending),
             )
             .await?,
@@ -266,25 +212,15 @@ impl RunnableTrait for TestCase {
             .await?,
         )?;
 
-        let hash = test_input
-            .random_paymaster_account
-            .execute_v3(vec![call_to_executable_account])
-            .send()
-            .await?;
+        let hash = test_input.random_paymaster_account.execute_v3(vec![call_to_executable_account]).send().await?;
 
-        wait_for_sent_transaction(
-            hash.transaction_hash,
-            &test_input.random_paymaster_account.random_accounts()?,
-        )
-        .await?;
+        wait_for_sent_transaction(hash.transaction_hash, &test_input.random_paymaster_account.random_accounts()?)
+            .await?;
 
         let exec_balance_after_transfer = felts_slice_to_biguint(
             get_balance(
                 &test_input.random_paymaster_account.provider(),
-                test_input
-                    .random_executable_account
-                    .random_accounts()?
-                    .address(),
+                test_input.random_executable_account.random_accounts()?.address(),
                 contract_address_erc20,
                 BlockId::Tag(BlockTag::Pending),
             )
@@ -294,13 +230,8 @@ impl RunnableTrait for TestCase {
         let paymaster_balance_after = felts_slice_to_biguint(
             get_balance(
                 test_input.random_paymaster_account.provider(),
-                test_input
-                    .random_paymaster_account
-                    .random_accounts()?
-                    .address(),
-                Felt::from_hex(
-                    "0x04718f5a0fc34cc1af16a1cdee98ffb20c31f5cd61d6ab07201858f4287c938d",
-                )?,
+                test_input.random_paymaster_account.random_accounts()?.address(),
+                Felt::from_hex("0x04718f5a0fc34cc1af16a1cdee98ffb20c31f5cd61d6ab07201858f4287c938d")?,
                 BlockId::Tag(BlockTag::Pending),
             )
             .await?,

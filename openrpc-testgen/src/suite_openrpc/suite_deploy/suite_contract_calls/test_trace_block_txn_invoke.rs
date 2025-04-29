@@ -38,27 +38,16 @@ impl RunnableTrait for TestCase {
 
         let chain_id = account.provider().chain_id().await?;
 
-        let nonce = account
-            .provider()
-            .get_nonce(BlockId::Tag(BlockTag::Pending), account.address())
-            .await?;
+        let nonce = account.provider().get_nonce(BlockId::Tag(BlockTag::Pending), account.address()).await?;
 
-        let prepared_execution_v3 = test_input
-            .random_paymaster_account
-            .execute_v3(vec![increase_balance_call])
-            .prepare()
-            .await?;
+        let prepared_execution_v3 =
+            test_input.random_paymaster_account.execute_v3(vec![increase_balance_call]).prepare().await?;
 
-        let invoke_request = prepared_execution_v3
-            .get_invoke_request(false, false)
-            .await?;
+        let invoke_request = prepared_execution_v3.get_invoke_request(false, false).await?;
 
-        let (_, invoke_hash) =
-            verify_invoke_v3_signature(&invoke_request, None, chain_id.to_hex_string().as_str())?;
+        let (_, invoke_hash) = verify_invoke_v3_signature(&invoke_request, None, chain_id.to_hex_string().as_str())?;
 
-        let invoke_result = prepared_execution_v3
-            .send_from_request(invoke_request)
-            .await?;
+        let invoke_result = prepared_execution_v3.send_from_request(invoke_request).await?;
 
         wait_for_sent_transaction(invoke_result.transaction_hash, &account).await?;
 
@@ -84,17 +73,10 @@ impl RunnableTrait for TestCase {
 
         let trace_len = trace.len();
 
-        assert_result!(
-            trace_len == 1,
-            format!(
-                "Trace block length missmatch expected: 1, got: {}",
-                trace_len
-            )
-        );
+        assert_result!(trace_len == 1, format!("Trace block length missmatch expected: 1, got: {}", trace_len));
 
-        let trace_block = trace
-            .first()
-            .ok_or_else(|| OpenRpcTestGenError::Other("Trace block not found".to_string()))?;
+        let trace_block =
+            trace.first().ok_or_else(|| OpenRpcTestGenError::Other("Trace block not found".to_string()))?;
 
         assert_matches_result!(
             trace_block,
@@ -104,51 +86,43 @@ impl RunnableTrait for TestCase {
             }
         );
 
-        let trace_root = trace_block.trace_root.clone().ok_or_else(|| {
-            OpenRpcTestGenError::Other("Trace root not found in trace block".to_string())
-        })?;
-        let transaction_hash = trace_block.transaction_hash.ok_or_else(|| {
-            OpenRpcTestGenError::Other("Transaction hash not found in trace block".to_string())
-        })?;
+        let trace_root = trace_block
+            .trace_root
+            .clone()
+            .ok_or_else(|| OpenRpcTestGenError::Other("Trace root not found in trace block".to_string()))?;
+        let transaction_hash = trace_block
+            .transaction_hash
+            .ok_or_else(|| OpenRpcTestGenError::Other("Transaction hash not found in trace block".to_string()))?;
 
         let (function_invocation, invoke_trace) = match trace_root {
-            TransactionTrace::Invoke(invoke_trace) => match invoke_trace.clone().execute_invocation
-            {
-                ExecuteInvocation::FunctionInvocation(func_invocation) => {
-                    (Some(func_invocation), Some(invoke_trace))
-                }
+            TransactionTrace::Invoke(invoke_trace) => match invoke_trace.clone().execute_invocation {
+                ExecuteInvocation::FunctionInvocation(func_invocation) => (Some(func_invocation), Some(invoke_trace)),
                 _ => (None, Some(invoke_trace)),
             },
             _ => (None, None),
         };
 
-        let invoke_trace = invoke_trace.ok_or_else(|| {
-            OpenRpcTestGenError::Other("Invoke trace not found in transaction trace".to_string())
-        })?;
-        let function_invocation = function_invocation.ok_or_else(|| {
-            OpenRpcTestGenError::Other("Function invocation not found in invoke trace".to_string())
-        })?;
+        let invoke_trace = invoke_trace
+            .ok_or_else(|| OpenRpcTestGenError::Other("Invoke trace not found in transaction trace".to_string()))?;
+        let function_invocation = function_invocation
+            .ok_or_else(|| OpenRpcTestGenError::Other("Function invocation not found in invoke trace".to_string()))?;
         let fee_transfer_invocation = invoke_trace.fee_transfer_invocation.ok_or_else(|| {
-            OpenRpcTestGenError::Other(
-                "Fee transfer invocation is missing in invoke trace".to_string(),
-            )
+            OpenRpcTestGenError::Other("Fee transfer invocation is missing in invoke trace".to_string())
         })?;
 
-        let validate_invocation = invoke_trace.validate_invocation.ok_or_else(|| {
-            OpenRpcTestGenError::Other("Validate invocation is missing in invoke trace".to_string())
-        })?;
+        let validate_invocation = invoke_trace
+            .validate_invocation
+            .ok_or_else(|| OpenRpcTestGenError::Other("Validate invocation is missing in invoke trace".to_string()))?;
 
-        let state_diff = invoke_trace.state_diff.ok_or_else(|| {
-            OpenRpcTestGenError::Other("State diff is missing in invoke trace".to_string())
-        })?;
+        let state_diff = invoke_trace
+            .state_diff
+            .ok_or_else(|| OpenRpcTestGenError::Other("State diff is missing in invoke trace".to_string()))?;
 
         let state_diff_nonce = state_diff
             .nonces
             .first()
             .and_then(|nonce| nonce.nonce)
-            .ok_or_else(|| {
-                OpenRpcTestGenError::Other("Nonce not found in state diff".to_string())
-            })?;
+            .ok_or_else(|| OpenRpcTestGenError::Other("Nonce not found in state diff".to_string()))?;
 
         let storage_diff = state_diff.storage_diffs;
 
@@ -166,10 +140,7 @@ impl RunnableTrait for TestCase {
 
         assert_result!(
             transaction_hash == invoke_hash,
-            format!(
-                "Transaction hash mismatch: expected {:?}, but found {:?}",
-                invoke_hash, transaction_hash
-            )
+            format!("Transaction hash mismatch: expected {:?}, but found {:?}", invoke_hash, transaction_hash)
         );
 
         let balance = account
@@ -185,29 +156,22 @@ impl RunnableTrait for TestCase {
             .await?[0];
 
         // index of deployed_contract_address in storage_diffs
-        let deployed_contract_index = storage_diff
-            .iter()
-            .position(|diff| diff.address == deployed_contract_address)
-            .ok_or_else(|| {
-                OpenRpcTestGenError::Other(
-                    "Deployed contract address not found in storage diffs".to_string(),
-                )
+        let deployed_contract_index =
+            storage_diff.iter().position(|diff| diff.address == deployed_contract_address).ok_or_else(|| {
+                OpenRpcTestGenError::Other("Deployed contract address not found in storage diffs".to_string())
             })?;
 
         // index of STRK_ERC20_CONTRACT_ADDRESS in storage_diffs
-        let strk_erc20_index = storage_diff
-            .iter()
-            .position(|diff| diff.address == STRK_ERC20_CONTRACT_ADDRESS)
-            .ok_or_else(|| {
-                OpenRpcTestGenError::Other(
-                    "STRK_ERC20_CONTRACT_ADDRESS not found in storage diffs".to_string(),
-                )
+        let strk_erc20_index =
+            storage_diff.iter().position(|diff| diff.address == STRK_ERC20_CONTRACT_ADDRESS).ok_or_else(|| {
+                OpenRpcTestGenError::Other("STRK_ERC20_CONTRACT_ADDRESS not found in storage diffs".to_string())
             })?;
 
         // Retrieve the first call from function_invocation
-        let function_invocation_call = function_invocation.calls.first().ok_or_else(|| {
-            OpenRpcTestGenError::Other("No calls found in function invocation".to_string())
-        })?;
+        let function_invocation_call = function_invocation
+            .calls
+            .first()
+            .ok_or_else(|| OpenRpcTestGenError::Other("No calls found in function invocation".to_string()))?;
 
         // Validate the contract address
         assert_result!(
@@ -229,12 +193,10 @@ impl RunnableTrait for TestCase {
 
         // Validate the entry point selector
         assert_result!(
-            function_invocation_call.function_call.entry_point_selector
-                == increase_balance_selector,
+            function_invocation_call.function_call.entry_point_selector == increase_balance_selector,
             format!(
                 "Entry point selector mismatch in nested call: expected {:?}, but found {:?}",
-                increase_balance_selector,
-                function_invocation_call.function_call.entry_point_selector
+                increase_balance_selector, function_invocation_call.function_call.entry_point_selector
             )
         );
 
@@ -268,21 +230,12 @@ impl RunnableTrait for TestCase {
         // state_diff nonces
         assert_result!(
             state_diff_nonce == nonce + Felt::ONE,
-            format!(
-                "Nonce mismatch: expected {:?}, but found {:?}",
-                nonce + Felt::ONE,
-                state_diff_nonce
-            )
+            format!("Nonce mismatch: expected {:?}, but found {:?}", nonce + Felt::ONE, state_diff_nonce)
         );
 
-        let state_diff_contract_address = state_diff
-            .nonces
-            .first()
-            .and_then(|nonce| nonce.contract_address)
-            .ok_or_else(|| {
-                OpenRpcTestGenError::Other(
-                    "Contract address not found in state diff nonces".to_string(),
-                )
+        let state_diff_contract_address =
+            state_diff.nonces.first().and_then(|nonce| nonce.contract_address).ok_or_else(|| {
+                OpenRpcTestGenError::Other("Contract address not found in state diff nonces".to_string())
             })?;
 
         assert_result!(
@@ -294,13 +247,12 @@ impl RunnableTrait for TestCase {
         );
 
         // Retrieve the storage diff for the deployed contract
-        let deployed_contract_storage_diff =
-            storage_diff.get(deployed_contract_index).ok_or_else(|| {
-                OpenRpcTestGenError::Other(format!(
-                    "No storage diff entry found for deployed contract at index {}",
-                    deployed_contract_index
-                ))
-            })?;
+        let deployed_contract_storage_diff = storage_diff.get(deployed_contract_index).ok_or_else(|| {
+            OpenRpcTestGenError::Other(format!(
+                "No storage diff entry found for deployed contract at index {}",
+                deployed_contract_index
+            ))
+        })?;
 
         // Validate the deployed contract address in the storage diff
         assert_result!(
@@ -312,22 +264,14 @@ impl RunnableTrait for TestCase {
         );
 
         // state diff storage balance
-        let storage_balance = deployed_contract_storage_diff
-            .storage_entries
-            .first()
-            .and_then(|entry| entry.value)
-            .ok_or_else(|| {
-                OpenRpcTestGenError::Other(
-                    "Value not found in deployed contract storage entries".to_string(),
-                )
+        let storage_balance =
+            deployed_contract_storage_diff.storage_entries.first().and_then(|entry| entry.value).ok_or_else(|| {
+                OpenRpcTestGenError::Other("Value not found in deployed contract storage entries".to_string())
             })?;
 
         assert_result!(
             storage_balance == balance,
-            format!(
-                "Balance mismatch in storage diff: expected {:?}, but found {:?}",
-                balance, storage_balance
-            )
+            format!("Balance mismatch in storage diff: expected {:?}, but found {:?}", balance, storage_balance)
         );
 
         // Retrieve the storage diff for STRK_ERC20_CONTRACT_ADDRESS

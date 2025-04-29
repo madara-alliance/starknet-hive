@@ -34,11 +34,7 @@ impl HttpTransport {
     }
 
     pub fn new_with_client(url: impl Into<Url>, client: Client) -> Self {
-        Self {
-            client,
-            url: url.into(),
-            headers: vec![],
-        }
+        Self { client, url: url.into(), headers: vec![] }
     }
 
     /// Consumes the current [HttpTransport] instance and returns a new one with the header
@@ -47,11 +43,7 @@ impl HttpTransport {
         let mut headers = self.headers;
         headers.push((name, value));
 
-        Self {
-            client: self.client,
-            url: self.url,
-            headers,
-        }
+        Self { client: self.client, url: self.url, headers }
     }
 
     /// Adds a custom HTTP header to be sent for requests.
@@ -63,30 +55,18 @@ impl HttpTransport {
 impl JsonRpcTransport for HttpTransport {
     type Error = HttpTransportError;
 
-    async fn send_request<P, R>(
-        &self,
-        method: JsonRpcMethod,
-        params: P,
-    ) -> Result<JsonRpcResponse<R>, Self::Error>
+    async fn send_request<P, R>(&self, method: JsonRpcMethod, params: P) -> Result<JsonRpcResponse<R>, Self::Error>
     where
         P: Serialize + Send,
         R: DeserializeOwned,
     {
-        let request_body = JsonRpcRequest {
-            id: 1,
-            jsonrpc: "2.0",
-            method,
-            params,
-        };
+        let request_body = JsonRpcRequest { id: 1, jsonrpc: "2.0", method, params };
 
         let request_body = serde_json::to_string(&request_body).map_err(Self::Error::Json)?;
         debug!("Sending request via JSON-RPC: {}", request_body);
 
-        let mut request = self
-            .client
-            .post(self.url.clone())
-            .body(request_body)
-            .header("Content-Type", "application/json");
+        let mut request =
+            self.client.post(self.url.clone()).body(request_body).header("Content-Type", "application/json");
         for (name, value) in &self.headers {
             request = request.header(name, value);
         }
@@ -96,8 +76,7 @@ impl JsonRpcTransport for HttpTransport {
         let response_body = response.text().await.map_err(Self::Error::Reqwest)?;
         debug!("Response from JSON-RPC: {}", response_body);
 
-        let parsed_response: JsonRpcResponse<R> =
-            serde_json::from_str(&response_body).map_err(Self::Error::Json)?;
+        let parsed_response: JsonRpcResponse<R> = serde_json::from_str(&response_body).map_err(Self::Error::Json)?;
         Ok(parsed_response)
     }
 }

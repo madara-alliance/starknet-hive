@@ -41,11 +41,7 @@ impl RunnableTrait for TestCase {
         // Block 1
 
         for _ in 0..5 {
-            let res = account
-                .execute_v1(vec![increase_balance_call.clone()])
-                .nonce(nonce)
-                .send()
-                .await?;
+            let res = account.execute_v1(vec![increase_balance_call.clone()]).nonce(nonce).send().await?;
             wait_for_sent_transaction_katana(res.transaction_hash, &account).await?;
             nonce += Felt::ONE;
             hashes.push(res.transaction_hash);
@@ -73,11 +69,7 @@ impl RunnableTrait for TestCase {
         nonce = account.get_nonce().await?;
 
         for _ in 0..2 {
-            let res = account
-                .execute_v1(vec![increase_balance_call.clone()])
-                .nonce(nonce)
-                .send()
-                .await?;
+            let res = account.execute_v1(vec![increase_balance_call.clone()]).nonce(nonce).send().await?;
             wait_for_sent_transaction_katana(res.transaction_hash, &account).await?;
             nonce += Felt::ONE;
             hashes.push(res.transaction_hash);
@@ -105,11 +97,7 @@ impl RunnableTrait for TestCase {
         nonce = account.get_nonce().await?;
 
         for _ in 0..3 {
-            let res = account
-                .execute_v1(vec![increase_balance_call.clone()])
-                .nonce(nonce)
-                .send()
-                .await?;
+            let res = account.execute_v1(vec![increase_balance_call.clone()]).nonce(nonce).send().await?;
             wait_for_sent_transaction_katana(res.transaction_hash, &account).await?;
             nonce += Felt::ONE;
             hashes.push(res.transaction_hash);

@@ -24,11 +24,8 @@ impl RunnableTrait for TestCase {
     type Input = super::TestSuiteOpenRpc;
 
     async fn run(test_input: &Self::Input) -> Result<Self, OpenRpcTestGenError> {
-        let initial_block_hash_and_number = test_input
-            .random_paymaster_account
-            .provider()
-            .block_hash_and_number()
-            .await;
+        let initial_block_hash_and_number =
+            test_input.random_paymaster_account.provider().block_hash_and_number().await;
 
         let result = initial_block_hash_and_number.is_ok();
 
@@ -36,11 +33,7 @@ impl RunnableTrait for TestCase {
 
         let initial_block_hash_and_number = initial_block_hash_and_number?;
 
-        let initial_block_number = test_input
-            .random_paymaster_account
-            .provider()
-            .block_number()
-            .await?;
+        let initial_block_number = test_input.random_paymaster_account.provider().block_number().await?;
 
         assert_result!(
             initial_block_hash_and_number.block_number == initial_block_number,
@@ -58,11 +51,7 @@ impl RunnableTrait for TestCase {
 
         let initial_block_hash = match block_with_txs {
             MaybePendingBlockWithTxs::Block(block) => block.block_header.block_hash,
-            _ => {
-                return Err(OpenRpcTestGenError::ProviderError(
-                    ProviderError::UnexpectedPendingBlock,
-                ))
-            }
+            _ => return Err(OpenRpcTestGenError::ProviderError(ProviderError::UnexpectedPendingBlock)),
         };
 
         assert_result!(
@@ -78,14 +67,10 @@ impl RunnableTrait for TestCase {
         let transfer_execution = test_input
             .random_paymaster_account
             .execute_v3(vec![Call {
-                to: Felt::from_hex(
-                    "0x4718F5A0FC34CC1AF16A1CDEE98FFB20C31F5CD61D6AB07201858F4287C938D",
-                )?,
+                to: Felt::from_hex("0x4718F5A0FC34CC1AF16A1CDEE98FFB20C31F5CD61D6AB07201858F4287C938D")?,
                 selector: get_selector_from_name("transfer")?,
                 calldata: vec![
-                    Felt::from_hex(
-                        "0xdeadF5A0beefCC1Adead1CDEbeefFB20dead5CD6beefB072dead8F42beef38D",
-                    )?,
+                    Felt::from_hex("0xdeadF5A0beefCC1Adead1CDEbeefFB20dead5CD6beefB072dead8F42beef38D")?,
                     transfer_amount,
                     Felt::ZERO,
                 ],
@@ -99,11 +84,8 @@ impl RunnableTrait for TestCase {
         )
         .await?;
 
-        let initial_block_hash_and_number = test_input
-            .random_paymaster_account
-            .provider()
-            .block_hash_and_number()
-            .await;
+        let initial_block_hash_and_number =
+            test_input.random_paymaster_account.provider().block_hash_and_number().await;
 
         let result = initial_block_hash_and_number.is_ok();
 
@@ -111,11 +93,7 @@ impl RunnableTrait for TestCase {
 
         let initial_block_hash_and_number = initial_block_hash_and_number?;
 
-        let initial_block_number = test_input
-            .random_paymaster_account
-            .provider()
-            .block_number()
-            .await?;
+        let initial_block_number = test_input.random_paymaster_account.provider().block_number().await?;
 
         assert_result!(
             initial_block_hash_and_number.block_number == initial_block_number,
@@ -133,11 +111,7 @@ impl RunnableTrait for TestCase {
 
         let initial_block_hash = match block_with_txs {
             MaybePendingBlockWithTxs::Block(block) => block.block_header.block_hash,
-            _ => {
-                return Err(OpenRpcTestGenError::ProviderError(
-                    ProviderError::UnexpectedPendingBlock,
-                ))
-            }
+            _ => return Err(OpenRpcTestGenError::ProviderError(ProviderError::UnexpectedPendingBlock)),
         };
 
         assert_result!(

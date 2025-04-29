@@ -39,38 +39,23 @@ impl RunnableTrait for TestCase {
             calldata: vec![Felt::from_hex("0x50")?],
         };
 
-        let res = account
-            .execute_v1(vec![increase_balance_call.clone()])
-            .max_fee(fee)
-            .send()
-            .await?;
+        let res = account.execute_v1(vec![increase_balance_call.clone()]).max_fee(fee).send().await?;
 
         wait_for_sent_transaction(res.transaction_hash, &account).await?;
 
         // initial sender's account nonce. use to assert how the txs validity change the account nonce.
         let valid_nonce = account.get_nonce().await?;
-        assert_eq_result!(
-            initial_nonce + 1,
-            valid_nonce,
-            "Initial nonce after sending tx should be greater by 1."
-        );
+        assert_eq_result!(initial_nonce + 1, valid_nonce, "Initial nonce after sending tx should be greater by 1.");
 
         // -----------------------------------------------------------------------
         //  transaction with nonce < account nonce.
         let old_nonce = valid_nonce - Felt::ONE;
 
-        let res = account
-            .execute_v1(vec![increase_balance_call.clone()])
-            .max_fee(fee)
-            .nonce(old_nonce)
-            .send()
-            .await;
+        let res = account.execute_v1(vec![increase_balance_call.clone()]).max_fee(fee).nonce(old_nonce).send().await;
 
         assert_matches_result!(
             res.unwrap_err(),
-            AccountError::Provider(ProviderError::StarknetError(
-                StarknetError::InvalidTransactionNonce
-            ))
+            AccountError::Provider(ProviderError::StarknetError(StarknetError::InvalidTransactionNonce))
         );
 
         let nonce = account.get_nonce().await?;
@@ -81,12 +66,7 @@ impl RunnableTrait for TestCase {
 
         let curr_nonce = valid_nonce;
 
-        let res = account
-            .execute_v1(vec![increase_balance_call.clone()])
-            .max_fee(fee)
-            .nonce(curr_nonce)
-            .send()
-            .await?;
+        let res = account.execute_v1(vec![increase_balance_call.clone()]).max_fee(fee).nonce(curr_nonce).send().await?;
 
         wait_for_sent_transaction(res.transaction_hash, &account).await?;
 
@@ -106,26 +86,15 @@ impl RunnableTrait for TestCase {
         // invalid with nonce mismatch error.
         let new_nonce = Felt::from_hex_unchecked("0x100");
 
-        let res = account
-            .execute_v1(vec![increase_balance_call.clone()])
-            .max_fee(fee)
-            .nonce(new_nonce)
-            .send()
-            .await;
+        let res = account.execute_v1(vec![increase_balance_call.clone()]).max_fee(fee).nonce(new_nonce).send().await;
 
         assert_matches_result!(
             res.unwrap_err(),
-            AccountError::Provider(ProviderError::StarknetError(
-                StarknetError::InvalidTransactionNonce
-            ))
+            AccountError::Provider(ProviderError::StarknetError(StarknetError::InvalidTransactionNonce))
         );
 
         let nonce = account.get_nonce().await?;
-        assert_eq_result!(
-            nonce,
-            initial_nonce + 2,
-            "Nonce shouldn't change bcs the tx is still invalid."
-        );
+        assert_eq_result!(nonce, initial_nonce + 2, "Nonce shouldn't change bcs the tx is still invalid.");
 
         Ok(Self {})
     }

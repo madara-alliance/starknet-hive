@@ -38,9 +38,7 @@ impl RunnableTrait for TestCase {
         let transfer_execution = test_input
             .random_paymaster_account
             .execute_v3(vec![Call {
-                to: Felt::from_hex(
-                    "0x4718F5A0FC34CC1AF16A1CDEE98FFB20C31F5CD61D6AB07201858F4287C938D",
-                )?,
+                to: Felt::from_hex("0x4718F5A0FC34CC1AF16A1CDEE98FFB20C31F5CD61D6AB07201858F4287C938D")?,
                 selector: get_selector_from_name("transfer")?,
                 calldata: vec![account_data.address, transfer_amount, Felt::ZERO],
             }])
@@ -53,10 +51,7 @@ impl RunnableTrait for TestCase {
         )
         .await?;
 
-        let wait_config = WaitForTx {
-            wait: true,
-            wait_params: ValidatedWaitParams::default(),
-        };
+        let wait_config = WaitForTx { wait: true, wait_params: ValidatedWaitParams::default() };
 
         let estimate_fee = estimate_fee_deploy_account(
             test_input.random_paymaster_account.provider(),
@@ -77,17 +72,9 @@ impl RunnableTrait for TestCase {
         )
         .await?;
 
-        wait_for_sent_transaction(
-            deploy_account_hash,
-            &test_input.random_paymaster_account.random_accounts()?,
-        )
-        .await?;
+        wait_for_sent_transaction(deploy_account_hash, &test_input.random_paymaster_account.random_accounts()?).await?;
 
-        let receipt = test_input
-            .random_paymaster_account
-            .provider()
-            .get_transaction_receipt(deploy_account_hash)
-            .await;
+        let receipt = test_input.random_paymaster_account.provider().get_transaction_receipt(deploy_account_hash).await;
 
         let result = receipt.is_ok();
 
@@ -95,38 +82,25 @@ impl RunnableTrait for TestCase {
 
         let receipt = match receipt? {
             TxnReceipt::DeployAccount(receipt) => receipt,
-            _ => {
-                return Err(OpenRpcTestGenError::CallError(
-                    CallError::UnexpectedReceiptType,
-                ))
-            }
+            _ => return Err(OpenRpcTestGenError::CallError(CallError::UnexpectedReceiptType)),
         };
 
         assert_result!(
             receipt.contract_address == account_data.address,
-            format!(
-                "Expected contract address: {:?}, actual: {:?}",
-                account_data.address, receipt.contract_address
-            )
+            format!("Expected contract address: {:?}, actual: {:?}", account_data.address, receipt.contract_address)
         );
 
         let common_receipt_properties = receipt.common_receipt_properties;
         let actual_fee = common_receipt_properties.actual_fee;
         assert_result!(
             actual_fee.amount == estimate_fee.overall_fee,
-            format!(
-                "Actual fee expected: {:?}, actual: {:?}",
-                estimate_fee.overall_fee, actual_fee.amount
-            )
+            format!("Actual fee expected: {:?}, actual: {:?}", estimate_fee.overall_fee, actual_fee.amount)
         );
 
         let expected_unit = PriceUnit::Fri;
         assert_result!(
             actual_fee.unit == expected_unit,
-            format!(
-                "Actual fee unit expected: {:?}, actual: {:?}",
-                expected_unit, actual_fee.unit
-            )
+            format!("Actual fee unit expected: {:?}, actual: {:?}", expected_unit, actual_fee.unit)
         );
 
         let expected_finality_status = TxnFinalityStatus::L2;
@@ -140,10 +114,7 @@ impl RunnableTrait for TestCase {
 
         assert_result!(
             common_receipt_properties.messages_sent.is_empty(),
-            format!(
-                "Expected no messages sent, actual: {:?}",
-                common_receipt_properties.messages_sent
-            )
+            format!("Expected no messages sent, actual: {:?}", common_receipt_properties.messages_sent)
         );
 
         assert_result!(
@@ -157,9 +128,7 @@ impl RunnableTrait for TestCase {
         let execution_status = match common_receipt_properties.anon {
             starknet_types_rpc::Anonymous::Successful(status) => status.execution_status,
             _ => {
-                return Err(OpenRpcTestGenError::Other(
-                    "Unexpected execution status type.".to_string(),
-                ));
+                return Err(OpenRpcTestGenError::Other("Unexpected execution status type.".to_string()));
             }
         };
 
@@ -167,21 +136,13 @@ impl RunnableTrait for TestCase {
 
         assert_result!(
             execution_status == expected_execution_status,
-            format!(
-                "Expected execution status to be {:?}, got {:?}",
-                expected_execution_status, execution_status
-            )
+            format!("Expected execution status to be {:?}, got {:?}", expected_execution_status, execution_status)
         );
 
         let events = common_receipt_properties.events;
-        assert_result!(
-            events.len() == 2,
-            format!("Expected 2 event, got {}", events.len())
-        );
+        assert_result!(events.len() == 2, format!("Expected 2 event, got {}", events.len()));
 
-        let first_event = events
-            .first()
-            .ok_or_else(|| OpenRpcTestGenError::Other("Event not found".to_string()))?;
+        let first_event = events.first().ok_or_else(|| OpenRpcTestGenError::Other("Event not found".to_string()))?;
         assert_result!(
             first_event.from_address == account_data.address,
             format!(
@@ -192,10 +153,7 @@ impl RunnableTrait for TestCase {
 
         assert_result!(
             first_event.data.is_empty(),
-            format!(
-                "Expected event data to be empty, but got {}",
-                first_event.data.len()
-            )
+            format!("Expected event data to be empty, but got {}", first_event.data.len())
         );
 
         let first_event_keys_first = *first_event
@@ -205,10 +163,7 @@ impl RunnableTrait for TestCase {
         let keccak_owner_added = starknet_keccak("OwnerAdded".as_bytes());
         assert_result!(
             first_event_keys_first == keccak_owner_added,
-            format!(
-                "Invalid event key, expected {:?}, got {:?}",
-                keccak_owner_added, first_event_keys_first
-            )
+            format!("Invalid event key, expected {:?}, got {:?}", keccak_owner_added, first_event_keys_first)
         );
 
         let first_event_keys_second = *first_event
@@ -224,16 +179,11 @@ impl RunnableTrait for TestCase {
             )
         );
 
-        let second_event = events
-            .get(1)
-            .ok_or_else(|| OpenRpcTestGenError::Other("Event missing".to_string()))?;
+        let second_event = events.get(1).ok_or_else(|| OpenRpcTestGenError::Other("Event missing".to_string()))?;
 
         assert_result!(
             second_event.from_address == STRK_ADDRESS,
-            format!(
-                "Expected event from address to be {:?}, got {:?}",
-                STRK_ADDRESS, second_event.from_address
-            )
+            format!("Expected event from address to be {:?}, got {:?}", STRK_ADDRESS, second_event.from_address)
         );
 
         let second_event_data_first = *second_event
@@ -256,11 +206,7 @@ impl RunnableTrait for TestCase {
 
         assert_result!(
             second_event_data_second == Felt::ZERO,
-            format!(
-                "Invalid fee amount in event data, expected {}, got {:?}",
-                Felt::ZERO,
-                second_event_data_second
-            )
+            format!("Invalid fee amount in event data, expected {}, got {:?}", Felt::ZERO, second_event_data_second)
         );
 
         let second_event_keys_first = *second_event

@@ -16,17 +16,11 @@ impl RunnableTrait for TestCase {
             TxnReceipt::Deploy(receipt) => receipt.common_receipt_properties.transaction_hash,
             TxnReceipt::Invoke(receipt) => receipt.common_receipt_properties.transaction_hash,
             _ => {
-                return Err(OpenRpcTestGenError::CallError(
-                    CallError::UnexpectedReceiptType,
-                ));
+                return Err(OpenRpcTestGenError::CallError(CallError::UnexpectedReceiptType));
             }
         };
 
-        let tx_status = test_input
-            .random_paymaster_account
-            .provider()
-            .get_transaction_status(tx_hash)
-            .await;
+        let tx_status = test_input.random_paymaster_account.provider().get_transaction_status(tx_hash).await;
 
         let result = tx_status.is_ok();
 

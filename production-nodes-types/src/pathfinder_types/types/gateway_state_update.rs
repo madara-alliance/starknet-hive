@@ -14,9 +14,7 @@ use primitive_types::H160;
 use serde::{Deserialize, Serialize};
 use serde_with::{serde_as, DisplayFromStr};
 use starknet_types_core::felt::Felt;
-use starknet_types_rpc::v0_7_1::starknet_api_openrpc::{
-    DeclareTxn, DeployAccountTxn, InvokeTxn, Txn, TxnWithHash,
-};
+use starknet_types_rpc::v0_7_1::starknet_api_openrpc::{DeclareTxn, DeployAccountTxn, InvokeTxn, Txn, TxnWithHash};
 
 pub type SequencerAddress = Felt;
 pub type Fee = Felt;
@@ -86,10 +84,7 @@ pub struct Block {
 }
 
 pub fn count_events(transaction_receipts: Vec<(Receipt, Vec<Event>)>) -> u32 {
-    transaction_receipts
-        .iter()
-        .map(|(_, events)| events.len() as u32)
-        .sum()
+    transaction_receipts.iter().map(|(_, events)| events.len() as u32).sum()
 }
 
 #[derive(Debug, Copy, Clone, PartialEq, Eq, Deserialize, Serialize, Default)]
@@ -236,14 +231,12 @@ impl From<Transaction> for TxnWithHash<Felt> {
                 sender_address,
                 signature,
                 transaction_hash: _,
-            })) => Txn::Declare(DeclareTxn::V0(
-                starknet_types_rpc::v0_7_1::starknet_api_openrpc::DeclareTxnV0 {
-                    class_hash,
-                    max_fee,
-                    sender_address,
-                    signature,
-                },
-            )),
+            })) => Txn::Declare(DeclareTxn::V0(starknet_types_rpc::v0_7_1::starknet_api_openrpc::DeclareTxnV0 {
+                class_hash,
+                max_fee,
+                sender_address,
+                signature,
+            })),
             Transaction::Declare(DeclareTransaction::V1(DeclareTransactionV0V1 {
                 class_hash,
                 max_fee,
@@ -251,15 +244,13 @@ impl From<Transaction> for TxnWithHash<Felt> {
                 sender_address,
                 signature,
                 transaction_hash: _,
-            })) => Txn::Declare(DeclareTxn::V1(
-                starknet_types_rpc::v0_7_1::starknet_api_openrpc::DeclareTxnV1 {
-                    class_hash,
-                    max_fee,
-                    nonce,
-                    sender_address,
-                    signature,
-                },
-            )),
+            })) => Txn::Declare(DeclareTxn::V1(starknet_types_rpc::v0_7_1::starknet_api_openrpc::DeclareTxnV1 {
+                class_hash,
+                max_fee,
+                nonce,
+                sender_address,
+                signature,
+            })),
             Transaction::Declare(DeclareTransaction::V2(DeclareTransactionV2 {
                 class_hash,
                 max_fee,
@@ -268,16 +259,14 @@ impl From<Transaction> for TxnWithHash<Felt> {
                 signature,
                 transaction_hash: _,
                 compiled_class_hash,
-            })) => Txn::Declare(DeclareTxn::V2(
-                starknet_types_rpc::v0_7_1::starknet_api_openrpc::DeclareTxnV2 {
-                    class_hash,
-                    max_fee,
-                    nonce,
-                    sender_address,
-                    signature,
-                    compiled_class_hash,
-                },
-            )),
+            })) => Txn::Declare(DeclareTxn::V2(starknet_types_rpc::v0_7_1::starknet_api_openrpc::DeclareTxnV2 {
+                class_hash,
+                max_fee,
+                nonce,
+                sender_address,
+                signature,
+                compiled_class_hash,
+            })),
             Transaction::Declare(DeclareTransaction::V3(DeclareTransactionV3 {
                 class_hash,
                 nonce,
@@ -291,21 +280,19 @@ impl From<Transaction> for TxnWithHash<Felt> {
                 transaction_hash: _,
                 compiled_class_hash,
                 account_deployment_data,
-            })) => Txn::Declare(DeclareTxn::V3(
-                starknet_types_rpc::v0_7_1::starknet_api_openrpc::DeclareTxnV3 {
-                    account_deployment_data,
-                    class_hash,
-                    compiled_class_hash,
-                    fee_data_availability_mode: fee_data_availability_mode.into(),
-                    nonce,
-                    nonce_data_availability_mode: nonce_data_availability_mode.into(),
-                    paymaster_data,
-                    resource_bounds: resource_bounds.into(),
-                    sender_address,
-                    signature,
-                    tip: tip.to_hex_string(),
-                },
-            )),
+            })) => Txn::Declare(DeclareTxn::V3(starknet_types_rpc::v0_7_1::starknet_api_openrpc::DeclareTxnV3 {
+                account_deployment_data,
+                class_hash,
+                compiled_class_hash,
+                fee_data_availability_mode: fee_data_availability_mode.into(),
+                nonce,
+                nonce_data_availability_mode: nonce_data_availability_mode.into(),
+                paymaster_data,
+                resource_bounds: resource_bounds.into(),
+                sender_address,
+                signature,
+                tip: tip.to_hex_string(),
+            })),
             Transaction::Deploy(DeployTransaction {
                 contract_address: _,
                 contract_address_salt,
@@ -313,27 +300,23 @@ impl From<Transaction> for TxnWithHash<Felt> {
                 constructor_calldata,
                 transaction_hash: _,
                 version,
-            }) => Txn::Deploy(
-                starknet_types_rpc::v0_7_1::starknet_api_openrpc::DeployTxn {
-                    contract_address_salt,
-                    class_hash,
-                    constructor_calldata,
-                    version: version.0,
-                },
-            ),
-            Transaction::DeployAccount(DeployAccountTransaction::V0V1(
-                DeployAccountTransactionV0V1 {
-                    contract_address: _,
-                    transaction_hash: _,
-                    max_fee,
-                    version: _,
-                    signature,
-                    nonce,
-                    contract_address_salt,
-                    constructor_calldata,
-                    class_hash,
-                },
-            )) => Txn::DeployAccount(DeployAccountTxn::V1(
+            }) => Txn::Deploy(starknet_types_rpc::v0_7_1::starknet_api_openrpc::DeployTxn {
+                contract_address_salt,
+                class_hash,
+                constructor_calldata,
+                version: version.0,
+            }),
+            Transaction::DeployAccount(DeployAccountTransaction::V0V1(DeployAccountTransactionV0V1 {
+                contract_address: _,
+                transaction_hash: _,
+                max_fee,
+                version: _,
+                signature,
+                nonce,
+                contract_address_salt,
+                constructor_calldata,
+                class_hash,
+            })) => Txn::DeployAccount(DeployAccountTxn::V1(
                 starknet_types_rpc::v0_7_1::starknet_api_openrpc::DeployAccountTxnV1 {
                     class_hash,
                     constructor_calldata,
@@ -343,23 +326,21 @@ impl From<Transaction> for TxnWithHash<Felt> {
                     signature,
                 },
             )),
-            Transaction::DeployAccount(DeployAccountTransaction::V3(
-                DeployAccountTransactionV3 {
-                    nonce,
-                    nonce_data_availability_mode,
-                    fee_data_availability_mode,
-                    resource_bounds,
-                    tip,
-                    paymaster_data,
-                    sender_address: _,
-                    signature,
-                    transaction_hash: _,
-                    version: _,
-                    contract_address_salt,
-                    constructor_calldata,
-                    class_hash,
-                },
-            )) => Txn::DeployAccount(DeployAccountTxn::V3(
+            Transaction::DeployAccount(DeployAccountTransaction::V3(DeployAccountTransactionV3 {
+                nonce,
+                nonce_data_availability_mode,
+                fee_data_availability_mode,
+                resource_bounds,
+                tip,
+                paymaster_data,
+                sender_address: _,
+                signature,
+                transaction_hash: _,
+                version: _,
+                contract_address_salt,
+                constructor_calldata,
+                class_hash,
+            })) => Txn::DeployAccount(DeployAccountTxn::V3(
                 starknet_types_rpc::v0_7_1::starknet_api_openrpc::DeployAccountTxnV3 {
                     class_hash,
                     constructor_calldata,
@@ -380,15 +361,13 @@ impl From<Transaction> for TxnWithHash<Felt> {
                 max_fee,
                 signature,
                 transaction_hash: _,
-            })) => Txn::Invoke(InvokeTxn::V0(
-                starknet_types_rpc::v0_7_1::starknet_api_openrpc::InvokeTxnV0 {
-                    calldata,
-                    contract_address: sender_address,
-                    entry_point_selector,
-                    max_fee,
-                    signature,
-                },
-            )),
+            })) => Txn::Invoke(InvokeTxn::V0(starknet_types_rpc::v0_7_1::starknet_api_openrpc::InvokeTxnV0 {
+                calldata,
+                contract_address: sender_address,
+                entry_point_selector,
+                max_fee,
+                signature,
+            })),
             Transaction::Invoke(InvokeTransaction::V1(InvokeTransactionV1 {
                 calldata,
                 sender_address,
@@ -396,15 +375,13 @@ impl From<Transaction> for TxnWithHash<Felt> {
                 signature,
                 nonce,
                 transaction_hash: _,
-            })) => Txn::Invoke(InvokeTxn::V1(
-                starknet_types_rpc::v0_7_1::starknet_api_openrpc::InvokeTxnV1 {
-                    calldata,
-                    sender_address,
-                    max_fee,
-                    signature,
-                    nonce,
-                },
-            )),
+            })) => Txn::Invoke(InvokeTxn::V1(starknet_types_rpc::v0_7_1::starknet_api_openrpc::InvokeTxnV1 {
+                calldata,
+                sender_address,
+                max_fee,
+                signature,
+                nonce,
+            })),
             Transaction::Invoke(InvokeTransaction::V3(InvokeTransactionV3 {
                 nonce,
                 nonce_data_availability_mode,
@@ -417,20 +394,18 @@ impl From<Transaction> for TxnWithHash<Felt> {
                 transaction_hash: _,
                 calldata,
                 account_deployment_data,
-            })) => Txn::Invoke(InvokeTxn::V3(
-                starknet_types_rpc::v0_7_1::starknet_api_openrpc::InvokeTxnV3 {
-                    signature,
-                    nonce,
-                    nonce_data_availability_mode: nonce_data_availability_mode.into(),
-                    fee_data_availability_mode: fee_data_availability_mode.into(),
-                    resource_bounds: resource_bounds.into(),
-                    tip,
-                    paymaster_data,
-                    account_deployment_data,
-                    calldata,
-                    sender_address,
-                },
-            )),
+            })) => Txn::Invoke(InvokeTxn::V3(starknet_types_rpc::v0_7_1::starknet_api_openrpc::InvokeTxnV3 {
+                signature,
+                nonce,
+                nonce_data_availability_mode: nonce_data_availability_mode.into(),
+                fee_data_availability_mode: fee_data_availability_mode.into(),
+                resource_bounds: resource_bounds.into(),
+                tip,
+                paymaster_data,
+                account_deployment_data,
+                calldata,
+                sender_address,
+            })),
             Transaction::L1Handler(L1HandlerTransaction {
                 contract_address,
                 entry_point_selector,
@@ -439,22 +414,17 @@ impl From<Transaction> for TxnWithHash<Felt> {
                 transaction_hash: _,
                 // This should always be zero.
                 version,
-            }) => Txn::L1Handler(
-                starknet_types_rpc::v0_7_1::starknet_api_openrpc::L1HandlerTxn {
-                    nonce: u64::from_str_radix(&nonce.to_hex_string(), 16).unwrap_or_default(),
-                    version: version.0.to_hex_string(),
-                    function_call: starknet_types_rpc::v0_7_1::starknet_api_openrpc::FunctionCall {
-                        calldata,
-                        contract_address,
-                        entry_point_selector,
-                    },
+            }) => Txn::L1Handler(starknet_types_rpc::v0_7_1::starknet_api_openrpc::L1HandlerTxn {
+                nonce: u64::from_str_radix(&nonce.to_hex_string(), 16).unwrap_or_default(),
+                version: version.0.to_hex_string(),
+                function_call: starknet_types_rpc::v0_7_1::starknet_api_openrpc::FunctionCall {
+                    calldata,
+                    contract_address,
+                    entry_point_selector,
                 },
-            ),
+            }),
         };
-        TxnWithHash {
-            transaction: txn,
-            transaction_hash,
-        }
+        TxnWithHash { transaction: txn, transaction_hash }
     }
 }
 
@@ -531,14 +501,9 @@ pub struct ResourceBounds {
     pub l2_gas: ResourceBound,
 }
 
-impl From<ResourceBounds>
-    for starknet_types_rpc::v0_7_1::starknet_api_openrpc::ResourceBoundsMapping
-{
+impl From<ResourceBounds> for starknet_types_rpc::v0_7_1::starknet_api_openrpc::ResourceBoundsMapping {
     fn from(value: ResourceBounds) -> Self {
-        Self {
-            l1_gas: value.l1_gas.into(),
-            l2_gas: value.l2_gas.into(),
-        }
+        Self { l1_gas: value.l1_gas.into(), l2_gas: value.l2_gas.into() }
     }
 }
 
@@ -550,10 +515,7 @@ pub struct ResourceBound {
 
 impl From<ResourceBound> for starknet_types_rpc::v0_7_1::starknet_api_openrpc::ResourceBounds {
     fn from(value: ResourceBound) -> Self {
-        Self {
-            max_amount: value.max_amount,
-            max_price_per_unit: value.max_price_per_unit,
-        }
+        Self { max_amount: value.max_amount, max_price_per_unit: value.max_price_per_unit }
     }
 }
 
@@ -599,15 +561,15 @@ impl<'de> Deserialize<'de> for DeployAccountTransaction {
         let version = Version::deserialize(&v).map_err(de::Error::custom)?;
 
         match version.version {
-            ver if ver == TransactionVersion::ZERO => Ok(Self::V0V1(
-                serde_json::from_value(v.clone()).map_err(de::Error::custom)?,
-            )),
-            ver if ver == TransactionVersion::ONE => Ok(Self::V0V1(
-                serde_json::from_value(v.clone()).map_err(de::Error::custom)?,
-            )),
-            ver if ver == TransactionVersion::THREE => Ok(Self::V3(
-                serde_json::from_value(v).map_err(de::Error::custom)?,
-            )),
+            ver if ver == TransactionVersion::ZERO => {
+                Ok(Self::V0V1(serde_json::from_value(v.clone()).map_err(de::Error::custom)?))
+            }
+            ver if ver == TransactionVersion::ONE => {
+                Ok(Self::V0V1(serde_json::from_value(v.clone()).map_err(de::Error::custom)?))
+            }
+            ver if ver == TransactionVersion::THREE => {
+                Ok(Self::V3(serde_json::from_value(v).map_err(de::Error::custom)?))
+            }
             _ => Err(de::Error::custom("version must be 0, 1, or 3")),
         }
     }
@@ -810,14 +772,10 @@ pub mod transaction {
     use serde_with::serde_as;
 
     use crate::pathfinder_types::types::{
-        block::ContractAddress, block_builder_input::TransactionHash, event::Event,
-        receipt::L2ToL1Message,
+        block::ContractAddress, block_builder_input::TransactionHash, event::Event, receipt::L2ToL1Message,
     };
 
-    use super::{
-        EntryPoint, EthereumAddress, Fee, L1ToL2MessageNonce, L1ToL2MessagePayloadElem,
-        TransactionIndex,
-    };
+    use super::{EntryPoint, EthereumAddress, Fee, L1ToL2MessageNonce, L1ToL2MessagePayloadElem, TransactionIndex};
 
     #[derive(Copy, Clone, Default, Debug, Deserialize, PartialEq, Eq)]
     #[serde(default)]
@@ -988,11 +946,8 @@ pub mod transaction {
         pub revert_error: Option<String>,
     }
 
-    impl
-        From<(
-            crate::pathfinder_types::types::receipt::Receipt,
-            Vec<crate::pathfinder_types::types::event::Event>,
-        )> for Receipt
+    impl From<(crate::pathfinder_types::types::receipt::Receipt, Vec<crate::pathfinder_types::types::event::Event>)>
+        for Receipt
     {
         fn from(
             (receipt, events): (
@@ -1035,19 +990,13 @@ pub mod transaction {
     impl<'de>
         serde_with::DeserializeAs<
             'de,
-            (
-                crate::pathfinder_types::types::receipt::Receipt,
-                Vec<crate::pathfinder_types::types::event::Event>,
-            ),
+            (crate::pathfinder_types::types::receipt::Receipt, Vec<crate::pathfinder_types::types::event::Event>),
         > for Receipt
     {
         fn deserialize_as<D>(
             deserializer: D,
         ) -> Result<
-            (
-                crate::pathfinder_types::types::receipt::Receipt,
-                Vec<crate::pathfinder_types::types::event::Event>,
-            ),
+            (crate::pathfinder_types::types::receipt::Receipt, Vec<crate::pathfinder_types::types::event::Event>),
             D::Error,
         >
         where
@@ -1058,10 +1007,7 @@ pub mod transaction {
     }
 
     impl From<Receipt>
-        for (
-            crate::pathfinder_types::types::receipt::Receipt,
-            Vec<crate::pathfinder_types::types::event::Event>,
-        )
+        for (crate::pathfinder_types::types::receipt::Receipt, Vec<crate::pathfinder_types::types::event::Event>)
     {
         fn from(value: Receipt) -> Self {
             use crate::pathfinder_types::types::receipt as common;
@@ -1088,9 +1034,9 @@ pub mod transaction {
                     transaction_index,
                     execution_status: match execution_status {
                         ExecutionStatus::Succeeded => common::ExecutionStatus::Succeeded,
-                        ExecutionStatus::Reverted => common::ExecutionStatus::Reverted {
-                            reason: revert_error.unwrap_or_default(),
-                        },
+                        ExecutionStatus::Reverted => {
+                            common::ExecutionStatus::Reverted { reason: revert_error.unwrap_or_default() }
+                        }
                     },
                 },
                 events,

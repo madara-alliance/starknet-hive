@@ -4,12 +4,8 @@ use starknet_rs_core::{crypto::pedersen_hash, types::FieldElement};
 use super::constants::SUPPORTED_TX_VERSION;
 
 /// Cairo string for "invoke"
-const PREFIX_INVOKE: FieldElement = FieldElement::from_mont([
-    18443034532770911073,
-    18446744073709551615,
-    18446744073709551615,
-    513398556346534256,
-]);
+const PREFIX_INVOKE: FieldElement =
+    FieldElement::from_mont([18443034532770911073, 18446744073709551615, 18446744073709551615, 513398556346534256]);
 // TODO try using TransactionHashPrefix instead
 
 #[derive(Debug, Clone)]

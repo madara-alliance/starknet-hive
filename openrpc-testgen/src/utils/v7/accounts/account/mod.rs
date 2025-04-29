@@ -18,12 +18,8 @@ mod declaration;
 mod execution;
 
 // 2 ** 251 - 256
-const ADDR_BOUND: NonZeroFelt = NonZeroFelt::from_raw([
-    576459263475590224,
-    18446744073709255680,
-    160989183,
-    18446743986131443745,
-]);
+const ADDR_BOUND: NonZeroFelt =
+    NonZeroFelt::from_raw([576459263475590224, 18446744073709255680, 160989183, 18446743986131443745]);
 
 /// The standard Starknet account contract interface. It makes no assumption about the underlying
 /// signer or provider. Account implementations that come with an active connection to the network
@@ -100,19 +96,11 @@ pub trait Account: ExecutionEncoder + Sized {
     //     self.execute_v1(calls)
     // }
 
-    fn declare_v2(
-        &self,
-        contract_class: Arc<ContractClass<Felt>>,
-        compiled_class_hash: Felt,
-    ) -> DeclarationV2<Self> {
+    fn declare_v2(&self, contract_class: Arc<ContractClass<Felt>>, compiled_class_hash: Felt) -> DeclarationV2<Self> {
         DeclarationV2::new(contract_class, compiled_class_hash, self)
     }
 
-    fn declare_v3(
-        &self,
-        contract_class: ContractClass<Felt>,
-        compiled_class_hash: Felt,
-    ) -> DeclarationV3<Self>
+    fn declare_v3(&self, contract_class: ContractClass<Felt>, compiled_class_hash: Felt) -> DeclarationV3<Self>
     where
         Self: Debug,
     {
@@ -139,11 +127,7 @@ pub trait ConnectedAccount: Account {
     }
 
     fn get_nonce(&self) -> impl std::future::Future<Output = Result<Felt, ProviderError>> {
-        async move {
-            self.provider()
-                .get_nonce(self.block_id(), self.address())
-                .await
-        }
+        async move { self.provider().get_nonce(self.block_id(), self.address()).await }
     }
 }
 
@@ -241,12 +225,8 @@ pub struct RawDeclarationV2 {
     max_fee: Felt,
 }
 
-const PREFIX_CONTRACT_CLASS_V0_1_0: Felt = Felt::from_raw([
-    37302452645455172,
-    18446734822722598327,
-    15539482671244488427,
-    5800711240972404213,
-]);
+const PREFIX_CONTRACT_CLASS_V0_1_0: Felt =
+    Felt::from_raw([37302452645455172, 18446734822722598327, 15539482671244488427, 5800711240972404213]);
 pub trait ContractClassHasher {
     fn class_hash(&self) -> Felt;
 }
@@ -446,9 +426,7 @@ where
         declaration: &RawDeclarationV2,
         query_only: bool,
     ) -> Result<Vec<Felt>, Self::SignError> {
-        self.as_ref()
-            .sign_declaration_v2(declaration, query_only)
-            .await
+        self.as_ref().sign_declaration_v2(declaration, query_only).await
     }
 
     async fn sign_declaration_v3(
@@ -456,9 +434,7 @@ where
         declaration: &RawDeclarationV3,
         query_only: bool,
     ) -> Result<Vec<Felt>, Self::SignError> {
-        self.as_ref()
-            .sign_declaration_v3(declaration, query_only)
-            .await
+        self.as_ref().sign_declaration_v3(declaration, query_only).await
     }
     fn is_signer_interactive(&self) -> bool {
         self.as_ref().is_signer_interactive()
@@ -500,9 +476,7 @@ where
         declaration: &RawDeclarationV2,
         query_only: bool,
     ) -> Result<Vec<Felt>, Self::SignError> {
-        self.as_ref()
-            .sign_declaration_v2(declaration, query_only)
-            .await
+        self.as_ref().sign_declaration_v2(declaration, query_only).await
     }
 
     async fn sign_declaration_v3(
@@ -510,9 +484,7 @@ where
         declaration: &RawDeclarationV3,
         query_only: bool,
     ) -> Result<Vec<Felt>, Self::SignError> {
-        self.as_ref()
-            .sign_declaration_v3(declaration, query_only)
-            .await
+        self.as_ref().sign_declaration_v3(declaration, query_only).await
     }
 
     fn is_signer_interactive(&self) -> bool {
@@ -531,11 +503,7 @@ where
     //     self.execute_v1(calls)
     // }
 
-    fn declare_v2(
-        &self,
-        contract_class: Arc<ContractClass<Felt>>,
-        compiled_class_hash: Felt,
-    ) -> DeclarationV2<Self> {
+    fn declare_v2(&self, contract_class: Arc<ContractClass<Felt>>, compiled_class_hash: Felt) -> DeclarationV2<Self> {
         DeclarationV2::new(contract_class, compiled_class_hash, self)
     }
 

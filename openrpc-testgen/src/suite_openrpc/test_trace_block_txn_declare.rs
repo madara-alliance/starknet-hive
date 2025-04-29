@@ -12,8 +12,7 @@ use crate::{
 };
 use starknet_types_core::felt::Felt;
 use starknet_types_rpc::{
-    BlockId, BlockTag, DeclareTransactionTrace, EntryPointType, TraceBlockTransactionsResult,
-    TransactionTrace,
+    BlockId, BlockTag, DeclareTransactionTrace, EntryPointType, TraceBlockTransactionsResult, TransactionTrace,
 };
 use t9n::txn_validation::declare::verify_declare_v3_signature;
 pub const STRK_ERC20_CONTRACT_ADDRESS: Felt =
@@ -29,17 +28,16 @@ impl RunnableTrait for TestCase {
         let account = test_input.random_paymaster_account.random_accounts()?;
         let acc_class_hash = test_input.account_class_hash;
 
-        let nonce = account
-            .provider()
-            .get_nonce(BlockId::Tag(BlockTag::Pending), account.address())
-            .await?;
+        let nonce = account.provider().get_nonce(BlockId::Tag(BlockTag::Pending), account.address()).await?;
         let chain_id = account.chain_id();
 
         let (flattened_sierra_class, compiled_class_hash) = get_compiled_contract(
-                PathBuf::from_str("target/dev/contracts_contracts_sample_contract_9_HelloStarknet.contract_class.json")?,
-                PathBuf::from_str("target/dev/contracts_contracts_sample_contract_9_HelloStarknet.compiled_contract_class.json")?,
-            )
-            .await?;
+            PathBuf::from_str("target/dev/contracts_contracts_sample_contract_9_HelloStarknet.contract_class.json")?,
+            PathBuf::from_str(
+                "target/dev/contracts_contracts_sample_contract_9_HelloStarknet.compiled_contract_class.json",
+            )?,
+        )
+        .await?;
 
         let prepared_declare = test_input
             .random_paymaster_account
@@ -49,8 +47,7 @@ impl RunnableTrait for TestCase {
 
         let declare_request = prepared_declare.get_declare_request(false, false).await?;
 
-        let (_, declare_hash) =
-            verify_declare_v3_signature(&declare_request, None, chain_id.to_hex_string().as_str())?;
+        let (_, declare_hash) = verify_declare_v3_signature(&declare_request, None, chain_id.to_hex_string().as_str())?;
 
         let declare_result = prepared_declare.send_from_request(declare_request).await?;
 
@@ -68,10 +65,7 @@ impl RunnableTrait for TestCase {
             )
         );
 
-        let trace_block_result = account
-            .provider()
-            .trace_block_transactions(BlockId::Tag(BlockTag::Latest))
-            .await;
+        let trace_block_result = account.provider().trace_block_transactions(BlockId::Tag(BlockTag::Latest)).await;
 
         let result = trace_block_result.is_ok();
 
@@ -79,17 +73,10 @@ impl RunnableTrait for TestCase {
 
         let trace = trace_block_result?;
 
-        assert_result!(
-            trace.len() == 1,
-            format!(
-                "Trace block length missmatch expected: 1, got: {}",
-                trace.len()
-            )
-        );
+        assert_result!(trace.len() == 1, format!("Trace block length missmatch expected: 1, got: {}", trace.len()));
 
-        let trace_block = trace
-            .first()
-            .ok_or_else(|| OpenRpcTestGenError::Other("Trace block not found".to_string()))?;
+        let trace_block =
+            trace.first().ok_or_else(|| OpenRpcTestGenError::Other("Trace block not found".to_string()))?;
 
         assert_matches_result!(
             trace_block,
@@ -99,44 +86,38 @@ impl RunnableTrait for TestCase {
             }
         );
 
-        let trace_root = trace_block.trace_root.clone().ok_or_else(|| {
-            OpenRpcTestGenError::Other("Trace root not found in trace block".to_string())
-        })?;
+        let trace_root = trace_block
+            .trace_root
+            .clone()
+            .ok_or_else(|| OpenRpcTestGenError::Other("Trace root not found in trace block".to_string()))?;
 
-        let transaction_hash = trace_block.transaction_hash.ok_or_else(|| {
-            OpenRpcTestGenError::Other("Transaction hash not found in trace block".to_string())
-        })?;
+        let transaction_hash = trace_block
+            .transaction_hash
+            .ok_or_else(|| OpenRpcTestGenError::Other("Transaction hash not found in trace block".to_string()))?;
 
         let declare_trace = match trace_root {
             TransactionTrace::Declare(declare_trace) => Ok(declare_trace),
             _ => Err(OpenRpcTestGenError::Other(
-                "Expected DeclareTransactionTrace, but found a different transaction trace type"
-                    .to_string(),
+                "Expected DeclareTransactionTrace, but found a different transaction trace type".to_string(),
             )),
         }?;
         let fee_transfer_invocation = declare_trace.fee_transfer_invocation.ok_or_else(|| {
-            OpenRpcTestGenError::Other(
-                "Fee transfer invocation is missing in invoke trace".to_string(),
-            )
+            OpenRpcTestGenError::Other("Fee transfer invocation is missing in invoke trace".to_string())
         })?;
 
-        let state_diff = declare_trace.state_diff.ok_or_else(|| {
-            OpenRpcTestGenError::Other("State diff is missing in invoke trace".to_string())
-        })?;
+        let state_diff = declare_trace
+            .state_diff
+            .ok_or_else(|| OpenRpcTestGenError::Other("State diff is missing in invoke trace".to_string()))?;
 
         let validate_invocation = declare_trace.validate_invocation.ok_or_else(|| {
-            OpenRpcTestGenError::Other(
-                "Validate invocation is missing in deploy account trace".to_string(),
-            )
+            OpenRpcTestGenError::Other("Validate invocation is missing in deploy account trace".to_string())
         })?;
 
         let state_diff_nonce = state_diff
             .nonces
             .first()
             .and_then(|nonce| nonce.nonce)
-            .ok_or_else(|| {
-                OpenRpcTestGenError::Other("Nonce not found in state diff".to_string())
-            })?;
+            .ok_or_else(|| OpenRpcTestGenError::Other("Nonce not found in state diff".to_string()))?;
 
         let transfer_selector = get_selector_from_name("transfer")?;
         let validate_declare_selector = get_selector_from_name("__validate_declare__")?;
@@ -149,10 +130,7 @@ impl RunnableTrait for TestCase {
         // validate trace hash with hash computed by t9n
         assert_result!(
             transaction_hash == declare_hash,
-            format!(
-                "Transaction hash mismatch: expected {:?}, but found {:?}",
-                declare_hash, transaction_hash
-            )
+            format!("Transaction hash mismatch: expected {:?}, but found {:?}", declare_hash, transaction_hash)
         );
 
         // fee_transfer_invocation STRK_ERC20_CONTRACT_ADDRESS
@@ -194,21 +172,12 @@ impl RunnableTrait for TestCase {
         // state_diff nonces
         assert_result!(
             state_diff_nonce == nonce + Felt::ONE,
-            format!(
-                "Nonce mismatch: expected {:?}, but found {:?}",
-                nonce + Felt::ONE,
-                state_diff_nonce
-            )
+            format!("Nonce mismatch: expected {:?}, but found {:?}", nonce + Felt::ONE, state_diff_nonce)
         );
 
-        let state_diff_contract_address = state_diff
-            .nonces
-            .first()
-            .and_then(|nonce| nonce.contract_address)
-            .ok_or_else(|| {
-                OpenRpcTestGenError::Other(
-                    "Contract address not found in state diff nonces".to_string(),
-                )
+        let state_diff_contract_address =
+            state_diff.nonces.first().and_then(|nonce| nonce.contract_address).ok_or_else(|| {
+                OpenRpcTestGenError::Other("Contract address not found in state diff nonces".to_string())
             })?;
 
         // Validate that the contract address in the state diff matches the expected account address
@@ -221,15 +190,10 @@ impl RunnableTrait for TestCase {
         );
 
         // Retrieve the class_hash from the state diff declared classes
-        let state_diff_class_hash = state_diff
-            .declared_classes
-            .first()
-            .and_then(|declared_class| declared_class.class_hash)
-            .ok_or_else(|| {
-                OpenRpcTestGenError::Other(
-                    "class_hash not found in state diff declared classes".to_string(),
-                )
-            })?;
+        let state_diff_class_hash =
+            state_diff.declared_classes.first().and_then(|declared_class| declared_class.class_hash).ok_or_else(
+                || OpenRpcTestGenError::Other("class_hash not found in state diff declared classes".to_string()),
+            )?;
 
         // Validate that the class_hash in the state diff matches the class_hash from the declare result
         assert_result!(
@@ -246,9 +210,7 @@ impl RunnableTrait for TestCase {
             .first()
             .and_then(|declared_class| declared_class.compiled_class_hash)
             .ok_or_else(|| {
-                OpenRpcTestGenError::Other(
-                    "compiled_class_hash not found in state diff declared classes".to_string(),
-                )
+                OpenRpcTestGenError::Other("compiled_class_hash not found in state diff declared classes".to_string())
             })?;
 
         // Validate that the compiled_class_hash matches the expected compiled_class_hash

@@ -58,9 +58,7 @@ impl RunnableTrait for TestCase {
 
         assert_matches_result!(
             res.unwrap_err(),
-            AccountError::Provider(ProviderError::StarknetError(
-                StarknetError::ValidationFailure(_)
-            ))
+            AccountError::Provider(ProviderError::StarknetError(StarknetError::ValidationFailure(_)))
         );
 
         // nonce shouldn't change for an invalid tx.

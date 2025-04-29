@@ -25,15 +25,8 @@ pub struct UserDeployedAccounts {
 }
 
 impl UserDeployedAccounts {
-    pub fn new(
-        eth_fee_token_address: ContractAddress,
-        strk_fee_token_address: ContractAddress,
-    ) -> Self {
-        Self {
-            eth_fee_token_address,
-            strk_fee_token_address,
-            accounts: Vec::new(),
-        }
+    pub fn new(eth_fee_token_address: ContractAddress, strk_fee_token_address: ContractAddress) -> Self {
+        Self { eth_fee_token_address, strk_fee_token_address, accounts: Vec::new() }
     }
 
     pub fn get_accounts(&self) -> &Vec<UserAccount> {
@@ -52,8 +45,7 @@ impl UserAccountGenerator for UserDeployedAccounts {
     ) -> DevnetResult<&Vec<Self::Acc>> {
         let file = File::open(json_path).expect("Unable to open file");
         let reader = BufReader::new(file);
-        let accounts_data: Vec<PartialUserAccount> =
-            serde_json::from_reader(reader).expect("Unable to parse JSON");
+        let accounts_data: Vec<PartialUserAccount> = serde_json::from_reader(reader).expect("Unable to parse JSON");
 
         self.accounts = accounts_data
             .into_iter()
@@ -87,33 +79,20 @@ impl PredeployedAccounts {
         eth_fee_token_address: ContractAddress,
         strk_fee_token_address: ContractAddress,
     ) -> Self {
-        Self {
-            seed,
-            initial_balance,
-            eth_fee_token_address,
-            strk_fee_token_address,
-            accounts: Vec::new(),
-        }
+        Self { seed, initial_balance, eth_fee_token_address, strk_fee_token_address, accounts: Vec::new() }
     }
 }
 
 impl PredeployedAccounts {
     fn generate_private_keys(&self, number_of_accounts: u8) -> Vec<Key> {
         let random_numbers = generate_u128_random_numbers(self.seed, number_of_accounts);
-        random_numbers
-            .into_iter()
-            .map(Key::from)
-            .collect::<Vec<Key>>()
+        random_numbers.into_iter().map(Key::from).collect::<Vec<Key>>()
     }
 
     fn generate_public_key(&self, private_key: &Key) -> Key {
         let private_key_field_element = FieldElement::from(*private_key);
 
-        Key::from(
-            SigningKey::from_secret_scalar(private_key_field_element)
-                .verifying_key()
-                .scalar(),
-        )
+        Key::from(SigningKey::from_secret_scalar(private_key_field_element).verifying_key().scalar())
     }
 
     pub fn get_accounts(&self) -> &Vec<Account> {

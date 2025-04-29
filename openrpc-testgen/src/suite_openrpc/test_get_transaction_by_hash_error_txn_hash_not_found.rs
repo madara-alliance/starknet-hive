@@ -19,19 +19,13 @@ impl RunnableTrait for TestCase {
     type Input = super::TestSuiteOpenRpc;
 
     async fn run(test_input: &Self::Input) -> Result<Self, OpenRpcTestGenError> {
-        let txn = test_input
-            .random_paymaster_account
-            .provider()
-            .get_transaction_by_hash(Felt::from_hex("0xdeadbeef")?)
-            .await;
+        let txn =
+            test_input.random_paymaster_account.provider().get_transaction_by_hash(Felt::from_hex("0xdeadbeef")?).await;
 
         let result = txn.is_err();
         assert_result!(result);
 
-        assert_matches_result!(
-            txn.unwrap_err(),
-            ProviderError::StarknetError(StarknetError::TransactionHashNotFound)
-        );
+        assert_matches_result!(txn.unwrap_err(), ProviderError::StarknetError(StarknetError::TransactionHashNotFound));
 
         Ok(Self {})
     }

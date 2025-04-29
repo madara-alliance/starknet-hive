@@ -11,11 +11,7 @@ use starknet_types_rpc::DeployAccountTxn;
 use std::fs::File;
 use std::path::PathBuf;
 
-pub fn validate_txn_json(
-    file_path: &PathBuf,
-    public_key: Option<&str>,
-    chain_id: &str,
-) -> SerdeResult<Value> {
+pub fn validate_txn_json(file_path: &PathBuf, public_key: Option<&str>, chain_id: &str) -> SerdeResult<Value> {
     let file = File::open(file_path).map_err(|e| {
         let error_response = json!({
             "error": "File not found",
@@ -170,11 +166,7 @@ pub fn validate_txn_json(
         "DEPLOY_ACCOUNT" => match version {
             "0x1" => {
                 let txn: DeployAccountTxnV1<Felt> = from_value(value)?;
-                match verify_deploy_account_signature(
-                    DeployAccountTxn::V1(txn),
-                    public_key,
-                    chain_id,
-                ) {
+                match verify_deploy_account_signature(DeployAccountTxn::V1(txn), public_key, chain_id) {
                     Ok((is_valid, hash)) => {
                         if is_valid {
                             Ok(json!({ "hash": hash }))
@@ -198,11 +190,7 @@ pub fn validate_txn_json(
             }
             "0x3" => {
                 let txn: DeployAccountTxnV3<Felt> = from_value(value)?;
-                match verify_deploy_account_signature(
-                    DeployAccountTxn::V3(txn),
-                    public_key,
-                    chain_id,
-                ) {
+                match verify_deploy_account_signature(DeployAccountTxn::V3(txn), public_key, chain_id) {
                     Ok((is_valid, hash)) => {
                         if is_valid {
                             Ok(json!({ "hash": hash }))
