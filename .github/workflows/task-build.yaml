@@ -1,0 +1,35 @@
+name: Task - Build Project
+
+on:
+  workflow_dispatch:
+  workflow_call:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Cache Rust dependencies
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cargo
+            target
+          key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
+
+      - name: Setup Rust toolchain
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Setup Cargo Hack
+        run: |
+          cargo install cargo-hack
+
+      - name: Check feature combinations
+        run: |
+          cargo cargo hack test --feature-powerset --no-dev-deps
+
+      - name: Build workspace
+        run: |
+          cargo build --all --all-features

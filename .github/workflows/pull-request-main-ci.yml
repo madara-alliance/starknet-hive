@@ -1,0 +1,24 @@
+# yaml-language-server: $schema=https://raw.githubusercontent.com/SchemaStore/schemastore/refs/heads/master/src/schemas/json/github-workflow.json
+name: Workflow - Pull Request Main
+
+on:
+  pull_request:
+    branches: [main]
+  push:
+    branches: [main]
+
+jobs:
+  lint-cargo:
+    if: github.event.pull_request.draft == false
+    uses: ./task-lint-cargo.yaml
+    secrets: inherit
+
+  lint-prettier:
+    needs: lint-cargo
+    uses: ./task-lint-prettier.yaml
+    secrets: inherit
+
+  build:
+    needs: lint-prettier
+    uses: ./task-build.yaml
+    secrets: inherit
