@@ -10,15 +10,15 @@ on:
 jobs:
   lint-cargo:
     if: github.event.pull_request.draft == false
-    uses: ./task-lint-cargo.yaml
+    uses: ./.github/workflows/task-lint-cargo.yaml
     secrets: inherit
 
   lint-prettier:
     needs: lint-cargo
-    uses: ./task-lint-prettier.yaml
+    uses: ./.github/workflows/task-lint-prettier.yaml
     secrets: inherit
 
   build:
     needs: lint-prettier
-    uses: ./task-build.yaml
+    uses: ./.github/workflows/task-build.yaml
     secrets: inherit
