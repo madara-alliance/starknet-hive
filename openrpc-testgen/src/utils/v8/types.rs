@@ -283,6 +283,7 @@ mod tests {
     use super::*;
 
     #[test]
+    #[allow(clippy::result_large_err)]
     fn test_valid_proof() -> Result<(), ProofError> {
         let proof = vec![
             NodeHashToNodeMappingItem {
@@ -327,6 +328,7 @@ mod tests {
     }
 
     #[test]
+    #[allow(clippy::result_large_err)]
     fn test_invalid_proof() -> Result<(), ProofError> {
         let proof = vec![
             NodeHashToNodeMappingItem {

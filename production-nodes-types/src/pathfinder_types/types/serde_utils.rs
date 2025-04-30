@@ -15,7 +15,7 @@ impl<'de> DeserializeAs<'de, GasPrice> for GasPriceAsHexStr {
     {
         struct GasPriceVisitor;
 
-        impl<'de> Visitor<'de> for GasPriceVisitor {
+        impl Visitor<'_> for GasPriceVisitor {
             type Value = GasPrice;
 
             fn expecting(&self, formatter: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
@@ -99,7 +99,7 @@ fn bytes_from_hex_str<const N: usize>(hex_str: &str) -> Result<[u8; N], HexParse
 
     for (i, c) in chunks.enumerate() {
         // Indexing c[0] and c[1] are safe since chunk-size is 2.
-        buf[N - 1 - i] = parse_hex_digit(c[0])? << 4 | parse_hex_digit(c[1])?;
+        buf[N - 1 - i] = (parse_hex_digit(c[0])? << 4) | parse_hex_digit(c[1])?;
     }
 
     Ok(buf)
@@ -122,7 +122,7 @@ impl<'de> DeserializeAs<'de, EthereumAddress> for EthereumAddressAsHexStr {
     {
         struct EthereumAddressVisitor;
 
-        impl<'de> Visitor<'de> for EthereumAddressVisitor {
+        impl Visitor<'_> for EthereumAddressVisitor {
             type Value = EthereumAddress;
 
             fn expecting(&self, formatter: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {

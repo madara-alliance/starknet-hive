@@ -4,6 +4,8 @@ use auto_impl::auto_impl;
 
 use sha3::{Digest, Keccak256};
 
+use std::fmt::Debug;
+
 use starknet_types_core::felt::{Felt, NonZeroFelt};
 use starknet_types_core::hash::{Poseidon, StarkHash};
 use starknet_types_rpc::v0_7_1::{BlockId, BlockTag, ContractClass, SierraEntryPoint};
@@ -20,11 +22,6 @@ mod execution;
 // 2 ** 251 - 256
 const ADDR_BOUND: NonZeroFelt =
     NonZeroFelt::from_raw([576459263475590224, 18446744073709255680, 160989183, 18446743986131443745]);
-
-/// The standard Starknet account contract interface. It makes no assumption about the underlying
-/// signer or provider. Account implementations that come with an active connection to the network
-/// should also implement [ConnectedAccount] for useful functionalities like estimating fees and
-/// sending transactions.
 
 /// Converts Cairo short string to [Felt].
 pub fn cairo_short_string_to_felt(str: &str) -> Result<Felt, CairoShortStringToFeltError> {
@@ -49,7 +46,11 @@ pub enum CairoShortStringToFeltError {
     NonAsciiCharacter,
     StringTooLong,
 }
-use std::fmt::Debug;
+
+/// The standard Starknet account contract interface. It makes no assumption about the underlying
+/// signer or provider. Account implementations that come with an active connection to the network
+/// should also implement [ConnectedAccount] for useful functionalities like estimating fees and
+/// sending transactions.
 pub trait Account: ExecutionEncoder + Sized {
     type SignError: Error + Send + Sync;
 

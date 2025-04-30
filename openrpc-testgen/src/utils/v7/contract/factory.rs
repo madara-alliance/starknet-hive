@@ -108,7 +108,7 @@ where
     }
 }
 
-impl<'f, A> DeploymentV1<'f, A> {
+impl<A> DeploymentV1<'_, A> {
     pub fn nonce(self, nonce: Felt) -> Self {
         Self { nonce: Some(nonce), ..self }
     }
@@ -122,7 +122,7 @@ impl<'f, A> DeploymentV1<'f, A> {
     }
 }
 
-impl<'f, A> DeploymentV3<'f, A> {
+impl<A> DeploymentV3<'_, A> {
     pub fn nonce(self, nonce: Felt) -> Self {
         Self { nonce: Some(nonce), ..self }
     }
@@ -144,7 +144,7 @@ impl<'f, A> DeploymentV3<'f, A> {
     }
 }
 
-impl<'f, A> DeploymentV1<'f, A>
+impl<A> DeploymentV1<'_, A>
 where
     A: Account,
 {
@@ -166,7 +166,7 @@ where
     }
 }
 
-impl<'f, A> DeploymentV3<'f, A>
+impl<A> DeploymentV3<'_, A>
 where
     A: Account,
 {

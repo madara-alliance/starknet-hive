@@ -79,7 +79,7 @@ where
     Ok((deployment.address(), get_deployment_fee(&deployment).await?))
 }
 
-async fn get_deployment_fee<'a, T>(account_deployment: &AccountDeploymentV3<'a, T>) -> Result<FeeEstimate<Felt>, String>
+async fn get_deployment_fee<T>(account_deployment: &AccountDeploymentV3<'_, T>) -> Result<FeeEstimate<Felt>, String>
 where
     T: AccountFactory + Sync,
 {

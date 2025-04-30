@@ -24,8 +24,8 @@ fn main() -> io::Result<()> {
         let path = entry.path();
 
         // Only process Rust files that end with "_state_machine.rs"
-        if path.extension().map_or(false, |ext| ext == "rs")
-            && path.file_name().unwrap().to_str().map_or(false, |name| name.ends_with("_state_machine.rs"))
+        if path.extension().is_some_and(|ext| ext == "rs")
+            && path.file_name().unwrap().to_str().is_some_and(|name| name.ends_with("_state_machine.rs"))
         {
             let file = File::open(&path)?;
             let reader = io::BufReader::new(file);

@@ -33,8 +33,8 @@ impl RunnableTrait for TestCase {
         let sender_nonce = sender.get_nonce().await?;
         let sender_address = sender.address();
 
-        let prepared_declaration =
-            sender.declare_v2(Arc::new(flattened_sierra_class), compiled_class_hash).prepare().await?;
+        let declare = sender.declare_v2(Arc::new(flattened_sierra_class), compiled_class_hash);
+        let prepared_declaration = declare.prepare().await?;
 
         let declaration_request = prepared_declaration.get_declare_request(false, false).await?;
 

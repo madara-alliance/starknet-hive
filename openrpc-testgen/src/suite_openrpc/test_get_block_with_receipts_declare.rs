@@ -48,12 +48,11 @@ impl RunnableTrait for TestCase {
         let estimate_fee =
             sender.declare_v3(flattened_sierra_class.clone(), compiled_class_hash).estimate_fee().await?;
 
-        let prepared_declaration_v3 = sender
+        let gas = sender
             .declare_v3(flattened_sierra_class, compiled_class_hash)
             .gas(DECLARE_TXN_GAS)
-            .gas_price(DECLARE_TXN_GAS_PRICE)
-            .prepare()
-            .await?;
+            .gas_price(DECLARE_TXN_GAS_PRICE);
+        let prepared_declaration_v3 = gas.prepare().await?;
 
         let declare_v3_request = prepared_declaration_v3.get_declare_request(false, false).await?;
 

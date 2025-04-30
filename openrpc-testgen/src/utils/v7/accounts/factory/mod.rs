@@ -516,7 +516,7 @@ where
                         }
                         let gas_price = u64::from_le_bytes(gas_price_bytes[..8].try_into().unwrap());
 
-                        ((((overall_fee + gas_price - 1) / gas_price) as f64) * self.gas_estimate_multiplier) as u64
+                        ((overall_fee.div_ceil(gas_price) as f64) * self.gas_estimate_multiplier) as u64
                     }
                 };
 
@@ -692,7 +692,7 @@ impl<'f, F> PreparedAccountDeploymentV3<'f, F> {
     }
 }
 
-impl<'f, F> PreparedAccountDeploymentV1<'f, F>
+impl<F> PreparedAccountDeploymentV1<'_, F>
 where
     F: AccountFactory,
 {
@@ -748,7 +748,7 @@ where
     }
 }
 
-impl<'f, F> PreparedAccountDeploymentV3<'f, F>
+impl<F> PreparedAccountDeploymentV3<'_, F>
 where
     F: AccountFactory,
 {

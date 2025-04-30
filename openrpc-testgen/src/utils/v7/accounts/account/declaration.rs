@@ -57,7 +57,7 @@ impl<'a, A> DeclarationV2<'a, A> {
         })
     }
 }
-impl<'a, A> DeclarationV2<'a, A>
+impl<A> DeclarationV2<'_, A>
 where
     A: ConnectedAccount + Sync,
 {
@@ -89,7 +89,7 @@ where
         self.prepare().await?.send().await
     }
 
-    pub async fn prepare(&self) -> Result<PreparedDeclarationV2<'a, A>, AccountError<A::SignError>> {
+    pub async fn prepare(&self) -> Result<PreparedDeclarationV2<'_, A>, AccountError<A::SignError>> {
         // Resolves nonce
         let nonce = match self.nonce {
             Some(value) => value,
@@ -256,7 +256,7 @@ impl<'a, A> DeclarationV3<'a, A> {
     }
 }
 
-impl<'a, A> DeclarationV3<'a, A>
+impl<A> DeclarationV3<'_, A>
 where
     A: ConnectedAccount + Sync,
 {
@@ -298,7 +298,7 @@ where
         self.prepare().await?.send().await
     }
 
-    pub async fn prepare(&self) -> Result<PreparedDeclarationV3<'a, A>, AccountError<A::SignError>> {
+    pub async fn prepare(&self) -> Result<PreparedDeclarationV3<'_, A>, AccountError<A::SignError>> {
         // Resolves nonce
         let nonce = match self.nonce {
             Some(value) => value,
@@ -358,7 +358,7 @@ where
                         }
                         let gas_price = u64::from_le_bytes(gas_price_bytes[..8].try_into().unwrap());
 
-                        (((overall_fee + gas_price - 1) / gas_price) as f64 * self.gas_estimate_multiplier) as u64
+                        ((overall_fee.div_ceil(gas_price)) as f64 * self.gas_estimate_multiplier) as u64
                     }
                 };
 
@@ -616,7 +616,7 @@ impl RawDeclarationV3 {
     }
 }
 
-impl<'a, A> PreparedDeclarationV2<'a, A>
+impl<A> PreparedDeclarationV2<'_, A>
 where
     A: Account,
 {
@@ -627,7 +627,7 @@ where
     }
 }
 
-impl<'a, A> PreparedDeclarationV2<'a, A>
+impl<A> PreparedDeclarationV2<'_, A>
 where
     A: ConnectedAccount,
 {
@@ -678,7 +678,7 @@ where
     }
 }
 
-impl<'a, A> PreparedDeclarationV3<'a, A>
+impl<A> PreparedDeclarationV3<'_, A>
 where
     A: Account,
 {
@@ -689,7 +689,7 @@ where
     }
 }
 
-impl<'a, A> PreparedDeclarationV3<'a, A>
+impl<A> PreparedDeclarationV3<'_, A>
 where
     A: ConnectedAccount,
 {

@@ -978,7 +978,7 @@ pub mod transaction {
                 events,
                 execution_resources: execution_resources.into(),
                 l1_to_l2_consumed_message: None,
-                l2_to_l1_messages: l2_to_l1_messages.into_iter().map(Into::into).collect(),
+                l2_to_l1_messages: l2_to_l1_messages.into_iter().collect(),
                 transaction_hash,
                 transaction_index,
                 execution_status,
@@ -1029,7 +1029,7 @@ pub mod transaction {
                 common::Receipt {
                     actual_fee,
                     execution_resources: execution_resources.into(),
-                    l2_to_l1_messages: l2_to_l1_messages.into_iter().map(Into::into).collect(),
+                    l2_to_l1_messages: l2_to_l1_messages.into_iter().collect(),
                     transaction_hash,
                     transaction_index,
                     execution_status: match execution_status {

@@ -29,7 +29,8 @@ impl RunnableTrait for TestCase {
 
         let sender = test_input.random_paymaster_account.random_accounts()?;
         let initial_sender_nonce = sender.get_nonce().await?;
-        let prepared_declaration_v3 = sender.declare_v3(flattened_sierra_class, compiled_class_hash).prepare().await?;
+        let declare = sender.declare_v3(flattened_sierra_class, compiled_class_hash);
+        let prepared_declaration_v3 = declare.prepare().await?;
 
         let declare_v3_request = prepared_declaration_v3.get_declare_request(false, false).await?;
 
