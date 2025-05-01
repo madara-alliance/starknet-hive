@@ -25,9 +25,9 @@ jobs:
           key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
 
       - name: Setup Rust toolchain
-        uses: dtolnay/rust-toolchain@stable
+        uses: ./.github/workflows/task-setup-rust.yaml
         with:
-          toolchain: ${{ inputs.rust-version }}
+          rust-version: ${{ inputs.rust-version }}
 
       - name: Setup Cargo Hack
         run: |

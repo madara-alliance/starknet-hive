@@ -1,5 +1,5 @@
 # yaml-language-server: $schema=https://raw.githubusercontent.com/SchemaStore/schemastore/refs/heads/master/src/schemas/json/github-workflow.json
-name: Task - Lint Cargo
+name: Task - Setup Rust
 
 on:
   workflow_dispatch:
@@ -11,21 +11,18 @@ on:
         type: string
 
 jobs:
-  lint-cargo:
+  setup-rust:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout Repository
         uses: actions/checkout@v4
 
       - name: Setup Rust toolchain
-        uses: ./.github/workflows/task-setup-rust.yaml
+        uses: dtolnay/rust-toolchain@stable
         with:
-          rust-version: ${{ inputs.rust-version }}
+          toolchain: ${{ inputs.rust-version }}
+          components: cargo, clippy, rustfmt, rustc
 
-      - name: Cargo fmt
+      - name: Rust version
         run: 
-          cargo fmt -- --check
-
-      - name: Cargo clippy
-        run:
-          cargo clippy -- -D warnings
+          echo rustc --version
