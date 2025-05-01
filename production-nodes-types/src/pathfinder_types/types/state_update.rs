@@ -91,7 +91,10 @@ impl StateUpdate {
         self
     }
 
-    pub fn with_parent_state_commitment(mut self, parent_state_commitment: StateCommitment) -> Self {
+    pub fn with_parent_state_commitment(
+        mut self,
+        parent_state_commitment: StateCommitment,
+    ) -> Self {
         self.parent_state_commitment = parent_state_commitment;
         self
     }
@@ -101,8 +104,17 @@ impl StateUpdate {
         self
     }
 
-    pub fn with_storage_update(mut self, contract: ContractAddress, key: StorageAddress, value: StorageValue) -> Self {
-        self.contract_updates.entry(contract).or_default().storage.insert(key, value);
+    pub fn with_storage_update(
+        mut self,
+        contract: ContractAddress,
+        key: StorageAddress,
+        value: StorageValue,
+    ) -> Self {
+        self.contract_updates
+            .entry(contract)
+            .or_default()
+            .storage
+            .insert(key, value);
         self
     }
 
@@ -112,17 +124,23 @@ impl StateUpdate {
         key: StorageAddress,
         value: StorageValue,
     ) -> Self {
-        self.system_contract_updates.entry(contract).or_default().storage.insert(key, value);
+        self.system_contract_updates
+            .entry(contract)
+            .or_default()
+            .storage
+            .insert(key, value);
         self
     }
 
     pub fn with_deployed_contract(mut self, contract: ContractAddress, class: ClassHash) -> Self {
-        self.contract_updates.entry(contract).or_default().class = Some(ContractClassUpdate::Deploy(class));
+        self.contract_updates.entry(contract).or_default().class =
+            Some(ContractClassUpdate::Deploy(class));
         self
     }
 
     pub fn with_replaced_class(mut self, contract: ContractAddress, class: ClassHash) -> Self {
-        self.contract_updates.entry(contract).or_default().class = Some(ContractClassUpdate::Replace(class));
+        self.contract_updates.entry(contract).or_default().class =
+            Some(ContractClassUpdate::Replace(class));
         self
     }
 
@@ -148,7 +166,11 @@ impl StateUpdate {
     pub fn change_count(&self) -> usize {
         self.declared_cairo_classes.len()
             + self.declared_sierra_classes.len()
-            + self.system_contract_updates.iter().map(|x| x.1.storage.len()).sum::<usize>()
+            + self
+                .system_contract_updates
+                .iter()
+                .map(|x| x.1.storage.len())
+                .sum::<usize>()
             + self
                 .contract_updates
                 .iter()
@@ -184,30 +206,45 @@ impl StateUpdate {
     /// A contract's new class hash, if it was deployed or replaced in this
     /// state update.
     pub fn contract_class(&self, contract: ContractAddress) -> Option<ClassHash> {
-        self.contract_updates.get(&contract).and_then(|x| x.class.as_ref().map(|x| x.class_hash()))
+        self.contract_updates
+            .get(&contract)
+            .and_then(|x| x.class.as_ref().map(|x| x.class_hash()))
     }
 
     /// The new storage value if it exists in this state update.
     ///
     /// Note that this will also return the default zero value for a contract
     /// that has been deployed, but without an explicit storage update.
-    pub fn storage_value(&self, contract: ContractAddress, key: StorageAddress) -> Option<StorageValue> {
+    pub fn storage_value(
+        &self,
+        contract: ContractAddress,
+        key: StorageAddress,
+    ) -> Option<StorageValue> {
         self.contract_updates
             .get(&contract)
             .and_then(|update| {
-                update.storage.iter().find_map(|(k, v)| (k == &key).then_some(*v)).or_else(|| {
-                    update.class.as_ref().and_then(|c| match c {
-                        // If the contract has been deployed in pending but the key has not been
-                        // set yet return the default value of zero.
-                        ContractClassUpdate::Deploy(_) => Some(StorageValue::ZERO),
-                        ContractClassUpdate::Replace(_) => None,
+                update
+                    .storage
+                    .iter()
+                    .find_map(|(k, v)| (k == &key).then_some(*v))
+                    .or_else(|| {
+                        update.class.as_ref().and_then(|c| match c {
+                            // If the contract has been deployed in pending but the key has not been
+                            // set yet return the default value of zero.
+                            ContractClassUpdate::Deploy(_) => Some(StorageValue::ZERO),
+                            ContractClassUpdate::Replace(_) => None,
+                        })
                     })
-                })
             })
             .or_else(|| {
                 self.system_contract_updates
                     .get(&contract)
-                    .and_then(|update| update.storage.iter().find_map(|(k, v)| (k == &key).then_some(*v)))
+                    .and_then(|update| {
+                        update
+                            .storage
+                            .iter()
+                            .find_map(|(k, v)| (k == &key).then_some(*v))
+                    })
             })
     }
 
@@ -273,7 +310,12 @@ pub mod state_diff_commitment {
         // Hash the deployed contracts.
         let deployed_contracts: BTreeMap<_, _> = contract_updates
             .iter()
-            .filter_map(|(address, update)| update.class.as_ref().map(|update| (*address, update.class_hash())))
+            .filter_map(|(address, update)| {
+                update
+                    .class
+                    .as_ref()
+                    .map(|update| (*address, update.class_hash()))
+            })
             .collect();
         data.push((deployed_contracts.len() as u64).into());
         for (address, class_hash) in deployed_contracts {
@@ -282,8 +324,10 @@ pub mod state_diff_commitment {
         }
 
         // Hash the declared classes.
-        let declared_classes: BTreeSet<_> =
-            declared_sierra_classes.iter().map(|(sierra, casm)| (*sierra, *casm)).collect();
+        let declared_classes: BTreeSet<_> = declared_sierra_classes
+            .iter()
+            .map(|(sierra, casm)| (*sierra, *casm))
+            .collect();
         data.push((declared_classes.len() as u64).into());
         for (sierra, casm) in declared_classes {
             data.push(sierra);
@@ -291,7 +335,8 @@ pub mod state_diff_commitment {
         }
 
         // Hash the old declared classes.
-        let deprecated_declared_classes: BTreeSet<_> = declared_cairo_classes.iter().copied().collect();
+        let deprecated_declared_classes: BTreeSet<_> =
+            declared_cairo_classes.iter().copied().collect();
         data.push((deprecated_declared_classes.len() as u64).into());
         for class_hash in deprecated_declared_classes {
             data.push(class_hash);
@@ -304,12 +349,17 @@ pub mod state_diff_commitment {
         let storage_diffs: BTreeMap<_, _> = contract_updates
             .iter()
             .map(|(address, update)| (address, &update.storage))
-            .chain(system_contract_updates.iter().map(|(address, update)| (address, &update.storage)))
+            .chain(
+                system_contract_updates
+                    .iter()
+                    .map(|(address, update)| (address, &update.storage)),
+            )
             .filter_map(|(address, storage)| {
                 if storage.is_empty() {
                     None
                 } else {
-                    let updates: BTreeMap<_, _> = storage.iter().map(|(key, value)| (*key, *value)).collect();
+                    let updates: BTreeMap<_, _> =
+                        storage.iter().map(|(key, value)| (*key, *value)).collect();
                     Some((*address, updates))
                 }
             })
@@ -344,32 +394,66 @@ pub mod state_diff_commitment {
 #[test]
 fn test_0_13_2_state_diff_commitment() {
     let contract_updates: HashMap<_, _> = [
-        (0u64.into(), ContractUpdate { class: Some(ContractClassUpdate::Deploy(1u64.into())), ..Default::default() }),
-        (2u64.into(), ContractUpdate { class: Some(ContractClassUpdate::Deploy(3u64.into())), ..Default::default() }),
+        (
+            0u64.into(),
+            ContractUpdate {
+                class: Some(ContractClassUpdate::Deploy(1u64.into())),
+                ..Default::default()
+            },
+        ),
+        (
+            2u64.into(),
+            ContractUpdate {
+                class: Some(ContractClassUpdate::Deploy(3u64.into())),
+                ..Default::default()
+            },
+        ),
         (
             4u64.into(),
             ContractUpdate {
-                storage: [(5u64.into(), 6u64.into()), (7u64.into(), 8u64.into())].iter().cloned().collect(),
+                storage: [(5u64.into(), 6u64.into()), (7u64.into(), 8u64.into())]
+                    .iter()
+                    .cloned()
+                    .collect(),
                 ..Default::default()
             },
         ),
         (
             9u64.into(),
-            ContractUpdate { storage: [(10u64.into(), 11u64.into())].iter().cloned().collect(), ..Default::default() },
+            ContractUpdate {
+                storage: [(10u64.into(), 11u64.into())].iter().cloned().collect(),
+                ..Default::default()
+            },
         ),
-        (17u64.into(), ContractUpdate { nonce: Some(18u64.into()), ..Default::default() }),
+        (
+            17u64.into(),
+            ContractUpdate {
+                nonce: Some(18u64.into()),
+                ..Default::default()
+            },
+        ),
         (
             (19u64.into()),
-            ContractUpdate { class: Some(ContractClassUpdate::Replace(20u64.into())), ..Default::default() },
+            ContractUpdate {
+                class: Some(ContractClassUpdate::Replace(20u64.into())),
+                ..Default::default()
+            },
         ),
     ]
     .into_iter()
     .collect();
-    let declared_sierra_classes: HashMap<_, _> =
-        [((12u64.into()), (13u64.into())), ((14u64.into()), (15u64.into()))].iter().cloned().collect();
+    let declared_sierra_classes: HashMap<_, _> = [
+        ((12u64.into()), (13u64.into())),
+        ((14u64.into()), (15u64.into())),
+    ]
+    .iter()
+    .cloned()
+    .collect();
     let declared_cairo_classes: HashSet<_> = [(16u64.into())].iter().cloned().collect();
 
-    let expected_hash = Felt::from_hex_unchecked("0x0281f5966e49ad7dad9323826d53d1d27c0c4e6ebe5525e2e2fbca549bfa0a67");
+    let expected_hash = Felt::from_hex_unchecked(
+        "0x0281f5966e49ad7dad9323826d53d1d27c0c4e6ebe5525e2e2fbca549bfa0a67",
+    );
 
     assert_eq!(
         expected_hash,

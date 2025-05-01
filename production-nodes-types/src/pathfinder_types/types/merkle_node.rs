@@ -168,7 +168,10 @@ impl EdgeNode {
     /// This is calculated with the edge's height taken into account.
     pub fn common_path(&self, key: &BitSlice<u8, Msb0>) -> &BitSlice<u8, Msb0> {
         let key_path = key.iter().skip(self.height);
-        let common_length = key_path.zip(self.path.iter()).take_while(|(a, b)| a == b).count();
+        let common_length = key_path
+            .zip(self.path.iter())
+            .take_while(|(a, b)| a == b)
+            .count();
 
         &self.path[..common_length]
     }
@@ -205,7 +208,9 @@ mod tests {
         //
         // Note that the hash function must be exchanged for `async_stark_hash_func`,
         // otherwise it just uses some other test hash function.
-        let expected = Felt::from_hex_unchecked("0x1d937094c09b5f8e26a662d21911871e3cbc6858d55cc49af9848ea6fed4e9");
+        let expected = Felt::from_hex_unchecked(
+            "0x1d937094c09b5f8e26a662d21911871e3cbc6858d55cc49af9848ea6fed4e9",
+        );
         // .unwrap();
         let child = Felt::from_hex_unchecked("0x1234ABCD");
 

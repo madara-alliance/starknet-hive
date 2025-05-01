@@ -5,7 +5,8 @@ use crate::{
     utils::v7::{
         accounts::account::{Account, ConnectedAccount},
         endpoints::{
-            declare_contract::get_compiled_contract, errors::OpenRpcTestGenError, utils::wait_for_sent_transaction,
+            declare_contract::get_compiled_contract, errors::OpenRpcTestGenError,
+            utils::wait_for_sent_transaction,
         },
         providers::provider::Provider,
     },
@@ -21,13 +22,20 @@ impl RunnableTrait for TestCase {
 
     async fn run(test_input: &Self::Input) -> Result<Self, OpenRpcTestGenError> {
         let (flattened_sierra_class, compiled_class_hash) = get_compiled_contract(
-            PathBuf::from_str("target/dev/contracts_contracts_smpl8_HelloStarknet.contract_class.json")?,
-            PathBuf::from_str("target/dev/contracts_contracts_smpl8_HelloStarknet.compiled_contract_class.json")?,
+            PathBuf::from_str(
+                "target/dev/contracts_contracts_smpl8_HelloStarknet.contract_class.json",
+            )?,
+            PathBuf::from_str(
+                "target/dev/contracts_contracts_smpl8_HelloStarknet.compiled_contract_class.json",
+            )?,
         )
         .await?;
 
-        let declaration_result =
-            test_input.random_paymaster_account.declare_v3(flattened_sierra_class, compiled_class_hash).send().await?;
+        let declaration_result = test_input
+            .random_paymaster_account
+            .declare_v3(flattened_sierra_class, compiled_class_hash)
+            .send()
+            .await?;
 
         wait_for_sent_transaction(
             declaration_result.transaction_hash,
@@ -35,8 +43,11 @@ impl RunnableTrait for TestCase {
         )
         .await?;
 
-        let state_update =
-            test_input.random_paymaster_account.provider().get_state_update(BlockId::Tag(BlockTag::Latest)).await;
+        let state_update = test_input
+            .random_paymaster_account
+            .provider()
+            .get_state_update(BlockId::Tag(BlockTag::Latest))
+            .await;
 
         let result = state_update.is_ok();
 
@@ -55,7 +66,9 @@ impl RunnableTrait for TestCase {
             .state_diff
             .declared_classes
             .first()
-            .ok_or(OpenRpcTestGenError::Other("No declared class in state update".to_string()))?
+            .ok_or(OpenRpcTestGenError::Other(
+                "No declared class in state update".to_string(),
+            ))?
             .class_hash;
 
         assert_result!(

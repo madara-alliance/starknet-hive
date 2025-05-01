@@ -1,9 +1,12 @@
 use starknet_types_core::felt::Felt;
-use starknet_types_rpc::v0_7_1::{AddInvokeTransactionResult, FeeEstimate, SimulateTransactionsResult};
+use starknet_types_rpc::v0_7_1::{
+    AddInvokeTransactionResult, FeeEstimate, SimulateTransactionsResult,
+};
 
 use crate::utils::v7::accounts::{
     account::{
-        Account, AccountError, ConnectedAccount, ExecutionV1, ExecutionV3, PreparedExecutionV1, PreparedExecutionV3,
+        Account, AccountError, ConnectedAccount, ExecutionV1, ExecutionV3, PreparedExecutionV1,
+        PreparedExecutionV3,
     },
     call::Call,
 };
@@ -18,11 +21,19 @@ use super::helpers::{get_udc_deployed_address, UdcUniqueSettings, UdcUniqueness}
 // };
 
 /// The default UDC address: 0x041a78e741e5af2fec34b695679bc6891742439f7afb8484ecd7766661ad02bf.
-const UDC_ADDRESS: Felt =
-    Felt::from_raw([121672436446604875, 9333317513348225193, 15685625669053253235, 15144800532519055890]);
+const UDC_ADDRESS: Felt = Felt::from_raw([
+    121672436446604875,
+    9333317513348225193,
+    15685625669053253235,
+    15144800532519055890,
+]);
 /// Selector for entrypoint `deployContract`.
-const SELECTOR_DEPLOYCONTRACT: Felt =
-    Felt::from_raw([469988280392664069, 1439621915307882061, 1265649739554438882, 18249998464715511309]);
+const SELECTOR_DEPLOYCONTRACT: Felt = Felt::from_raw([
+    469988280392664069,
+    1439621915307882061,
+    1265649739554438882,
+    18249998464715511309,
+]);
 
 pub struct ContractFactory<A> {
     class_hash: Felt,
@@ -68,7 +79,11 @@ impl<A> ContractFactory<A> {
     }
 
     pub fn new_with_udc(class_hash: Felt, account: A, udc_address: Felt) -> Self {
-        Self { class_hash, udc_address, account }
+        Self {
+            class_hash,
+            udc_address,
+            account,
+        }
     }
 }
 
@@ -76,7 +91,12 @@ impl<A> ContractFactory<A>
 where
     A: Account,
 {
-    pub fn deploy_v1(&self, constructor_calldata: Vec<Felt>, salt: Felt, unique: bool) -> DeploymentV1<A> {
+    pub fn deploy_v1(
+        &self,
+        constructor_calldata: Vec<Felt>,
+        salt: Felt,
+        unique: bool,
+    ) -> DeploymentV1<A> {
         DeploymentV1 {
             factory: self,
             constructor_calldata,
@@ -88,7 +108,12 @@ where
         }
     }
 
-    pub fn deploy_v3(&self, constructor_calldata: Vec<Felt>, salt: Felt, unique: bool) -> DeploymentV3<A> {
+    pub fn deploy_v3(
+        &self,
+        constructor_calldata: Vec<Felt>,
+        salt: Felt,
+        unique: bool,
+    ) -> DeploymentV3<A> {
         DeploymentV3 {
             factory: self,
             constructor_calldata,
@@ -103,48 +128,77 @@ where
     }
 
     #[deprecated = "use version specific variants (`deploy_v1` & `deploy_v3`) instead"]
-    pub fn deploy(&self, constructor_calldata: Vec<Felt>, salt: Felt, unique: bool) -> DeploymentV3<A> {
+    pub fn deploy(
+        &self,
+        constructor_calldata: Vec<Felt>,
+        salt: Felt,
+        unique: bool,
+    ) -> DeploymentV3<A> {
         self.deploy_v3(constructor_calldata, salt, unique)
     }
 }
 
-impl<A> DeploymentV1<'_, A> {
+impl<'f, A> DeploymentV1<'f, A> {
     pub fn nonce(self, nonce: Felt) -> Self {
-        Self { nonce: Some(nonce), ..self }
+        Self {
+            nonce: Some(nonce),
+            ..self
+        }
     }
 
     pub fn max_fee(self, max_fee: Felt) -> Self {
-        Self { max_fee: Some(max_fee), ..self }
+        Self {
+            max_fee: Some(max_fee),
+            ..self
+        }
     }
 
     pub fn fee_estimate_multiplier(self, fee_estimate_multiplier: f64) -> Self {
-        Self { fee_estimate_multiplier, ..self }
+        Self {
+            fee_estimate_multiplier,
+            ..self
+        }
     }
 }
 
-impl<A> DeploymentV3<'_, A> {
+impl<'f, A> DeploymentV3<'f, A> {
     pub fn nonce(self, nonce: Felt) -> Self {
-        Self { nonce: Some(nonce), ..self }
+        Self {
+            nonce: Some(nonce),
+            ..self
+        }
     }
 
     pub fn gas(self, gas: u64) -> Self {
-        Self { gas: Some(gas), ..self }
+        Self {
+            gas: Some(gas),
+            ..self
+        }
     }
 
     pub fn gas_price(self, gas_price: u128) -> Self {
-        Self { gas_price: Some(gas_price), ..self }
+        Self {
+            gas_price: Some(gas_price),
+            ..self
+        }
     }
 
     pub fn gas_estimate_multiplier(self, gas_estimate_multiplier: f64) -> Self {
-        Self { gas_estimate_multiplier, ..self }
+        Self {
+            gas_estimate_multiplier,
+            ..self
+        }
     }
 
     pub fn gas_price_estimate_multiplier(self, gas_price_estimate_multiplier: f64) -> Self {
-        Self { gas_price_estimate_multiplier, ..self }
+        Self {
+            gas_price_estimate_multiplier,
+            ..self
+        }
     }
 }
 
-impl<A> DeploymentV1<'_, A>
+impl<'f, A> DeploymentV1<'f, A>
 where
     A: Account,
 {
@@ -166,7 +220,7 @@ where
     }
 }
 
-impl<A> DeploymentV3<'_, A>
+impl<'f, A> DeploymentV3<'f, A>
 where
     A: Account,
 {
@@ -207,12 +261,16 @@ where
         execution.simulate(skip_validate, skip_fee_charge).await
     }
 
-    pub async fn prepare_execute(&self) -> Result<PreparedExecutionV1<'f, A>, AccountError<A::SignError>> {
+    pub async fn prepare_execute(
+        &self,
+    ) -> Result<PreparedExecutionV1<'f, A>, AccountError<A::SignError>> {
         let execution: ExecutionV1<A> = self.into();
         execution.prepare().await
     }
 
-    pub async fn send(&self) -> Result<AddInvokeTransactionResult<Felt>, AccountError<A::SignError>> {
+    pub async fn send(
+        &self,
+    ) -> Result<AddInvokeTransactionResult<Felt>, AccountError<A::SignError>> {
         let execution: ExecutionV1<A> = self.into();
 
         execution.send().await
@@ -237,12 +295,16 @@ where
         execution.simulate(skip_validate, skip_fee_charge).await
     }
 
-    pub async fn send(&self) -> Result<AddInvokeTransactionResult<Felt>, AccountError<A::SignError>> {
+    pub async fn send(
+        &self,
+    ) -> Result<AddInvokeTransactionResult<Felt>, AccountError<A::SignError>> {
         let execution: ExecutionV3<A> = self.into();
         execution.send().await
     }
 
-    pub async fn prepare_execute(&self) -> Result<PreparedExecutionV3<'f, A>, AccountError<A::SignError>> {
+    pub async fn prepare_execute(
+        &self,
+    ) -> Result<PreparedExecutionV3<'f, A>, AccountError<A::SignError>> {
         let execution: ExecutionV3<A> = self.into();
         execution.prepare().await
     }
@@ -259,13 +321,25 @@ impl<'f, A> From<&DeploymentV1<'f, A>> for ExecutionV1<'f, A> {
         calldata.extend_from_slice(&value.constructor_calldata);
 
         let execution = Self::new(
-            vec![Call { to: value.factory.udc_address, selector: SELECTOR_DEPLOYCONTRACT, calldata }],
+            vec![Call {
+                to: value.factory.udc_address,
+                selector: SELECTOR_DEPLOYCONTRACT,
+                calldata,
+            }],
             &value.factory.account,
         );
 
-        let execution = if let Some(nonce) = value.nonce { execution.nonce(nonce) } else { execution };
+        let execution = if let Some(nonce) = value.nonce {
+            execution.nonce(nonce)
+        } else {
+            execution
+        };
 
-        let execution = if let Some(max_fee) = value.max_fee { execution.max_fee(max_fee) } else { execution };
+        let execution = if let Some(max_fee) = value.max_fee {
+            execution.max_fee(max_fee)
+        } else {
+            execution
+        };
 
         execution.fee_estimate_multiplier(value.fee_estimate_multiplier)
     }
@@ -282,15 +356,31 @@ impl<'f, A> From<&DeploymentV3<'f, A>> for ExecutionV3<'f, A> {
         calldata.extend_from_slice(&value.constructor_calldata);
 
         let execution = Self::new(
-            vec![Call { to: value.factory.udc_address, selector: SELECTOR_DEPLOYCONTRACT, calldata }],
+            vec![Call {
+                to: value.factory.udc_address,
+                selector: SELECTOR_DEPLOYCONTRACT,
+                calldata,
+            }],
             &value.factory.account,
         );
 
-        let execution = if let Some(nonce) = value.nonce { execution.nonce(nonce) } else { execution };
+        let execution = if let Some(nonce) = value.nonce {
+            execution.nonce(nonce)
+        } else {
+            execution
+        };
 
-        let execution = if let Some(gas) = value.gas { execution.gas(gas) } else { execution };
+        let execution = if let Some(gas) = value.gas {
+            execution.gas(gas)
+        } else {
+            execution
+        };
 
-        let execution = if let Some(gas_price) = value.gas_price { execution.gas_price(gas_price) } else { execution };
+        let execution = if let Some(gas_price) = value.gas_price {
+            execution.gas_price(gas_price)
+        } else {
+            execution
+        };
 
         let execution = execution.gas_estimate_multiplier(value.gas_estimate_multiplier);
 

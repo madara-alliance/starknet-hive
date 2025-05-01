@@ -12,7 +12,8 @@ use crate::{assert_eq_result, assert_matches_result, assert_result, Randomizable
 use crate::{utils::v7::endpoints::errors::OpenRpcTestGenError, RunnableTrait};
 use starknet_types_core::felt::Felt;
 use starknet_types_rpc::{
-    BlockId, BlockTag, DeclareTransactionTrace, FeeEstimate, SimulateTransactionsResult, TransactionTrace,
+    BlockId, BlockTag, DeclareTransactionTrace, FeeEstimate, SimulateTransactionsResult,
+    TransactionTrace,
 };
 use t9n::txn_hashes::declare_hash::class_hash;
 
@@ -40,12 +41,10 @@ impl RunnableTrait for TestCase {
         );
 
         let (flattened_sierra_class, compiled_class_hash) = get_compiled_contract(
-            PathBuf::from_str("target/dev/contracts_contracts_sample_contract_8_HelloStarknet.contract_class.json")?,
-            PathBuf::from_str(
-                "target/dev/contracts_contracts_sample_contract_8_HelloStarknet.compiled_contract_class.json",
-            )?,
-        )
-        .await?;
+                PathBuf::from_str("target/dev/contracts_contracts_sample_contract_8_HelloStarknet.contract_class.json")?,
+                PathBuf::from_str("target/dev/contracts_contracts_sample_contract_8_HelloStarknet.compiled_contract_class.json")?,
+            )
+            .await?;
 
         let estimate_fee = test_input
             .random_paymaster_account
@@ -53,14 +52,20 @@ impl RunnableTrait for TestCase {
             .estimate_fee_skip_signature()
             .await?;
 
-        let nonce_before_simulate =
-            account.provider().get_nonce(BlockId::Tag(BlockTag::Pending), account.address()).await?;
+        let nonce_before_simulate = account
+            .provider()
+            .get_nonce(BlockId::Tag(BlockTag::Pending), account.address())
+            .await?;
 
-        let simulate_declare_result =
-            account_invalid.declare_v3(flattened_sierra_class.clone(), compiled_class_hash).simulate(true, true).await;
+        let simulate_declare_result = account_invalid
+            .declare_v3(flattened_sierra_class.clone(), compiled_class_hash)
+            .simulate(true, true)
+            .await;
 
-        let nonce_after_simulate =
-            account.provider().get_nonce(BlockId::Tag(BlockTag::Pending), account.address()).await?;
+        let nonce_after_simulate = account
+            .provider()
+            .get_nonce(BlockId::Tag(BlockTag::Pending), account.address())
+            .await?;
 
         let class_hash = class_hash(flattened_sierra_class.clone());
 
@@ -79,40 +84,57 @@ impl RunnableTrait for TestCase {
         );
 
         let (fee_estimation, transaction_trace) = match simulate_declare {
-            SimulateTransactionsResult { fee_estimation: Some(fee), transaction_trace: Some(trace) } => {
-                (Some(fee), Some(trace))
-            }
-            SimulateTransactionsResult { fee_estimation: Some(fee), transaction_trace: None } => (Some(fee), None),
-            SimulateTransactionsResult { fee_estimation: None, transaction_trace: Some(trace) } => (None, Some(trace)),
+            SimulateTransactionsResult {
+                fee_estimation: Some(fee),
+                transaction_trace: Some(trace),
+            } => (Some(fee), Some(trace)),
+            SimulateTransactionsResult {
+                fee_estimation: Some(fee),
+                transaction_trace: None,
+            } => (Some(fee), None),
+            SimulateTransactionsResult {
+                fee_estimation: None,
+                transaction_trace: Some(trace),
+            } => (None, Some(trace)),
             _ => (None, None),
         };
 
         let fee_estimation = fee_estimation.ok_or_else(|| {
-            OpenRpcTestGenError::Other("Fee estimation is missing in simulate transaction".to_string())
+            OpenRpcTestGenError::Other(
+                "Fee estimation is missing in simulate transaction".to_string(),
+            )
         })?;
 
         let transaction_trace = transaction_trace.ok_or_else(|| {
-            OpenRpcTestGenError::Other("Transaction trace is missing in simulate transaction".to_string())
+            OpenRpcTestGenError::Other(
+                "Transaction trace is missing in simulate transaction".to_string(),
+            )
         })?;
 
-        assert_matches_result!(transaction_trace, TransactionTrace::Declare(DeclareTransactionTrace { .. }));
+        assert_matches_result!(
+            transaction_trace,
+            TransactionTrace::Declare(DeclareTransactionTrace { .. })
+        );
 
         let declare_trace = match transaction_trace {
             TransactionTrace::Declare(declare_trace) => Ok(declare_trace),
             _ => Err(OpenRpcTestGenError::Other(
-                "Expected DeclareTransactionTrace, but found a different transaction trace type".to_string(),
+                "Expected DeclareTransactionTrace, but found a different transaction trace type"
+                    .to_string(),
             )),
         }?;
 
-        let state_diff = declare_trace
-            .state_diff
-            .ok_or_else(|| OpenRpcTestGenError::Other("State diff is missing in invoke trace".to_string()))?;
+        let state_diff = declare_trace.state_diff.ok_or_else(|| {
+            OpenRpcTestGenError::Other("State diff is missing in invoke trace".to_string())
+        })?;
 
         let state_diff_nonce = state_diff
             .nonces
             .first()
             .and_then(|nonce| nonce.nonce)
-            .ok_or_else(|| OpenRpcTestGenError::Other("Nonce not found in state diff".to_string()))?;
+            .ok_or_else(|| {
+                OpenRpcTestGenError::Other("Nonce not found in state diff".to_string())
+            })?;
 
         // caller address
         let account_address = account.address();
@@ -168,15 +190,19 @@ impl RunnableTrait for TestCase {
 
         // Validate nonces before and after simulate
         assert_result!(
-            nonce_before_simulate == nonce_after_simulate,
-            format!(
-                "Nonce before and after simulate should be equal found: before simulate {:?}, after simulate {:?}",
-                nonce_before_simulate, nonce_after_simulate
+        nonce_before_simulate == nonce_after_simulate,
+        format!(
+            "Nonce before and after simulate should be equal found: before simulate {:?}, after simulate {:?}",
+            nonce_before_simulate ,
+            nonce_after_simulate
             )
         );
 
         // fee_transfer_invocation should be none because of skipFeeCharge flag
-        assert_result!(declare_trace.fee_transfer_invocation.is_none(), "fee_transfer_invocation should be none.");
+        assert_result!(
+            declare_trace.fee_transfer_invocation.is_none(),
+            "fee_transfer_invocation should be none."
+        );
 
         // state_diff nonces
         assert_result!(
@@ -188,9 +214,14 @@ impl RunnableTrait for TestCase {
             )
         );
 
-        let state_diff_contract_address =
-            state_diff.nonces.first().and_then(|nonce| nonce.contract_address).ok_or_else(|| {
-                OpenRpcTestGenError::Other("Contract address not found in state diff nonces".to_string())
+        let state_diff_contract_address = state_diff
+            .nonces
+            .first()
+            .and_then(|nonce| nonce.contract_address)
+            .ok_or_else(|| {
+                OpenRpcTestGenError::Other(
+                    "Contract address not found in state diff nonces".to_string(),
+                )
             })?;
 
         // Validate that the contract address in the state diff matches the expected account address
@@ -203,15 +234,23 @@ impl RunnableTrait for TestCase {
         );
 
         // Retrieve the class_hash from the state diff declared classes
-        let state_diff_class_hash =
-            state_diff.declared_classes.first().and_then(|declared_class| declared_class.class_hash).ok_or_else(
-                || OpenRpcTestGenError::Other("class_hash not found in state diff declared classes".to_string()),
-            )?;
+        let state_diff_class_hash = state_diff
+            .declared_classes
+            .first()
+            .and_then(|declared_class| declared_class.class_hash)
+            .ok_or_else(|| {
+                OpenRpcTestGenError::Other(
+                    "class_hash not found in state diff declared classes".to_string(),
+                )
+            })?;
 
         // Validate that the class_hash in the state diff matches the class_hash from the declare result
         assert_result!(
             state_diff_class_hash == class_hash,
-            format!("Class hash mismatch: expected {:?}, but found {:?}", class_hash, state_diff_class_hash)
+            format!(
+                "Class hash mismatch: expected {:?}, but found {:?}",
+                class_hash, state_diff_class_hash
+            )
         );
 
         // Retrieve the compiled_class_hash from the state diff declared classes
@@ -220,7 +259,9 @@ impl RunnableTrait for TestCase {
             .first()
             .and_then(|declared_class| declared_class.compiled_class_hash)
             .ok_or_else(|| {
-                OpenRpcTestGenError::Other("compiled_class_hash not found in state diff declared classes".to_string())
+                OpenRpcTestGenError::Other(
+                    "compiled_class_hash not found in state diff declared classes".to_string(),
+                )
             })?;
 
         // Validate that the compiled_class_hash matches the expected compiled_class_hash
@@ -233,7 +274,10 @@ impl RunnableTrait for TestCase {
         );
 
         // validate_invocation should be none because of skipValidate flag
-        assert_result!(declare_trace.validate_invocation.is_none(), "validate_invocation should be none.");
+        assert_result!(
+            declare_trace.validate_invocation.is_none(),
+            "validate_invocation should be none."
+        );
 
         Ok(Self {})
     }

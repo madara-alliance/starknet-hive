@@ -1,5 +1,7 @@
 use super::errors::Error;
-use crate::txn_hashes::deploy_account::{calculate_deploy_account_v1_hash, calculate_deploy_v3_transaction_hash};
+use crate::txn_hashes::deploy_account::{
+    calculate_deploy_account_v1_hash, calculate_deploy_v3_transaction_hash,
+};
 use crypto_utils::curve::signer::{recover, verify};
 use starknet_types_core::felt::Felt;
 use starknet_types_rpc::{v0_7_1::starknet_api_openrpc::*, DeployAccountTxn};

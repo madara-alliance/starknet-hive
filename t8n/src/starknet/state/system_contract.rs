@@ -17,7 +17,11 @@ pub(crate) struct SystemContract {
 }
 
 impl SystemContract {
-    pub(crate) fn new_cairo0(class_hash: &str, address: &str, contract_class_json_str: &str) -> DevnetResult<Self> {
+    pub(crate) fn new_cairo0(
+        class_hash: &str,
+        address: &str,
+        contract_class_json_str: &str,
+    ) -> DevnetResult<Self> {
         Ok(Self {
             class_hash: Felt::from_prefixed_hex_str(class_hash)?,
             address: ContractAddress::new(Felt::from_prefixed_hex_str(address)?)?,
@@ -25,11 +29,16 @@ impl SystemContract {
         })
     }
 
-    pub(crate) fn new_cairo1(class_hash: &str, address: &str, contract_class_json_str: &str) -> DevnetResult<Self> {
+    pub(crate) fn new_cairo1(
+        class_hash: &str,
+        address: &str,
+        contract_class_json_str: &str,
+    ) -> DevnetResult<Self> {
         Ok(Self {
             class_hash: Felt::from_prefixed_hex_str(class_hash)?,
             address: ContractAddress::new(Felt::from_prefixed_hex_str(address)?)?,
-            contract_class: ContractClass::cairo_1_from_sierra_json_str(contract_class_json_str)?.into(),
+            contract_class: ContractClass::cairo_1_from_sierra_json_str(contract_class_json_str)?
+                .into(),
         })
     }
 }
@@ -51,7 +60,11 @@ impl Accounted for SystemContract {
         Ok(())
     }
 
-    fn get_balance(&self, _state: &mut impl StateReader, _token: FeeToken) -> DevnetResult<Balance> {
+    fn get_balance(
+        &self,
+        _state: &mut impl StateReader,
+        _token: FeeToken,
+    ) -> DevnetResult<Balance> {
         Ok(Balance::default())
     }
 }

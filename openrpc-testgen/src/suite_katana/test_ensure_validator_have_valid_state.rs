@@ -39,7 +39,9 @@ impl RunnableTrait for TestCase {
 
         let transfer_execution = account
             .execute_v1(vec![Call {
-                to: Felt::from_hex("0x49D36570D4E46F48E99674BD3FCC84644DDD6B96F7C741B1562B82F9E004DC7")?,
+                to: Felt::from_hex(
+                    "0x49D36570D4E46F48E99674BD3FCC84644DDD6B96F7C741B1562B82F9E004DC7",
+                )?,
                 selector: get_selector_from_name("transfer")?,
                 calldata: vec![account_data.address, transfer_amount, Felt::ZERO],
             }])
@@ -63,7 +65,9 @@ impl RunnableTrait for TestCase {
 
         assert_matches_result!(
             invoke_result.unwrap_err(),
-            AccountError::Provider(ProviderError::StarknetError(StarknetError::InsufficientAccountBalance))
+            AccountError::Provider(ProviderError::StarknetError(
+                StarknetError::InsufficientAccountBalance
+            ))
         );
 
         Ok(Self {})

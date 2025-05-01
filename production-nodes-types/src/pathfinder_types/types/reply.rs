@@ -160,7 +160,12 @@ pub struct StateUpdate {
 impl StateUpdate {
     pub fn new(block_hash: Felt, state_diff: state_update::StateDiff) -> Self {
         // TODO new and old root are not computed, they are not part of the MVP
-        Self { block_hash, new_root: Felt::default(), old_root: Felt::default(), state_diff }
+        Self {
+            block_hash,
+            new_root: Felt::default(),
+            old_root: Felt::default(),
+            state_diff,
+        }
     }
 }
 
@@ -179,7 +184,11 @@ impl From<StateUpdate> for state_update_main::StateUpdate {
         //
         // As of starknet v0.12.0 these are embedded in this way, but in the future will
         // be a separate property in the state diff.
-        if let Some((address, storage_updates)) = gateway.state_diff.storage_diffs.remove_entry(&ContractAddress::ONE) {
+        if let Some((address, storage_updates)) = gateway
+            .state_diff
+            .storage_diffs
+            .remove_entry(&ContractAddress::ONE)
+        {
             for state_update::StorageDiff { key, value } in storage_updates {
                 state_update = state_update.with_system_storage_update(address, key, value);
             }
@@ -193,7 +202,11 @@ impl From<StateUpdate> for state_update_main::StateUpdate {
             }
         }
 
-        for state_update::DeployedContract { address, class_hash } in gateway.state_diff.deployed_contracts {
+        for state_update::DeployedContract {
+            address,
+            class_hash,
+        } in gateway.state_diff.deployed_contracts
+        {
             state_update = state_update.with_deployed_contract(address, class_hash);
         }
 
@@ -201,11 +214,18 @@ impl From<StateUpdate> for state_update_main::StateUpdate {
             state_update = state_update.with_contract_nonce(address, nonce);
         }
 
-        for state_update::ReplacedClass { address, class_hash } in gateway.state_diff.replaced_classes {
+        for state_update::ReplacedClass {
+            address,
+            class_hash,
+        } in gateway.state_diff.replaced_classes
+        {
             state_update = state_update.with_replaced_class(address, class_hash);
         }
 
-        for state_update::DeclaredSierraClass { class_hash, compiled_class_hash } in gateway.state_diff.declared_classes
+        for state_update::DeclaredSierraClass {
+            class_hash,
+            compiled_class_hash,
+        } in gateway.state_diff.declared_classes
         {
             state_update = state_update.with_declared_sierra_class(class_hash, compiled_class_hash);
         }

@@ -19,7 +19,8 @@ use crate::{
             },
             endpoints::{
                 declare_contract::{
-                    extract_class_hash_from_error, get_compiled_contract, parse_class_hash_from_error, RunnerError,
+                    extract_class_hash_from_error, get_compiled_contract,
+                    parse_class_hash_from_error, RunnerError,
                 },
                 errors::OpenRpcTestGenError,
                 utils::{get_selector_from_name, wait_for_sent_transaction},
@@ -113,14 +114,17 @@ impl SetupableTrait for TestSuiteOpenRpc {
         let (executable_account_flattened_sierra_class, executable_account_compiled_class_hash) =
             get_compiled_contract(
                 PathBuf::from_str("target/dev/contracts_MyAccountExec.contract_class.json")?,
-                PathBuf::from_str("target/dev/contracts_MyAccountExec.compiled_contract_class.json")?,
+                PathBuf::from_str(
+                    "target/dev/contracts_MyAccountExec.compiled_contract_class.json",
+                )?,
             )
             .await?;
 
         let provider = JsonRpcClient::new(HttpTransport::new(setup_input.urls[0].clone()));
         let chain_id = get_chain_id(&provider).await?;
 
-        let paymaster_private_key = SigningKey::from_secret_scalar(setup_input.paymaster_private_key);
+        let paymaster_private_key =
+            SigningKey::from_secret_scalar(setup_input.paymaster_private_key);
 
         let mut paymaster_account = SingleOwnerAccount::new(
             provider.clone(),
@@ -132,7 +136,10 @@ impl SetupableTrait for TestSuiteOpenRpc {
         paymaster_account.set_block_id(BlockId::Tag(BlockTag::Pending));
 
         let declare_executable_account_hash = match paymaster_account
-            .declare_v3(executable_account_flattened_sierra_class.clone(), executable_account_compiled_class_hash)
+            .declare_v3(
+                executable_account_flattened_sierra_class.clone(),
+                executable_account_compiled_class_hash,
+            )
             .send()
             .await
         {
@@ -144,10 +151,12 @@ impl SetupableTrait for TestSuiteOpenRpc {
                 if sign_error.to_string().contains("is already declared") {
                     Ok(parse_class_hash_from_error(&sign_error.to_string())?)
                 } else {
-                    Err(OpenRpcTestGenError::RunnerError(RunnerError::AccountFailure(format!(
-                        "Transaction execution error: {}",
-                        sign_error
-                    ))))
+                    Err(OpenRpcTestGenError::RunnerError(
+                        RunnerError::AccountFailure(format!(
+                            "Transaction execution error: {}",
+                            sign_error
+                        )),
+                    ))
                 }
             }
 
@@ -155,10 +164,12 @@ impl SetupableTrait for TestSuiteOpenRpc {
                 if starkneterror.to_string().contains("is already declared") {
                     Ok(parse_class_hash_from_error(&starkneterror.to_string())?)
                 } else {
-                    Err(OpenRpcTestGenError::RunnerError(RunnerError::AccountFailure(format!(
-                        "Transaction execution error: {}",
-                        starkneterror
-                    ))))
+                    Err(OpenRpcTestGenError::RunnerError(
+                        RunnerError::AccountFailure(format!(
+                            "Transaction execution error: {}",
+                            starkneterror
+                        )),
+                    ))
                 }
             }
             Err(e) => {
@@ -166,13 +177,20 @@ impl SetupableTrait for TestSuiteOpenRpc {
                 if full_error_message.contains("is already declared") {
                     Ok(extract_class_hash_from_error(&full_error_message)?)
                 } else {
-                    Err(OpenRpcTestGenError::AccountError(AccountError::Other(full_error_message)))
+                    Err(OpenRpcTestGenError::AccountError(AccountError::Other(
+                        full_error_message,
+                    )))
                 }
             }
         }?;
 
-        let executable_account_data =
-            create_account(&provider, AccountType::Oz, Option::None, Some(declare_executable_account_hash)).await?;
+        let executable_account_data = create_account(
+            &provider,
+            AccountType::Oz,
+            Option::None,
+            Some(declare_executable_account_hash),
+        )
+        .await?;
 
         let deploy_executable_account_call: Call = Call {
             to: setup_input.udc_address,
@@ -186,10 +204,16 @@ impl SetupableTrait for TestSuiteOpenRpc {
             ],
         };
 
-        let deploy_executable_account_result =
-            paymaster_account.execute_v3(vec![deploy_executable_account_call]).send().await?;
+        let deploy_executable_account_result = paymaster_account
+            .execute_v3(vec![deploy_executable_account_call])
+            .send()
+            .await?;
 
-        wait_for_sent_transaction(deploy_executable_account_result.transaction_hash, &paymaster_account).await?;
+        wait_for_sent_transaction(
+            deploy_executable_account_result.transaction_hash,
+            &paymaster_account,
+        )
+        .await?;
 
         let mut executable_account = SingleOwnerAccount::new(
             provider.clone(),
@@ -228,8 +252,12 @@ impl SetupableTrait for TestSuiteOpenRpc {
         }
 
         Ok(Self {
-            random_executable_account: RandomSingleOwnerAccount { accounts: executable_accounts },
-            random_paymaster_account: RandomSingleOwnerAccount { accounts: paymaster_accounts },
+            random_executable_account: RandomSingleOwnerAccount {
+                accounts: executable_accounts,
+            },
+            random_paymaster_account: RandomSingleOwnerAccount {
+                accounts: paymaster_accounts,
+            },
             paymaster_private_key: setup_input.paymaster_private_key,
             executable_private_key: executable_account_data.signing_key.secret_scalar(),
             account_class_hash: setup_input.account_class_hash,
@@ -238,4 +266,8 @@ impl SetupableTrait for TestSuiteOpenRpc {
     }
 }
 
-include!(concat!(env!("OUT_DIR"), "/generated_tests_suite_openrpc.rs"));
+#[cfg(not(feature = "rust-analyzer"))]
+include!(concat!(
+    env!("OUT_DIR"),
+    "/generated_tests_suite_openrpc.rs"
+));

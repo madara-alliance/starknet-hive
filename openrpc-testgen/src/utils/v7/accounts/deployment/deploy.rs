@@ -1,8 +1,8 @@
 use starknet_types_core::felt::Felt;
 use starknet_types_rpc::{
     v0_7_1::{BlockId, BlockTag, TxnHash},
-    BroadcastedDeployAccountTxn, BroadcastedTxn, ContractAndTxnHash, DeployAccountTxn, DeployAccountTxnV1,
-    DeployAccountTxnV3, FeeEstimate, SimulateTransactionsResult,
+    BroadcastedDeployAccountTxn, BroadcastedTxn, ContractAndTxnHash, DeployAccountTxn,
+    DeployAccountTxnV1, DeployAccountTxnV3, FeeEstimate, SimulateTransactionsResult,
 };
 
 use crate::utils::v7::{
@@ -19,8 +19,8 @@ use crate::utils::v7::{
 
 use super::{
     helpers::{
-        get_contract_address, get_deployment_request, get_deployment_result, get_estimate_fee_deployment_result,
-        simulate_get_deployment_result,
+        get_contract_address, get_deployment_request, get_deployment_result,
+        get_estimate_fee_deployment_result, simulate_get_deployment_result,
     },
     structs::WaitForTx,
 };
@@ -51,7 +51,11 @@ pub async fn deploy_account(
         ),
     };
 
-    let result = if provider.get_class_hash_at(BlockId::Tag(BlockTag::Pending), address).await.is_ok() {
+    let result = if provider
+        .get_class_hash_at(BlockId::Tag(BlockTag::Pending), address)
+        .await
+        .is_ok()
+    {
         Felt::ZERO
     } else {
         get_deployment_result(
@@ -150,7 +154,9 @@ pub async fn deploy_account_v1_from_request(
     tx_request: DeployAccountTxnV1<Felt>,
 ) -> Result<ContractAndTxnHash<Felt>, CreationError> {
     provider
-        .add_deploy_account_transaction(BroadcastedTxn::DeployAccount(BroadcastedDeployAccountTxn::V1(tx_request)))
+        .add_deploy_account_transaction(BroadcastedTxn::DeployAccount(
+            BroadcastedDeployAccountTxn::V1(tx_request),
+        ))
         .await
         .map_err(CreationError::from)
 }
@@ -160,7 +166,9 @@ pub async fn deploy_account_v3_from_request(
     tx_request: DeployAccountTxnV3<Felt>,
 ) -> Result<ContractAndTxnHash<Felt>, CreationError> {
     provider
-        .add_deploy_account_transaction(BroadcastedTxn::DeployAccount(BroadcastedDeployAccountTxn::V3(tx_request)))
+        .add_deploy_account_transaction(BroadcastedTxn::DeployAccount(
+            BroadcastedDeployAccountTxn::V3(tx_request),
+        ))
         .await
         .map_err(CreationError::from)
 }

@@ -36,7 +36,11 @@ impl RunnableTrait for TestCase {
         // -----------------------------------------------------------------------
         //  transaction with low max fee (underpriced).
 
-        let res = account.execute_v1(vec![increase_balance_call.clone()]).max_fee(Felt::TWO).send().await;
+        let res = account
+            .execute_v1(vec![increase_balance_call.clone()])
+            .max_fee(Felt::TWO)
+            .send()
+            .await;
 
         // In no fee mode, the transaction resources (ie max fee) is totally ignored. So doesn't
         // matter what value is set, the transaction will always be executed successfully.
@@ -46,14 +50,22 @@ impl RunnableTrait for TestCase {
         });
 
         let nonce = account.get_nonce().await?;
-        assert_eq_result!(initial_nonce + 1, nonce, "Nonce should change in fee-disabled mode");
+        assert_eq_result!(
+            initial_nonce + 1,
+            nonce,
+            "Nonce should change in fee-disabled mode"
+        );
 
         // -----------------------------------------------------------------------
         //  transaction with insufficient balance.
 
         let fee = Felt::from(DEFAULT_PREFUNDED_ACCOUNT_BALANCE + 1);
 
-        let res = account.execute_v1(vec![increase_balance_call]).max_fee(fee).send().await;
+        let res = account
+            .execute_v1(vec![increase_balance_call])
+            .max_fee(fee)
+            .send()
+            .await;
 
         // in no fee mode, account balance is ignored. as long as the max fee (aka resources) is
         // enough to at least run the account validation, the tx should be accepted.
@@ -62,7 +74,11 @@ impl RunnableTrait for TestCase {
 
         // nonce should be incremented by 1 after a valid tx.
         let nonce = account.get_nonce().await?;
-        assert_eq_result!(initial_nonce + 2, nonce, "Nonce should change in fee-disabled mode");
+        assert_eq_result!(
+            initial_nonce + 2,
+            nonce,
+            "Nonce should change in fee-disabled mode"
+        );
 
         Ok(Self {})
     }

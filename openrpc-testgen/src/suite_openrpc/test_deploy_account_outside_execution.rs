@@ -40,11 +40,16 @@ impl RunnableTrait for TestCase {
         let nonce = test_input
             .random_paymaster_account
             .provider()
-            .get_nonce(BlockId::Tag(BlockTag::Latest), test_input.random_paymaster_account.address())
+            .get_nonce(
+                BlockId::Tag(BlockTag::Latest),
+                test_input.random_paymaster_account.address(),
+            )
             .await?;
 
         let udc_call = Call {
-            to: Felt::from_hex_unchecked("0x041a78e741e5af2fec34b695679bc6891742439f7afb8484ecd7766661ad02bf"),
+            to: Felt::from_hex_unchecked(
+                "0x041a78e741e5af2fec34b695679bc6891742439f7afb8484ecd7766661ad02bf",
+            ),
             selector: get_selector_from_name("deployContract")?,
             calldata: vec![
                 test_input.account_class_hash,
@@ -55,7 +60,8 @@ impl RunnableTrait for TestCase {
             ],
         };
 
-        let timestamp = get_current_timestamp(&test_input.random_paymaster_account.provider()).await?;
+        let timestamp =
+            get_current_timestamp(&test_input.random_paymaster_account.provider()).await?;
 
         let outside_execution = OutsideExecution {
             caller: test_input.random_paymaster_account.address(),
@@ -67,13 +73,23 @@ impl RunnableTrait for TestCase {
 
         let calldata_to_executable_account_call = prepare_outside_execution(
             &outside_execution,
-            test_input.random_executable_account.random_accounts()?.address(),
+            test_input
+                .random_executable_account
+                .random_accounts()?
+                .address(),
             test_input.executable_private_key,
-            test_input.random_paymaster_account.provider().chain_id().await?,
+            test_input
+                .random_paymaster_account
+                .provider()
+                .chain_id()
+                .await?,
         )
         .await?;
         let call_to_executable_account = Call {
-            to: test_input.random_executable_account.random_accounts()?.address(),
+            to: test_input
+                .random_executable_account
+                .random_accounts()?
+                .address(),
             selector: get_selector_from_name("execute_from_outside_v2")?,
             calldata: calldata_to_executable_account_call,
         };
@@ -85,19 +101,34 @@ impl RunnableTrait for TestCase {
                 test_input
                     .random_paymaster_account
                     .provider()
-                    .get_nonce(BlockId::Tag(BlockTag::Pending), test_input.random_paymaster_account.address())
+                    .get_nonce(
+                        BlockId::Tag(BlockTag::Pending),
+                        test_input.random_paymaster_account.address(),
+                    )
                     .await?,
             )
             .send()
             .await?
             .transaction_hash;
 
-        wait_for_sent_transaction(deploy_hash, &test_input.random_paymaster_account.random_accounts()?).await?;
+        wait_for_sent_transaction(
+            deploy_hash,
+            &test_input.random_paymaster_account.random_accounts()?,
+        )
+        .await?;
 
-        let block_number = test_input.random_paymaster_account.provider().block_hash_and_number().await?.block_number;
+        let block_number = test_input
+            .random_paymaster_account
+            .provider()
+            .block_hash_and_number()
+            .await?
+            .block_number;
 
-        let block_with_txns =
-            test_input.random_paymaster_account.provider().get_block_with_txs(BlockId::Number(block_number)).await?;
+        let block_with_txns = test_input
+            .random_paymaster_account
+            .provider()
+            .get_block_with_txs(BlockId::Number(block_number))
+            .await?;
 
         let txn_index: u64 = match block_with_txns {
             MaybePendingBlockWithTxs::Block(block_with_txs) => block_with_txs

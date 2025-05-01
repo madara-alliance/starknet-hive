@@ -2,7 +2,9 @@ use std::collections::HashMap;
 
 use super::errors::{DevnetResult, Error};
 use super::utils::casm_hash;
-use super::{defaulter::StarknetDefaulter, dict_state::DictState, state_diff::StateDiff, types::ClassHash};
+use super::{
+    defaulter::StarknetDefaulter, dict_state::DictState, state_diff::StateDiff, types::ClassHash,
+};
 use blockifier::state::state_api::StateReader;
 use blockifier::state::{
     cached_state::{CachedState, GlobalContractCache, GLOBAL_CONTRACT_CACHE_SIZE_FOR_TEST},
@@ -24,9 +26,21 @@ pub trait CustomStateReader {
 }
 
 pub trait CustomState {
-    fn predeclare_contract_class(&mut self, class_hash: ClassHash, contract_class: ContractClass) -> DevnetResult<()>;
-    fn declare_contract_class(&mut self, class_hash: ClassHash, contract_class: ContractClass) -> DevnetResult<()>;
-    fn predeploy_contract(&mut self, contract_address: ContractAddress, class_hash: ClassHash) -> DevnetResult<()>;
+    fn predeclare_contract_class(
+        &mut self,
+        class_hash: ClassHash,
+        contract_class: ContractClass,
+    ) -> DevnetResult<()>;
+    fn declare_contract_class(
+        &mut self,
+        class_hash: ClassHash,
+        contract_class: ContractClass,
+    ) -> DevnetResult<()>;
+    fn predeploy_contract(
+        &mut self,
+        contract_address: ContractAddress,
+        class_hash: ClassHash,
+    ) -> DevnetResult<()>;
 }
 
 #[derive(Default, Clone, Debug, Serialize, Deserialize)]
@@ -83,7 +97,10 @@ pub struct StarknetState {
 impl Default for StarknetState {
     fn default() -> Self {
         Self {
-            state: CachedState::new(Default::default(), GlobalContractCache::new(GLOBAL_CONTRACT_CACHE_SIZE_FOR_TEST)),
+            state: CachedState::new(
+                Default::default(),
+                GlobalContractCache::new(GLOBAL_CONTRACT_CACHE_SIZE_FOR_TEST),
+            ),
             rpc_contract_classes: Default::default(),
             historic_state: Default::default(),
         }
@@ -109,8 +126,10 @@ impl StarknetState {
     pub fn commit_with_diff(&mut self) -> DevnetResult<StateDiff> {
         let diff = StateDiff::generate(&mut self.state, &mut self.rpc_contract_classes)?;
         let new_historic = self.expand_historic(diff.clone())?;
-        self.state =
-            CachedState::new(new_historic.clone(), GlobalContractCache::new(GLOBAL_CONTRACT_CACHE_SIZE_FOR_TEST));
+        self.state = CachedState::new(
+            new_historic.clone(),
+            GlobalContractCache::new(GLOBAL_CONTRACT_CACHE_SIZE_FOR_TEST),
+        );
         Ok(diff)
     }
 
@@ -120,7 +139,10 @@ impl StarknetState {
             CachedState::create_transactional(&mut self.state),
             GlobalContractCache::new(GLOBAL_CONTRACT_CACHE_SIZE_FOR_TEST),
         );
-        let diff = StateDiff::generate(&mut transactional_state, &mut transactional_rpc_contract_classes)?;
+        let diff = StateDiff::generate(
+            &mut transactional_state,
+            &mut transactional_rpc_contract_classes,
+        )?;
         Ok(diff)
     }
 
@@ -134,7 +156,10 @@ impl StarknetState {
         Ok(diff)
     }
 
-    pub fn assert_contract_deployed(&mut self, contract_address: ContractAddress) -> DevnetResult<()> {
+    pub fn assert_contract_deployed(
+        &mut self,
+        contract_address: ContractAddress,
+    ) -> DevnetResult<()> {
         if !self.is_contract_deployed(contract_address)? {
             return Err(Error::ContractNotFound);
         }
@@ -176,7 +201,10 @@ impl StarknetState {
     pub fn clone_historic(&self) -> Self {
         let historic_state = self.historic_state.as_ref().unwrap().clone();
         Self {
-            state: CachedState::new(historic_state, GlobalContractCache::new(GLOBAL_CONTRACT_CACHE_SIZE_FOR_TEST)),
+            state: CachedState::new(
+                historic_state,
+                GlobalContractCache::new(GLOBAL_CONTRACT_CACHE_SIZE_FOR_TEST),
+            ),
             rpc_contract_classes: self.rpc_contract_classes.clone(),
             historic_state: Some(self.historic_state.as_ref().unwrap().clone()),
         }
@@ -221,14 +249,19 @@ impl State for StarknetState {
         class_hash: starknet_api::core::ClassHash,
         compiled_class_hash: starknet_api::core::CompiledClassHash,
     ) -> blockifier::state::state_api::StateResult<()> {
-        self.state.set_compiled_class_hash(class_hash, compiled_class_hash)
+        self.state
+            .set_compiled_class_hash(class_hash, compiled_class_hash)
     }
 
     fn to_state_diff(&mut self) -> blockifier::state::cached_state::CommitmentStateDiff {
         self.state.to_state_diff()
     }
 
-    fn add_visited_pcs(&mut self, class_hash: starknet_api::core::ClassHash, pcs: &std::collections::HashSet<usize>) {
+    fn add_visited_pcs(
+        &mut self,
+        class_hash: starknet_api::core::ClassHash,
+        pcs: &std::collections::HashSet<usize>,
+    ) {
         self.state.add_visited_pcs(class_hash, pcs)
     }
 }
@@ -259,7 +292,9 @@ impl blockifier::state::state_api::StateReader for StarknetState {
     fn get_compiled_contract_class(
         &mut self,
         class_hash: starknet_api::core::ClassHash,
-    ) -> blockifier::state::state_api::StateResult<blockifier::execution::contract_class::ContractClass> {
+    ) -> blockifier::state::state_api::StateResult<
+        blockifier::execution::contract_class::ContractClass,
+    > {
         self.state.get_compiled_contract_class(class_hash)
     }
 
@@ -293,35 +328,52 @@ impl CustomStateReader for StarknetState {
 
 impl CustomState for StarknetState {
     /// writes directly to the most underlying state, skipping cache
-    fn predeclare_contract_class(&mut self, class_hash: ClassHash, contract_class: ContractClass) -> DevnetResult<()> {
+    fn predeclare_contract_class(
+        &mut self,
+        class_hash: ClassHash,
+        contract_class: ContractClass,
+    ) -> DevnetResult<()> {
         let compiled_class = contract_class.clone().try_into()?;
 
         if let ContractClass::Cairo1(cairo_lang_contract_class) = &contract_class {
-            let casm_json = usc::compile_contract(
-                serde_json::to_value(cairo_lang_contract_class)
-                    .map_err(|err| Error::SerializationError { origin: err.to_string() })?,
-            )
-            .map_err(|_| Error::SierraCompilationError)?;
+            let casm_json =
+                usc::compile_contract(serde_json::to_value(cairo_lang_contract_class).map_err(
+                    |err| Error::SerializationError {
+                        origin: err.to_string(),
+                    },
+                )?)
+                .map_err(|_| Error::SierraCompilationError)?;
 
             let casm_hash = Felt::from(casm_hash(casm_json)?);
 
-            self.state.state.set_compiled_class_hash(class_hash.into(), casm_hash.into())?;
+            self.state
+                .state
+                .set_compiled_class_hash(class_hash.into(), casm_hash.into())?;
         };
 
-        self.state.state.set_contract_class(class_hash.into(), compiled_class)?;
-        self.rpc_contract_classes.insert_and_commit(class_hash, contract_class);
+        self.state
+            .state
+            .set_contract_class(class_hash.into(), compiled_class)?;
+        self.rpc_contract_classes
+            .insert_and_commit(class_hash, contract_class);
         Ok(())
     }
 
-    fn declare_contract_class(&mut self, class_hash: ClassHash, contract_class: ContractClass) -> DevnetResult<()> {
+    fn declare_contract_class(
+        &mut self,
+        class_hash: ClassHash,
+        contract_class: ContractClass,
+    ) -> DevnetResult<()> {
         let compiled_class = contract_class.clone().try_into()?;
 
         if let ContractClass::Cairo1(cairo_lang_contract_class) = &contract_class {
-            let casm_json = usc::compile_contract(
-                serde_json::to_value(cairo_lang_contract_class)
-                    .map_err(|err| Error::SerializationError { origin: err.to_string() })?,
-            )
-            .map_err(|_| Error::SierraCompilationError)?;
+            let casm_json =
+                usc::compile_contract(serde_json::to_value(cairo_lang_contract_class).map_err(
+                    |err| Error::SerializationError {
+                        origin: err.to_string(),
+                    },
+                )?)
+                .map_err(|_| Error::SierraCompilationError)?;
 
             let casm_hash = Felt::from(casm_hash(casm_json)?);
             self.set_compiled_class_hash(class_hash.into(), casm_hash.into())?;
@@ -332,7 +384,14 @@ impl CustomState for StarknetState {
         Ok(())
     }
 
-    fn predeploy_contract(&mut self, contract_address: ContractAddress, class_hash: ClassHash) -> DevnetResult<()> {
-        self.state.state.set_class_hash_at(contract_address.try_into()?, class_hash.into()).map_err(|e| e.into())
+    fn predeploy_contract(
+        &mut self,
+        contract_address: ContractAddress,
+        class_hash: ClassHash,
+    ) -> DevnetResult<()> {
+        self.state
+            .state
+            .set_class_hash_at(contract_address.try_into()?, class_hash.into())
+            .map_err(|e| e.into())
     }
 }

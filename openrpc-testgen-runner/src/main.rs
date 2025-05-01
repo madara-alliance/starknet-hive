@@ -18,7 +18,9 @@ pub mod args;
 #[tokio::main]
 #[allow(unused_variables, unused_mut)]
 async fn main() {
-    tracing_subscriber::fmt().with_max_level(tracing::Level::INFO).init();
+    tracing_subscriber::fmt()
+        .with_max_level(tracing::Level::INFO)
+        .init();
 
     let args = Args::parse();
     let mut failed_tests: HashMap<String, HashMap<String, String>> = HashMap::new(); // Suite -> {TestName -> ErrorMessage}
@@ -36,10 +38,7 @@ async fn main() {
                         account_class_hash: args.account_class_hash.clone(),
                     };
                     if let Err(e) = TestSuiteOpenRpc::run(&suite_openrpc_input).await {
-                        if let openrpc_testgen::utils::v7::endpoints::errors::OpenRpcTestGenError::TestSuiteFailure {
-                            failed_tests: suite_failed_tests,
-                        } = e
-                        {
+                        if let openrpc_testgen::utils::v7::endpoints::errors::OpenRpcTestGenError::TestSuiteFailure { failed_tests: suite_failed_tests } = e {
                             failed_tests.insert("OpenRpc".to_string(), suite_failed_tests);
                         } else {
                             error!("Error while running TestSuiteOpenRpc: {}", e);
@@ -62,10 +61,7 @@ async fn main() {
                         account_class_hash: args.account_class_hash.clone(),
                     };
                     if let Err(e) = TestSuiteKatana::run(&suite_katana_input).await {
-                        if let openrpc_testgen::utils::v7::endpoints::errors::OpenRpcTestGenError::TestSuiteFailure {
-                            failed_tests: suite_failed_tests,
-                        } = e
-                        {
+                        if let openrpc_testgen::utils::v7::endpoints::errors::OpenRpcTestGenError::TestSuiteFailure { failed_tests: suite_failed_tests } = e {
                             failed_tests.insert("Katana".to_string(), suite_failed_tests);
                         } else {
                             error!("Error while running TestSuiteKatana: {}", e);
@@ -87,11 +83,10 @@ async fn main() {
                         udc_address: args.udc_address.clone(),
                         account_class_hash: args.account_class_hash.clone(),
                     };
-                    if let Err(e) = TestSuiteKatanaNoMining::run(&suite_katana_no_mining_input).await {
-                        if let openrpc_testgen::utils::v7::endpoints::errors::OpenRpcTestGenError::TestSuiteFailure {
-                            failed_tests: suite_failed_tests,
-                        } = e
-                        {
+                    if let Err(e) =
+                        TestSuiteKatanaNoMining::run(&suite_katana_no_mining_input).await
+                    {
+                        if let openrpc_testgen::utils::v7::endpoints::errors::OpenRpcTestGenError::TestSuiteFailure { failed_tests: suite_failed_tests } = e {
                             failed_tests.insert("KatanaNoMining".to_string(), suite_failed_tests);
                         } else {
                             error!("Error while running TestSuiteKatanaNoMining: {}", e);
@@ -114,10 +109,7 @@ async fn main() {
                         account_class_hash: args.account_class_hash.clone(),
                     };
                     if let Err(e) = TestSuiteKatanaNoFee::run(&suite_katana_no_fee_input).await {
-                        if let openrpc_testgen::utils::v7::endpoints::errors::OpenRpcTestGenError::TestSuiteFailure {
-                            failed_tests: suite_failed_tests,
-                        } = e
-                        {
+                        if let openrpc_testgen::utils::v7::endpoints::errors::OpenRpcTestGenError::TestSuiteFailure { failed_tests: suite_failed_tests } = e {
                             failed_tests.insert("KatanaNoFee".to_string(), suite_failed_tests);
                         } else {
                             error!("Error while running TestSuiteKatanaNoFee: {}", e);
@@ -132,20 +124,20 @@ async fn main() {
             Suite::KatanaNoAccountValidation => {
                 #[cfg(feature = "katana_no_account_validation")]
                 {
-                    let suite_katana_no_account_validation_input = SetupInputKatanaNoAccountValidation {
-                        urls: args.urls.clone(),
-                        paymaster_account_address: args.paymaster_account_address.clone(),
-                        paymaster_private_key: args.paymaster_private_key.clone(),
-                        udc_address: args.udc_address.clone(),
-                        account_class_hash: args.account_class_hash.clone(),
-                    };
-                    if let Err(e) =
-                        TestSuiteKatanaNoAccountValidation::run(&suite_katana_no_account_validation_input).await
+                    let suite_katana_no_account_validation_input =
+                        SetupInputKatanaNoAccountValidation {
+                            urls: args.urls.clone(),
+                            paymaster_account_address: args.paymaster_account_address.clone(),
+                            paymaster_private_key: args.paymaster_private_key.clone(),
+                            udc_address: args.udc_address.clone(),
+                            account_class_hash: args.account_class_hash.clone(),
+                        };
+                    if let Err(e) = TestSuiteKatanaNoAccountValidation::run(
+                        &suite_katana_no_account_validation_input,
+                    )
+                    .await
                     {
-                        if let openrpc_testgen::utils::v7::endpoints::errors::OpenRpcTestGenError::TestSuiteFailure {
-                            failed_tests: suite_failed_tests,
-                        } = e
-                        {
+                        if let openrpc_testgen::utils::v7::endpoints::errors::OpenRpcTestGenError::TestSuiteFailure { failed_tests: suite_failed_tests } = e {
                             failed_tests.insert("KatanaNoAccountValidation".to_string(), suite_failed_tests);
                         } else {
                             error!("Error while running TestSuiteKatanaNoAccountValidation: {}", e);

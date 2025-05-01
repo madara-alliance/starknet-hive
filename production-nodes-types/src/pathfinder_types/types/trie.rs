@@ -27,10 +27,18 @@ pub enum RootIndexUpdate {
 
 #[derive(Clone, Debug)]
 pub enum Node {
-    Binary { left: NodeRef, right: NodeRef },
-    Edge { child: NodeRef, path: BitVec<u8, Msb0> },
+    Binary {
+        left: NodeRef,
+        right: NodeRef,
+    },
+    Edge {
+        child: NodeRef,
+        path: BitVec<u8, Msb0>,
+    },
     LeafBinary,
-    LeafEdge { path: BitVec<u8, Msb0> },
+    LeafEdge {
+        path: BitVec<u8, Msb0>,
+    },
 }
 
 #[derive(Copy, Clone, Debug)]

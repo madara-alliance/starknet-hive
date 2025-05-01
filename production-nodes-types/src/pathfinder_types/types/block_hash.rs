@@ -11,7 +11,9 @@ use crypto_utils::hash::{poseidon_hash_many, PoseidonHasher};
 // use starknet_types_core::hash::{poseidon_hash_many, PoseidonHasher};
 // use starknet_types_core::hash::{poseidon_hash_many, PoseidonHasher};
 use starknet_types_core::hash::{Poseidon, StarkHash};
-use starknet_types_rpc::v0_7_1::starknet_api_openrpc::{DeclareTxn, DeployAccountTxn, InvokeTxn, Txn, TxnWithHash};
+use starknet_types_rpc::v0_7_1::starknet_api_openrpc::{
+    DeclareTxn, DeployAccountTxn, InvokeTxn, Txn, TxnWithHash,
+};
 
 use super::transaction::TransactionOrEventTree;
 use sha3::Digest;
@@ -27,7 +29,10 @@ impl BlockHeaderData {
             sequencer_address: header.sequencer_address,
             state_commitment: header.state_commitment,
             transaction_commitment: header.transaction_commitment,
-            transaction_count: header.transaction_count.try_into().expect("ptr size is 64bits"),
+            transaction_count: header
+                .transaction_count
+                .try_into()
+                .expect("ptr size is 64bits"),
             event_commitment: header.event_commitment,
             event_count: header.event_count.try_into().expect("ptr size is 64bits"),
             starknet_version: header.starknet_version.to_string(),
@@ -100,7 +105,10 @@ pub fn compute_final_hash(header: &BlockHeaderData) -> Result<Felt, io::Error> {
 pub fn calculate_transaction_commitment(transactions: &[TxnWithHash<Felt>]) -> Result<Felt> {
     use rayon::prelude::*;
 
-    let final_hashes = transactions.par_iter().map(calculate_transaction_hash_with_signature).collect();
+    let final_hashes = transactions
+        .par_iter()
+        .map(calculate_transaction_hash_with_signature)
+        .collect();
 
     calculate_commitment_root::<PoseidonHash>(final_hashes)
 }
@@ -145,7 +153,11 @@ pub fn calculate_receipt_commitment(receipts: &[super::receipt::Receipt]) -> Res
                 // L1 gas consumed
                 receipt.execution_resources.total_gas_consumed.l1_gas.into(),
                 // L1 data gas consumed
-                receipt.execution_resources.total_gas_consumed.l1_data_gas.into(),
+                receipt
+                    .execution_resources
+                    .total_gas_consumed
+                    .l1_data_gas
+                    .into(),
             ])
             // .into()
         })
@@ -161,7 +173,9 @@ fn calculate_commitment_root<H: FeltHash>(hashes: Vec<Felt>) -> Result<Felt> {
         .into_iter()
         .enumerate()
         .try_for_each(|(idx, final_hash)| {
-            let idx: u64 = idx.try_into().expect("too many transactions while calculating commitment");
+            let idx: u64 = idx
+                .try_into()
+                .expect("too many transactions while calculating commitment");
             tree.set(idx, final_hash)
         })
         .context("Building transaction commitment tree")?;
@@ -206,7 +220,9 @@ fn calculate_transaction_hash_with_signature(tx: &TxnWithHash<Felt>) -> Felt {
 /// The event commitment is the root of the Patricia Merkle tree with height 64
 /// constructed by adding the (event_index, event_hash) key-value pairs to the
 /// tree and computing the root hash.
-pub fn calculate_event_commitment(transaction_events: &Vec<(TransactionHash, Vec<Event>)>) -> Result<Felt> {
+pub fn calculate_event_commitment(
+    transaction_events: &Vec<(TransactionHash, Vec<Event>)>,
+) -> Result<Felt> {
     use rayon::prelude::*;
 
     let event_hashes = transaction_events
@@ -221,7 +237,11 @@ pub fn calculate_event_commitment(transaction_events: &Vec<(TransactionHash, Vec
 /// Calculate the hash of an event.
 /// [Reference code from StarkWare](https://github.com/starkware-libs/starknet-api/blob/5565e5282f5fead364a41e49c173940fd83dee00/src/block_hash/event_commitment.rs#L33).
 fn calculate_event_hash(event: &Event, transaction_hash: Felt) -> Felt {
-    let mut data = vec![event.from_address, transaction_hash, (event.keys.len() as u64).into()];
+    let mut data = vec![
+        event.from_address,
+        transaction_hash,
+        (event.keys.len() as u64).into(),
+    ];
 
     // Add each key to the vector
     data.extend(event.keys.iter().copied());

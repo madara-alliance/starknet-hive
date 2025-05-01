@@ -35,7 +35,7 @@ impl<'de> DeserializeAs<'de, Felt> for UfeHex {
     }
 }
 
-impl Visitor<'_> for UfeHexVisitor {
+impl<'de> Visitor<'de> for UfeHexVisitor {
     type Value = Felt;
 
     fn expecting(&self, formatter: &mut Formatter) -> fmt::Result {
@@ -71,7 +71,7 @@ impl<'de> DeserializeAs<'de, Option<Felt>> for UfeHexOption {
     }
 }
 
-impl Visitor<'_> for UfeHexOptionVisitor {
+impl<'de> Visitor<'de> for UfeHexOptionVisitor {
     type Value = Option<Felt>;
 
     fn expecting(&self, formatter: &mut Formatter) -> fmt::Result {
@@ -114,7 +114,7 @@ impl<'de> DeserializeAs<'de, Option<Felt>> for UfePendingBlockHash {
     }
 }
 
-impl Visitor<'_> for UfePendingBlockHashVisitor {
+impl<'de> Visitor<'de> for UfePendingBlockHashVisitor {
     type Value = Option<Felt>;
 
     fn expecting(&self, formatter: &mut Formatter) -> fmt::Result {

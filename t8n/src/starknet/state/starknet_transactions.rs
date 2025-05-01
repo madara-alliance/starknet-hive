@@ -8,10 +8,12 @@ use starknet_devnet_types::{
     felt::{BlockHash, Felt, TransactionHash},
     messaging::{MessageToL1, MessageToL2, OrderedMessageToL1},
     rpc::{
-        transaction_receipt::{DeployTransactionReceipt, FeeAmount, FeeInUnits, TransactionReceipt},
+        transaction_receipt::{
+            DeployTransactionReceipt, FeeAmount, FeeInUnits, TransactionReceipt,
+        },
         transactions::{
-            DeclareTransaction, DeployAccountTransaction, InvokeTransaction, Transaction, TransactionTrace,
-            TransactionType, TransactionWithHash,
+            DeclareTransaction, DeployAccountTransaction, InvokeTransaction, Transaction,
+            TransactionTrace, TransactionType, TransactionWithHash,
         },
     },
 };
@@ -34,7 +36,11 @@ impl Serialize for StarknetTransactions {
     where
         S: Serializer,
     {
-        let inner_vec: Vec<&TransactionWithHash> = self.0.values().map(|transaction| &transaction.inner).collect();
+        let inner_vec: Vec<&TransactionWithHash> = self
+            .0
+            .values()
+            .map(|transaction| &transaction.inner)
+            .collect();
         inner_vec.serialize(serializer)
     }
 }
@@ -97,7 +103,10 @@ impl StarknetTransaction {
             finality_status: TransactionFinalityStatus::AcceptedOnL2,
             execution_result: match execution_info.is_reverted() {
                 true => ExecutionResult::Reverted {
-                    reason: execution_info.revert_error.clone().unwrap_or("No revert error".to_string()),
+                    reason: execution_info
+                        .revert_error
+                        .clone()
+                        .unwrap_or("No revert error".to_string()),
                 },
                 false => ExecutionResult::Succeeded,
             },
@@ -141,11 +150,15 @@ impl StarknetTransaction {
         for inner_call_info in call_infos.into_iter().flatten() {
             let mut not_sorted_events = get_blockifier_events_recursively(inner_call_info);
             not_sorted_events.sort_by_key(|(ordered_event, _)| ordered_event.order);
-            events.extend(not_sorted_events.into_iter().map(|(ordered_event, address)| Event {
-                from_address: address,
-                keys: ordered_event.keys,
-                data: ordered_event.data,
-            }));
+            events.extend(
+                not_sorted_events
+                    .into_iter()
+                    .map(|(ordered_event, address)| Event {
+                        from_address: address,
+                        keys: ordered_event.keys,
+                        data: ordered_event.data,
+                    }),
+            );
         }
 
         events
@@ -156,7 +169,9 @@ impl StarknetTransaction {
     ///
     /// # Arguments
     /// * `events` - The events that will be searched
-    pub fn get_deployed_address_from_events(events: &[Event]) -> DevnetResult<Option<ContractAddress>> {
+    pub fn get_deployed_address_from_events(
+        events: &[Event],
+    ) -> DevnetResult<Option<ContractAddress>> {
         let contract_deployed_event_key =
             Felt::from(get_selector_from_name("ContractDeployed").map_err(|_| Error::FormatError)?);
 
@@ -164,7 +179,9 @@ impl StarknetTransaction {
 
         let deployed_address = events
             .iter()
-            .find(|e| e.from_address == udc_address && e.keys.contains(&contract_deployed_event_key))
+            .find(|e| {
+                e.from_address == udc_address && e.keys.contains(&contract_deployed_event_key)
+            })
             .map(|e| e.data.first().cloned().unwrap_or_default());
 
         Ok(if let Some(contract_address) = deployed_address {
@@ -183,7 +200,9 @@ impl StarknetTransaction {
         // L1 Handler transactions are in WEI
         // V3 transactions are in STRK(FRI)
         // Other transactions versions are in ETH(WEI)
-        let fee_amount = FeeAmount { amount: self.execution_info.actual_fee };
+        let fee_amount = FeeAmount {
+            amount: self.execution_info.actual_fee,
+        };
         let actual_fee_in_units = match self.inner.transaction {
             Transaction::L1Handler(_) => FeeInUnits::WEI(fee_amount),
             Transaction::Declare(DeclareTransaction::V3(_))
@@ -211,11 +230,15 @@ impl StarknetTransaction {
                 }))
             }
             Transaction::Invoke(_) => {
-                let deployed_address = StarknetTransaction::get_deployed_address_from_events(&transaction_events)?;
+                let deployed_address =
+                    StarknetTransaction::get_deployed_address_from_events(&transaction_events)?;
 
                 let receipt = if let Some(contract_address) = deployed_address {
                     common_receipt.r#type = TransactionType::Deploy;
-                    TransactionReceipt::Deploy(DeployTransactionReceipt { common: common_receipt, contract_address })
+                    TransactionReceipt::Deploy(DeployTransactionReceipt {
+                        common: common_receipt,
+                        contract_address,
+                    })
                 } else {
                     TransactionReceipt::Common(common_receipt)
                 };
@@ -250,13 +273,15 @@ impl StarknetTransaction {
             // caller address.
             let from_address = call_info.call.storage_address;
 
-            messages.extend(call_info.execution.l2_to_l1_messages.iter().map(|m| OrderedMessageToL1 {
-                order: m.order,
-                message: MessageToL1 {
-                    to_address: m.message.to_address.into(),
-                    from_address: from_address.into(),
-                    payload: m.message.payload.0.iter().map(|p| (*p).into()).collect(),
-                },
+            messages.extend(call_info.execution.l2_to_l1_messages.iter().map(|m| {
+                OrderedMessageToL1 {
+                    order: m.order,
+                    message: MessageToL1 {
+                        to_address: m.message.to_address.into(),
+                        from_address: from_address.into(),
+                        payload: m.message.payload.0.iter().map(|p| (*p).into()).collect(),
+                    },
+                }
             }));
 
             call_info.inner_calls.iter().for_each(|inner_call| {

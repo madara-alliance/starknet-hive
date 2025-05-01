@@ -24,12 +24,18 @@ pub struct Event {
     pub keys: Vec<Felt>,
 }
 
-serde_conv!(EventDataAsDecimalStr, Felt, |serialize_me: &Felt| starkhash_to_dec_str(&serialize_me), |s: &str| {
-    starkhash_from_dec_str(s)
-});
-serde_conv!(EventKeyAsDecimalStr, Felt, |serialize_me: &Felt| starkhash_to_dec_str(&serialize_me), |s: &str| {
-    starkhash_from_dec_str(s)
-});
+serde_conv!(
+    EventDataAsDecimalStr,
+    Felt,
+    |serialize_me: &Felt| starkhash_to_dec_str(&serialize_me),
+    |s: &str| starkhash_from_dec_str(s)
+);
+serde_conv!(
+    EventKeyAsDecimalStr,
+    Felt,
+    |serialize_me: &Felt| starkhash_to_dec_str(&serialize_me),
+    |s: &str| starkhash_from_dec_str(s)
+);
 
 /// A helper conversion function. Only use with __sequencer API related types__.
 fn starkhash_to_dec_str(h: &Felt) -> String {
@@ -67,7 +73,11 @@ pub fn extract_emmited_events(transaction_receipts: Vec<TransactionReceipt>) -> 
             TransactionReceipt::Deploy(tx_receipt) => {
                 events.push(EmittedEvent {
                     transaction_hash: Felt::from_hex_unchecked(
-                        tx_receipt.common.transaction_hash.to_prefixed_hex_str().as_str(),
+                        tx_receipt
+                            .common
+                            .transaction_hash
+                            .to_prefixed_hex_str()
+                            .as_str(),
                     ),
                     events: convert_events(tx_receipt.common.events.clone()),
                 });
@@ -75,7 +85,11 @@ pub fn extract_emmited_events(transaction_receipts: Vec<TransactionReceipt>) -> 
             TransactionReceipt::L1Handler(tx_receipt) => {
                 events.push(EmittedEvent {
                     transaction_hash: Felt::from_hex_unchecked(
-                        tx_receipt.common.transaction_hash.to_prefixed_hex_str().as_str(),
+                        tx_receipt
+                            .common
+                            .transaction_hash
+                            .to_prefixed_hex_str()
+                            .as_str(),
                     ),
                     events: convert_events(tx_receipt.common.events.clone()),
                 });
@@ -95,7 +109,8 @@ fn convert_events(old_events: Vec<DevnetEvent>) -> Vec<Event> {
                 .map(|felt| Felt::from_hex_unchecked(felt.to_prefixed_hex_str().as_str()))
                 .collect();
 
-            let new_from_address = Felt::from_hex_unchecked(event.from_address.to_prefixed_hex_str().as_str());
+            let new_from_address =
+                Felt::from_hex_unchecked(event.from_address.to_prefixed_hex_str().as_str());
 
             let new_keys: Vec<Felt> = event
                 .keys
@@ -103,7 +118,11 @@ fn convert_events(old_events: Vec<DevnetEvent>) -> Vec<Event> {
                 .map(|felt| Felt::from_hex_unchecked(felt.to_prefixed_hex_str().as_str()))
                 .collect();
 
-            Event { data: new_data, from_address: new_from_address, keys: new_keys }
+            Event {
+                data: new_data,
+                from_address: new_from_address,
+                keys: new_keys,
+            }
         })
         .collect()
 }

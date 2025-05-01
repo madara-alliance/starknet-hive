@@ -34,9 +34,15 @@ impl RunnableTrait for TestCase {
         let salt = Felt::from_bytes_be(&salt_buffer);
         let unique = true;
         let constructor_calldata = vec![];
-        let estimate_fee = factory.deploy_v3(constructor_calldata.clone(), salt, unique).estimate_fee().await?;
+        let estimate_fee = factory
+            .deploy_v3(constructor_calldata.clone(), salt, unique)
+            .estimate_fee()
+            .await?;
 
-        let invoke_result = factory.deploy_v3(constructor_calldata.clone(), salt, unique).send().await?;
+        let invoke_result = factory
+            .deploy_v3(constructor_calldata.clone(), salt, unique)
+            .send()
+            .await?;
 
         wait_for_sent_transaction(
             invoke_result.transaction_hash,
@@ -56,20 +62,30 @@ impl RunnableTrait for TestCase {
 
         let receipt = match receipt? {
             TxnReceipt::Invoke(receipt) => receipt,
-            _ => return Err(OpenRpcTestGenError::CallError(CallError::UnexpectedReceiptType)),
+            _ => {
+                return Err(OpenRpcTestGenError::CallError(
+                    CallError::UnexpectedReceiptType,
+                ))
+            }
         };
 
         let common_receipt_properties = receipt.common_receipt_properties;
         let actual_fee = common_receipt_properties.actual_fee;
         assert_result!(
             actual_fee.amount == estimate_fee.overall_fee,
-            format!("Actual fee expected: {:?}, actual: {:?}", estimate_fee.overall_fee, actual_fee.amount)
+            format!(
+                "Actual fee expected: {:?}, actual: {:?}",
+                estimate_fee.overall_fee, actual_fee.amount
+            )
         );
 
         let expected_unit = PriceUnit::Fri;
         assert_result!(
             actual_fee.unit == expected_unit,
-            format!("Actual fee unit expected: {:?}, actual: {:?}", expected_unit, actual_fee.unit)
+            format!(
+                "Actual fee unit expected: {:?}, actual: {:?}",
+                expected_unit, actual_fee.unit
+            )
         );
 
         let expected_finality_status = TxnFinalityStatus::L2;
@@ -83,7 +99,10 @@ impl RunnableTrait for TestCase {
 
         assert_result!(
             common_receipt_properties.messages_sent.is_empty(),
-            format!("Expected no messages sent, actual: {:?}", common_receipt_properties.messages_sent)
+            format!(
+                "Expected no messages sent, actual: {:?}",
+                common_receipt_properties.messages_sent
+            )
         );
 
         assert_result!(
@@ -97,7 +116,9 @@ impl RunnableTrait for TestCase {
         let execution_status = match common_receipt_properties.anon {
             starknet_types_rpc::Anonymous::Successful(status) => status.execution_status,
             _ => {
-                return Err(OpenRpcTestGenError::Other("Unexpected execution status type.".to_string()));
+                return Err(OpenRpcTestGenError::Other(
+                    "Unexpected execution status type.".to_string(),
+                ));
             }
         };
 
@@ -105,21 +126,35 @@ impl RunnableTrait for TestCase {
 
         assert_result!(
             execution_status == expected_execution_status,
-            format!("Expected execution status to be {:?}, got {:?}", expected_execution_status, execution_status)
+            format!(
+                "Expected execution status to be {:?}, got {:?}",
+                expected_execution_status, execution_status
+            )
         );
 
         let events = common_receipt_properties.events.clone();
-        assert_result!(events.len() == 2, format!("Expected 2 event, got {}", events.len()));
+        assert_result!(
+            events.len() == 2,
+            format!("Expected 2 event, got {}", events.len())
+        );
 
-        let first_event = events.first().ok_or_else(|| OpenRpcTestGenError::Other("Event not found".to_string()))?;
+        let first_event = events
+            .first()
+            .ok_or_else(|| OpenRpcTestGenError::Other("Event not found".to_string()))?;
         assert_result!(
             first_event.from_address == UDC_ADDRESS,
-            format!("Expected event from address to be {:?}, got {:?}", UDC_ADDRESS, first_event.from_address)
+            format!(
+                "Expected event from address to be {:?}, got {:?}",
+                UDC_ADDRESS, first_event.from_address
+            )
         );
 
         assert_result!(
             first_event.data.len() == 6,
-            format!("Expected first event to contain 6 data items, got {}", first_event.data.len())
+            format!(
+                "Expected first event to contain 6 data items, got {}",
+                first_event.data.len()
+            )
         );
 
         let first_event_data_second = *first_event
@@ -129,7 +164,10 @@ impl RunnableTrait for TestCase {
 
         assert_result!(
             first_event_data_second == sender_address,
-            format!("Expected second event data to be {:?}, got {:?}", sender_address, first_event_data_second)
+            format!(
+                "Expected second event data to be {:?}, got {:?}",
+                sender_address, first_event_data_second
+            )
         );
 
         let first_event_data_third = *first_event
@@ -143,7 +181,10 @@ impl RunnableTrait for TestCase {
         };
         assert_result!(
             first_event_data_third == unique_hex,
-            format!("Expected third event data to be {:?}, got {:?}", unique_hex, first_event_data_third)
+            format!(
+                "Expected third event data to be {:?}, got {:?}",
+                unique_hex, first_event_data_third
+            )
         );
 
         let first_event_data_fourth = *first_event
@@ -153,14 +194,18 @@ impl RunnableTrait for TestCase {
         let expected_class_hash = test_input.declaration_result.class_hash;
         assert_result!(
             first_event_data_fourth == expected_class_hash,
-            format!("Expected fourth event data to be {:?}, got {:?}", expected_class_hash, first_event_data_fourth)
+            format!(
+                "Expected fourth event data to be {:?}, got {:?}",
+                expected_class_hash, first_event_data_fourth
+            )
         );
 
         let first_event_data_fifth = *first_event
             .data
             .get(4)
             .ok_or_else(|| OpenRpcTestGenError::Other("Missing fifth event data".to_string()))?;
-        let constructor_calldata_len_felt = Felt::from_dec_str(&constructor_calldata.len().to_string())?;
+        let constructor_calldata_len_felt =
+            Felt::from_dec_str(&constructor_calldata.len().to_string())?;
         assert_result!(
             first_event_data_fifth == constructor_calldata_len_felt,
             format!(
@@ -176,7 +221,10 @@ impl RunnableTrait for TestCase {
 
         assert_result!(
             first_event_data_sixth == salt,
-            format!("Expected sixth event data to be {:?}, got {:?}", salt, first_event_data_sixth)
+            format!(
+                "Expected sixth event data to be {:?}, got {:?}",
+                salt, first_event_data_sixth
+            )
         );
 
         let first_event_keys_first = *first_event
@@ -200,7 +248,10 @@ impl RunnableTrait for TestCase {
 
         assert_result!(
             second_event.from_address == STRK_ADDRESS,
-            format!("Expected event from address to be {:?}, got {:?}", STRK_ADDRESS, second_event.from_address)
+            format!(
+                "Expected event from address to be {:?}, got {:?}",
+                STRK_ADDRESS, second_event.from_address
+            )
         );
 
         let second_event_data_first = *second_event
@@ -223,7 +274,11 @@ impl RunnableTrait for TestCase {
 
         assert_result!(
             second_event_data_second == Felt::ZERO,
-            format!("Invalid fee amount in event data, expected {}, got {:?}", Felt::ZERO, second_event_data_second)
+            format!(
+                "Invalid fee amount in event data, expected {}, got {:?}",
+                Felt::ZERO,
+                second_event_data_second
+            )
         );
 
         let second_event_keys_first = *second_event

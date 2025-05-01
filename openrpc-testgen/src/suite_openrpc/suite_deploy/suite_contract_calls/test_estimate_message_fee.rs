@@ -41,17 +41,26 @@ impl RunnableTrait for TestCase {
         let expected_price_unit = PriceUnit::Wei;
         assert_result!(
             estimate.unit == expected_price_unit,
-            format!("Estimate fee unit expected: {:?}, actual: {:?}", expected_price_unit, estimate.unit)
+            format!(
+                "Estimate fee unit expected: {:?}, actual: {:?}",
+                expected_price_unit, estimate.unit
+            )
         );
 
         assert_result!(
             estimate.data_gas_price == BLOB_GAS_PRICE,
-            format!("Estimate data gas price expected: {:?}, actual: {:?}", BLOB_GAS_PRICE, estimate.data_gas_price)
+            format!(
+                "Estimate data gas price expected: {:?}, actual: {:?}",
+                BLOB_GAS_PRICE, estimate.data_gas_price
+            )
         );
 
         assert_result!(
             estimate.gas_price == GAS_PRICE,
-            format!("Estimate fee data gas price expected: {:?}, actual: {:?}", GAS_PRICE, estimate.gas_price)
+            format!(
+                "Estimate fee data gas price expected: {:?}, actual: {:?}",
+                GAS_PRICE, estimate.gas_price
+            )
         );
 
         let data_fee = estimate.data_gas_consumed * estimate.data_gas_price;
@@ -62,7 +71,10 @@ impl RunnableTrait for TestCase {
 
         assert_result!(
             overall_fee == estimate.overall_fee,
-            format!("Estimate fee overall fee expected: {:?}, actual: {:?}", overall_fee, estimate.overall_fee)
+            format!(
+                "Estimate fee overall fee expected: {:?}, actual: {:?}",
+                overall_fee, estimate.overall_fee
+            )
         );
 
         Ok(Self {})

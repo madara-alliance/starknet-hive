@@ -3,10 +3,11 @@ use serde::{Deserialize, Serialize};
 use starknet_types_core::felt::Felt;
 use starknet_types_rpc::{
     v0_7_1::{
-        AddInvokeTransactionResult, BlockHashAndNumber, BlockId, BroadcastedTxn, ClassAndTxnHash, ContractAndTxnHash,
-        ContractClass, EventFilterWithPageRequest, EventsChunk, FeeEstimate, FunctionCall,
-        MaybePendingBlockWithTxHashes, MaybePendingBlockWithTxs, MaybePendingStateUpdate, MsgFromL1,
-        SimulateTransactionsResult, SimulationFlag, SyncingStatus, TraceBlockTransactionsResult, TransactionTrace, Txn,
+        AddInvokeTransactionResult, BlockHashAndNumber, BlockId, BroadcastedTxn, ClassAndTxnHash,
+        ContractAndTxnHash, ContractClass, EventFilterWithPageRequest, EventsChunk, FeeEstimate,
+        FunctionCall, MaybePendingBlockWithTxHashes, MaybePendingBlockWithTxs,
+        MaybePendingStateUpdate, MsgFromL1, SimulateTransactionsResult, SimulationFlag,
+        SyncingStatus, TraceBlockTransactionsResult, TransactionTrace, Txn,
         TxnFinalityAndExecutionStatus, TxnReceipt,
     },
     BlockWithReceipts,
@@ -144,7 +145,9 @@ pub trait Provider {
         block_id: BlockId<Felt>,
     ) -> impl std::future::Future<Output = Result<FeeEstimate<Felt>, ProviderError>> {
         async move {
-            let mut result = self.estimate_fee(vec![request], simulation_flags, block_id).await?;
+            let mut result = self
+                .estimate_fee(vec![request], simulation_flags, block_id)
+                .await?;
 
             if result.len() == 1 {
                 // Unwrapping here is safe because we already checked the length
@@ -173,7 +176,9 @@ pub trait Provider {
     fn chain_id(&self) -> impl std::future::Future<Output = Result<Felt, ProviderError>>;
 
     /// Returns an object about the sync status, or false if the node is not synching
-    fn syncing(&self) -> impl std::future::Future<Output = Result<SyncingStatus<Felt>, ProviderError>>;
+    fn syncing(
+        &self,
+    ) -> impl std::future::Future<Output = Result<SyncingStatus<Felt>, ProviderError>>;
 
     /// Returns all events matching the given filter
     fn get_events(
@@ -238,9 +243,12 @@ pub trait Provider {
         block_id: BlockId<Felt>,
         transaction: BroadcastedTxn<Felt>,
         simulation_flags: Vec<SimulationFlag>,
-    ) -> impl std::future::Future<Output = Result<SimulateTransactionsResult<Felt>, ProviderError>> {
+    ) -> impl std::future::Future<Output = Result<SimulateTransactionsResult<Felt>, ProviderError>>
+    {
         async move {
-            let mut result = self.simulate_transactions(block_id, vec![transaction], simulation_flags).await?;
+            let mut result = self
+                .simulate_transactions(block_id, vec![transaction], simulation_flags)
+                .await?;
 
             if result.len() == 1 {
                 // Unwrapping here is safe becuase we already checked length

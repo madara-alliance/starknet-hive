@@ -6,10 +6,12 @@ use crypto_utils::curve::signer::compute_hash_on_elements;
 use starknet_types_core::felt::Felt;
 use starknet_types_core::hash::{Poseidon, StarkHash};
 use starknet_types_rpc::v0_7_1::{
-    BroadcastedDeclareTxn, BroadcastedDeclareTxnV2, BroadcastedDeclareTxnV3, BroadcastedTxn, ClassAndTxnHash,
-    ContractClass, FeeEstimate, SimulateTransactionsResult, SimulationFlag,
+    BroadcastedDeclareTxn, BroadcastedDeclareTxnV2, BroadcastedDeclareTxnV3, BroadcastedTxn,
+    ClassAndTxnHash, ContractClass, FeeEstimate, SimulateTransactionsResult, SimulationFlag,
 };
-use starknet_types_rpc::{DaMode, MaybePendingBlockWithTxHashes, ResourceBounds, ResourceBoundsMapping};
+use starknet_types_rpc::{
+    DaMode, MaybePendingBlockWithTxHashes, ResourceBounds, ResourceBoundsMapping,
+};
 use std::sync::Arc;
 
 use super::{
@@ -18,26 +20,55 @@ use super::{
 };
 
 /// Cairo string for "declare"
-const PREFIX_DECLARE: Felt =
-    Felt::from_raw([191557713328401194, 18446744073709551615, 18446744073709551615, 17542456862011667323]);
+const PREFIX_DECLARE: Felt = Felt::from_raw([
+    191557713328401194,
+    18446744073709551615,
+    18446744073709551615,
+    17542456862011667323,
+]);
 
 /// 2 ^ 128 + 2
-const QUERY_VERSION_TWO: Felt = Felt::from_raw([576460752142433232, 18446744073709551584, 17407, 18446744073700081601]);
+const QUERY_VERSION_TWO: Felt = Felt::from_raw([
+    576460752142433232,
+    18446744073709551584,
+    17407,
+    18446744073700081601,
+]);
 impl<'a, A> DeclarationV2<'a, A> {
-    pub fn new(contract_class: Arc<ContractClass<Felt>>, compiled_class_hash: Felt, account: &'a A) -> Self {
-        Self { account, contract_class, compiled_class_hash, nonce: None, max_fee: None, fee_estimate_multiplier: 1.1 }
+    pub fn new(
+        contract_class: Arc<ContractClass<Felt>>,
+        compiled_class_hash: Felt,
+        account: &'a A,
+    ) -> Self {
+        Self {
+            account,
+            contract_class,
+            compiled_class_hash,
+            nonce: None,
+            max_fee: None,
+            fee_estimate_multiplier: 1.1,
+        }
     }
 
     pub fn nonce(self, nonce: Felt) -> Self {
-        Self { nonce: Some(nonce), ..self }
+        Self {
+            nonce: Some(nonce),
+            ..self
+        }
     }
 
     pub fn max_fee(self, max_fee: Felt) -> Self {
-        Self { max_fee: Some(max_fee), ..self }
+        Self {
+            max_fee: Some(max_fee),
+            ..self
+        }
     }
 
     pub fn fee_estimate_multiplier(self, fee_estimate_multiplier: f64) -> Self {
-        Self { fee_estimate_multiplier, ..self }
+        Self {
+            fee_estimate_multiplier,
+            ..self
+        }
     }
 
     /// Calling this function after manually specifying `nonce` and `max_fee` turns [DeclarationV2]
@@ -57,7 +88,7 @@ impl<'a, A> DeclarationV2<'a, A> {
         })
     }
 }
-impl<A> DeclarationV2<'_, A>
+impl<'a, A> DeclarationV2<'a, A>
 where
     A: ConnectedAccount + Sync,
 {
@@ -65,7 +96,11 @@ where
         // Resolves nonce
         let nonce = match self.nonce {
             Some(value) => value,
-            None => self.account.get_nonce().await.map_err(AccountError::Provider)?,
+            None => self
+                .account
+                .get_nonce()
+                .await
+                .map_err(AccountError::Provider)?,
         };
 
         self.estimate_fee_with_nonce(nonce).await
@@ -79,21 +114,32 @@ where
         // Resolves nonce
         let nonce = match self.nonce {
             Some(value) => value,
-            None => self.account.get_nonce().await.map_err(AccountError::Provider)?,
+            None => self
+                .account
+                .get_nonce()
+                .await
+                .map_err(AccountError::Provider)?,
         };
 
-        self.simulate_with_nonce(nonce, skip_validate, skip_fee_charge).await
+        self.simulate_with_nonce(nonce, skip_validate, skip_fee_charge)
+            .await
     }
 
     pub async fn send(&self) -> Result<ClassAndTxnHash<Felt>, AccountError<A::SignError>> {
         self.prepare().await?.send().await
     }
 
-    pub async fn prepare(&self) -> Result<PreparedDeclarationV2<'_, A>, AccountError<A::SignError>> {
+    pub async fn prepare(
+        &self,
+    ) -> Result<PreparedDeclarationV2<'a, A>, AccountError<A::SignError>> {
         // Resolves nonce
         let nonce = match self.nonce {
             Some(value) => value,
-            None => self.account.get_nonce().await.map_err(AccountError::Provider)?,
+            None => self
+                .account
+                .get_nonce()
+                .await
+                .map_err(AccountError::Provider)?,
         };
 
         // Resolves max_fee
@@ -111,7 +157,8 @@ where
                 }
 
                 // Convert the first 8 bytes to u64
-                let overall_fee_u64 = u64::from_le_bytes(overall_fee_bytes[..8].try_into().unwrap());
+                let overall_fee_u64 =
+                    u64::from_le_bytes(overall_fee_bytes[..8].try_into().unwrap());
 
                 // Perform necessary operations on overall_fee_u64 and convert to f64 then to u64
                 (((overall_fee_u64 as f64) * self.fee_estimate_multiplier) as u64).into()
@@ -129,7 +176,10 @@ where
         })
     }
 
-    async fn estimate_fee_with_nonce(&self, nonce: Felt) -> Result<FeeEstimate<Felt>, AccountError<A::SignError>> {
+    async fn estimate_fee_with_nonce(
+        &self,
+        nonce: Felt,
+    ) -> Result<FeeEstimate<Felt>, AccountError<A::SignError>> {
         let skip_signature = self.account.is_signer_interactive();
         let prepared = PreparedDeclarationV2 {
             account: self.account,
@@ -203,7 +253,11 @@ where
 }
 
 impl<'a, A> DeclarationV3<'a, A> {
-    pub fn new(contract_class: ContractClass<Felt>, compiled_class_hash: Felt, account: &'a A) -> Self {
+    pub fn new(
+        contract_class: ContractClass<Felt>,
+        compiled_class_hash: Felt,
+        account: &'a A,
+    ) -> Self {
         Self {
             account,
             contract_class,
@@ -217,23 +271,38 @@ impl<'a, A> DeclarationV3<'a, A> {
     }
 
     pub fn nonce(self, nonce: Felt) -> Self {
-        Self { nonce: Some(nonce), ..self }
+        Self {
+            nonce: Some(nonce),
+            ..self
+        }
     }
 
     pub fn gas(self, gas: u64) -> Self {
-        Self { gas: Some(gas), ..self }
+        Self {
+            gas: Some(gas),
+            ..self
+        }
     }
 
     pub fn gas_price(self, gas_price: u128) -> Self {
-        Self { gas_price: Some(gas_price), ..self }
+        Self {
+            gas_price: Some(gas_price),
+            ..self
+        }
     }
 
     pub fn gas_estimate_multiplier(self, gas_estimate_multiplier: f64) -> Self {
-        Self { gas_estimate_multiplier, ..self }
+        Self {
+            gas_estimate_multiplier,
+            ..self
+        }
     }
 
     pub fn gas_price_estimate_multiplier(self, gas_price_estimate_multiplier: f64) -> Self {
-        Self { gas_price_estimate_multiplier, ..self }
+        Self {
+            gas_price_estimate_multiplier,
+            ..self
+        }
     }
 
     /// Calling this function after manually specifying `nonce`, `gas` and `gas_price` turns
@@ -256,7 +325,7 @@ impl<'a, A> DeclarationV3<'a, A> {
     }
 }
 
-impl<A> DeclarationV3<'_, A>
+impl<'a, A> DeclarationV3<'a, A>
 where
     A: ConnectedAccount + Sync,
 {
@@ -264,17 +333,27 @@ where
         // Resolves nonce
         let nonce = match self.nonce {
             Some(value) => value,
-            None => self.account.get_nonce().await.map_err(AccountError::Provider)?,
+            None => self
+                .account
+                .get_nonce()
+                .await
+                .map_err(AccountError::Provider)?,
         };
 
         self.estimate_fee_with_nonce(nonce).await
     }
 
-    pub async fn estimate_fee_skip_signature(&self) -> Result<FeeEstimate<Felt>, AccountError<A::SignError>> {
+    pub async fn estimate_fee_skip_signature(
+        &self,
+    ) -> Result<FeeEstimate<Felt>, AccountError<A::SignError>> {
         // Resolves nonce
         let nonce = match self.nonce {
             Some(value) => value,
-            None => self.account.get_nonce().await.map_err(AccountError::Provider)?,
+            None => self
+                .account
+                .get_nonce()
+                .await
+                .map_err(AccountError::Provider)?,
         };
 
         self.estimate_fee_with_nonce_skip_signature(nonce).await
@@ -288,21 +367,32 @@ where
         // Resolves nonce
         let nonce = match self.nonce {
             Some(value) => value,
-            None => self.account.get_nonce().await.map_err(AccountError::Provider)?,
+            None => self
+                .account
+                .get_nonce()
+                .await
+                .map_err(AccountError::Provider)?,
         };
 
-        self.simulate_with_nonce(nonce, skip_validate, skip_fee_charge).await
+        self.simulate_with_nonce(nonce, skip_validate, skip_fee_charge)
+            .await
     }
 
     pub async fn send(&self) -> Result<ClassAndTxnHash<Felt>, AccountError<A::SignError>> {
         self.prepare().await?.send().await
     }
 
-    pub async fn prepare(&self) -> Result<PreparedDeclarationV3<'_, A>, AccountError<A::SignError>> {
+    pub async fn prepare(
+        &self,
+    ) -> Result<PreparedDeclarationV3<'a, A>, AccountError<A::SignError>> {
         // Resolves nonce
         let nonce = match self.nonce {
             Some(value) => value,
-            None => self.account.get_nonce().await.map_err(AccountError::Provider)?,
+            None => self
+                .account
+                .get_nonce()
+                .await
+                .map_err(AccountError::Provider)?,
         };
 
         // Resolves fee settings
@@ -334,9 +424,11 @@ where
                 if block_l1_gas_price_bytes.iter().skip(8).any(|&x| x != 0) {
                     return Err(AccountError::FeeOutOfRange);
                 }
-                let block_l1_gas_price = u64::from_le_bytes(block_l1_gas_price_bytes[..8].try_into().unwrap());
+                let block_l1_gas_price =
+                    u64::from_le_bytes(block_l1_gas_price_bytes[..8].try_into().unwrap());
 
-                let gas_price = ((block_l1_gas_price as f64) * self.gas_price_estimate_multiplier) as u128;
+                let gas_price =
+                    ((block_l1_gas_price as f64) * self.gas_price_estimate_multiplier) as u128;
                 (gas, gas_price)
             }
             // We have to perform fee estimation as long as gas is not specified
@@ -350,15 +442,18 @@ where
                         if overall_fee_bytes.iter().skip(8).any(|&x| x != 0) {
                             return Err(AccountError::FeeOutOfRange);
                         }
-                        let overall_fee = u64::from_le_bytes(overall_fee_bytes[..8].try_into().unwrap());
+                        let overall_fee =
+                            u64::from_le_bytes(overall_fee_bytes[..8].try_into().unwrap());
 
                         let gas_price_bytes = fee_estimate.gas_price.to_bytes_le();
                         if gas_price_bytes.iter().skip(8).any(|&x| x != 0) {
                             return Err(AccountError::FeeOutOfRange);
                         }
-                        let gas_price = u64::from_le_bytes(gas_price_bytes[..8].try_into().unwrap());
+                        let gas_price =
+                            u64::from_le_bytes(gas_price_bytes[..8].try_into().unwrap());
 
-                        ((overall_fee.div_ceil(gas_price)) as f64 * self.gas_estimate_multiplier) as u64
+                        (((overall_fee + gas_price - 1) / gas_price) as f64
+                            * self.gas_estimate_multiplier) as u64
                     }
                 };
 
@@ -369,7 +464,8 @@ where
                         if gas_price_bytes.iter().skip(8).any(|&x| x != 0) {
                             return Err(AccountError::FeeOutOfRange);
                         }
-                        let gas_price = u64::from_le_bytes(gas_price_bytes[..8].try_into().unwrap());
+                        let gas_price =
+                            u64::from_le_bytes(gas_price_bytes[..8].try_into().unwrap());
 
                         ((gas_price as f64) * self.gas_price_estimate_multiplier) as u128
                     }
@@ -391,7 +487,10 @@ where
         })
     }
 
-    async fn estimate_fee_with_nonce(&self, nonce: Felt) -> Result<FeeEstimate<Felt>, AccountError<A::SignError>> {
+    async fn estimate_fee_with_nonce(
+        &self,
+        nonce: Felt,
+    ) -> Result<FeeEstimate<Felt>, AccountError<A::SignError>> {
         let skip_signature = self.account.is_signer_interactive();
         let prepared = PreparedDeclarationV3 {
             account: self.account,
@@ -521,7 +620,11 @@ impl RawDeclarationV2 {
     pub fn transaction_hash(&self, chain_id: Felt, address: Felt, query_only: bool) -> Felt {
         compute_hash_on_elements(&[
             PREFIX_DECLARE,
-            if query_only { QUERY_VERSION_TWO } else { Felt::TWO }, // version
+            if query_only {
+                QUERY_VERSION_TWO
+            } else {
+                Felt::TWO
+            }, // version
             address,
             Felt::ZERO, // entry_point_selector
             compute_hash_on_elements(&[self.contract_class.class_hash()]),
@@ -559,8 +662,8 @@ impl RawDeclarationV3 {
 
         // First L1 gas resource buffer
         let mut resource_buffer = [
-            0, 0, b'L', b'1', b'_', b'G', b'A', b'S', 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-            0, 0,
+            0, 0, b'L', b'1', b'_', b'G', b'A', b'S', 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+            0, 0, 0, 0, 0, 0, 0, 0, 0,
         ];
         resource_buffer[8..(8 + 8)].copy_from_slice(&self.gas.to_be_bytes());
         resource_buffer[(8 + 8)..].copy_from_slice(&self.gas_price.to_be_bytes());
@@ -568,8 +671,8 @@ impl RawDeclarationV3 {
 
         // Second L2 gas resource buffer
         let resource_buffer = [
-            0, 0, b'L', b'2', b'_', b'G', b'A', b'S', 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-            0, 0,
+            0, 0, b'L', b'2', b'_', b'G', b'A', b'S', 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+            0, 0, 0, 0, 0, 0, 0, 0, 0,
         ];
         fee_data.push(Felt::from_bytes_be(&resource_buffer));
 
@@ -616,18 +719,19 @@ impl RawDeclarationV3 {
     }
 }
 
-impl<A> PreparedDeclarationV2<'_, A>
+impl<'a, A> PreparedDeclarationV2<'a, A>
 where
     A: Account,
 {
     /// Locally calculates the hash of the transaction to be sent from this declaration given the
     /// parameters.
     pub fn transaction_hash(&self, query_only: bool) -> Felt {
-        self.inner.transaction_hash(self.account.chain_id(), self.account.address(), query_only)
+        self.inner
+            .transaction_hash(self.account.chain_id(), self.account.address(), query_only)
     }
 }
 
-impl<A> PreparedDeclarationV2<'_, A>
+impl<'a, A> PreparedDeclarationV2<'a, A>
 where
     A: ConnectedAccount,
 {
@@ -636,7 +740,9 @@ where
 
         self.account
             .provider()
-            .add_declare_transaction(BroadcastedTxn::Declare(BroadcastedDeclareTxn::V2(tx_request)))
+            .add_declare_transaction(BroadcastedTxn::Declare(BroadcastedDeclareTxn::V2(
+                tx_request,
+            )))
             .await
             .map_err(AccountError::Provider)
     }
@@ -647,7 +753,9 @@ where
     ) -> Result<ClassAndTxnHash<Felt>, AccountError<A::SignError>> {
         self.account
             .provider()
-            .add_declare_transaction(BroadcastedTxn::Declare(BroadcastedDeclareTxn::V2(tx_request)))
+            .add_declare_transaction(BroadcastedTxn::Declare(BroadcastedDeclareTxn::V2(
+                tx_request,
+            )))
             .await
             .map_err(AccountError::Provider)
     }
@@ -660,7 +768,10 @@ where
         let signature = if skip_signature {
             vec![]
         } else {
-            self.account.sign_declaration_v2(&self.inner, query_only).await.map_err(AccountError::Signing)?
+            self.account
+                .sign_declaration_v2(&self.inner, query_only)
+                .await
+                .map_err(AccountError::Signing)?
         };
 
         Ok(BroadcastedDeclareTxnV2 {
@@ -678,18 +789,19 @@ where
     }
 }
 
-impl<A> PreparedDeclarationV3<'_, A>
+impl<'a, A> PreparedDeclarationV3<'a, A>
 where
     A: Account,
 {
     /// Locally calculates the hash of the transaction to be sent from this declaration given the
     /// parameters.
     pub fn transaction_hash(&self, query_only: bool) -> Felt {
-        self.inner.transaction_hash(self.account.chain_id(), self.account.address(), query_only)
+        self.inner
+            .transaction_hash(self.account.chain_id(), self.account.address(), query_only)
     }
 }
 
-impl<A> PreparedDeclarationV3<'_, A>
+impl<'a, A> PreparedDeclarationV3<'a, A>
 where
     A: ConnectedAccount,
 {
@@ -697,7 +809,9 @@ where
         let tx_request = self.get_declare_request(false, false).await?;
         self.account
             .provider()
-            .add_declare_transaction(BroadcastedTxn::Declare(BroadcastedDeclareTxn::V3(tx_request)))
+            .add_declare_transaction(BroadcastedTxn::Declare(BroadcastedDeclareTxn::V3(
+                tx_request,
+            )))
             .await
             .map_err(AccountError::Provider)
     }
@@ -708,7 +822,9 @@ where
     ) -> Result<ClassAndTxnHash<Felt>, AccountError<A::SignError>> {
         self.account
             .provider()
-            .add_declare_transaction(BroadcastedTxn::Declare(BroadcastedDeclareTxn::V3(tx_request)))
+            .add_declare_transaction(BroadcastedTxn::Declare(BroadcastedDeclareTxn::V3(
+                tx_request,
+            )))
             .await
             .map_err(AccountError::Provider)
     }
@@ -724,17 +840,27 @@ where
             signature: if skip_signature {
                 vec![]
             } else {
-                self.account.sign_declaration_v3(&self.inner, query_only).await.map_err(AccountError::Signing)?
+                self.account
+                    .sign_declaration_v3(&self.inner, query_only)
+                    .await
+                    .map_err(AccountError::Signing)?
             },
             nonce: self.inner.nonce,
             contract_class: self.inner.contract_class.clone(),
             resource_bounds: ResourceBoundsMapping {
                 l1_gas: ResourceBounds {
-                    max_amount: Felt::from_dec_str(&self.inner.gas.to_string()).unwrap().to_hex_string(),
-                    max_price_per_unit: Felt::from_dec_str(&self.inner.gas_price.to_string()).unwrap().to_hex_string(),
+                    max_amount: Felt::from_dec_str(&self.inner.gas.to_string())
+                        .unwrap()
+                        .to_hex_string(),
+                    max_price_per_unit: Felt::from_dec_str(&self.inner.gas_price.to_string())
+                        .unwrap()
+                        .to_hex_string(),
                 },
                 // L2 resources are hard-coded to 0
-                l2_gas: ResourceBounds { max_amount: "0x0".to_string(), max_price_per_unit: "0x0".to_string() },
+                l2_gas: ResourceBounds {
+                    max_amount: "0x0".to_string(),
+                    max_price_per_unit: "0x0".to_string(),
+                },
             },
             // Fee market has not been been activated yet so it's hard-coded to be 0
             tip: Felt::from(0),

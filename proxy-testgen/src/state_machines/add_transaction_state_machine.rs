@@ -77,7 +77,12 @@ impl<S> AddTransactionStateMachine<S> {
 
 impl AddTransactionStateMachine<Ok> {
     pub fn new() -> Self {
-        Self { path: "/gateway/add_transaction".to_string(), state: Ok, request_type: None, transaction_type: None }
+        Self {
+            path: "/gateway/add_transaction".to_string(),
+            state: Ok,
+            request_type: None,
+            transaction_type: None,
+        }
     }
 
     pub fn to_invalid(self) -> AddTransactionStateMachine<Invalid> {
@@ -107,7 +112,12 @@ impl Default for AddTransactionStateMachine<Ok> {
 
 impl AddTransactionStateMachine<Invalid> {
     pub fn to_skipped(self) -> AddTransactionStateMachine<Skipped> {
-        AddTransactionStateMachine { path: self.path, state: Skipped, request_type: None, transaction_type: None }
+        AddTransactionStateMachine {
+            path: self.path,
+            state: Skipped,
+            request_type: None,
+            transaction_type: None,
+        }
     }
 }
 
@@ -131,17 +141,22 @@ struct Version {
 }
 
 pub fn validate_request(request: String) -> Result<String, ValidationError> {
-    let mut json_value: Value = serde_json::from_str(&request).map_err(ValidationError::JsonParseError)?;
+    let mut json_value: Value =
+        serde_json::from_str(&request).map_err(ValidationError::JsonParseError)?;
 
     let txn_type = json_value
         .get("type")
         .and_then(|v| v.as_str())
-        .ok_or_else(|| ValidationError::ValidationError("Missing or invalid 'type' field".to_string()))?;
+        .ok_or_else(|| {
+            ValidationError::ValidationError("Missing or invalid 'type' field".to_string())
+        })?;
 
     let txn_version = json_value
         .get("version")
         .and_then(|v| v.as_str())
-        .ok_or_else(|| ValidationError::ValidationError("Missing or invalid 'version' field".to_string()))?;
+        .ok_or_else(|| {
+            ValidationError::ValidationError("Missing or invalid 'version' field".to_string())
+        })?;
 
     if txn_type == "DEPLOY_ACCOUNT" && txn_version == "0x1" {
         // Convert constructor_calldata to hex
@@ -175,12 +190,20 @@ pub fn validate_request(request: String) -> Result<String, ValidationError> {
 
     // nonce_data_availability_mode from 0 to L1
     if let Some(nonce_mode) = json_value.get_mut("nonce_data_availability_mode") {
-        *nonce_mode = if nonce_mode == &json!(0) { json!("L1") } else { json!("L2") };
+        *nonce_mode = if nonce_mode == &json!(0) {
+            json!("L1")
+        } else {
+            json!("L2")
+        };
     }
 
     // fee_data_availability_mode from 0 to L1
     if let Some(fee_mode) = json_value.get_mut("fee_data_availability_mode") {
-        *fee_mode = if fee_mode == &json!(0) { json!("L1") } else { json!("L2") };
+        *fee_mode = if fee_mode == &json!(0) {
+            json!("L1")
+        } else {
+            json!("L2")
+        };
     }
 
     if let Some(resource_bounds) = json_value.get_mut("resource_bounds") {
@@ -196,16 +219,17 @@ pub fn validate_request(request: String) -> Result<String, ValidationError> {
 
     if let Some(contract_class) = json_value.get_mut("contract_class") {
         if let Some(sierra_program) = contract_class.get_mut("sierra_program") {
-            let encoded_data = sierra_program
-                .as_str()
-                .ok_or_else(|| ValidationError::ValidationError("sierra_program must be a string".to_string()))?;
-            let decoded_array =
-                decode_declare_sierra(encoded_data.to_string()).map_err(ValidationError::SierraDecodeError)?;
+            let encoded_data = sierra_program.as_str().ok_or_else(|| {
+                ValidationError::ValidationError("sierra_program must be a string".to_string())
+            })?;
+            let decoded_array = decode_declare_sierra(encoded_data.to_string())
+                .map_err(ValidationError::SierraDecodeError)?;
             *sierra_program = json!(decoded_array);
         }
     }
 
-    let modified_json_str = serde_json::to_string_pretty(&json_value).map_err(ValidationError::JsonParseError)?;
+    let modified_json_str =
+        serde_json::to_string_pretty(&json_value).map_err(ValidationError::JsonParseError)?;
 
     let target_dir = Path::new("target/shared");
     fs::create_dir_all(target_dir).map_err(ValidationError::IoError)?;
@@ -225,7 +249,10 @@ pub fn validate_request(request: String) -> Result<String, ValidationError> {
                 Err(ValidationError::MissingHash)
             }
         }
-        Err(e) => Err(ValidationError::ValidationError(format!("Validation error: {}", e))),
+        Err(e) => Err(ValidationError::ValidationError(format!(
+            "Validation error: {}",
+            e
+        ))),
     }
 }
 
@@ -244,7 +271,12 @@ fn decode_declare_sierra(declare_txn: String) -> Result<Vec<Felt>, DecodeError> 
 }
 
 impl StateMachine for AddTransactionStateMachineWrapper {
-    fn run(&mut self, request_body: String, response_body: String, path: String) -> StateMachineResult {
+    fn run(
+        &mut self,
+        request_body: String,
+        response_body: String,
+        path: String,
+    ) -> StateMachineResult {
         if self.filter(path) {
             self.step(request_body, response_body)
         } else {
@@ -272,7 +304,9 @@ impl StateMachine for AddTransactionStateMachineWrapper {
                         machine.request_type = Some(version);
                         AddTransactionStateMachineWrapper::Ok(machine.clone())
                     }
-                    Err(_) => AddTransactionStateMachineWrapper::Invalid(machine.clone().to_invalid()),
+                    Err(_) => {
+                        AddTransactionStateMachineWrapper::Invalid(machine.clone().to_invalid())
+                    }
                 }
             }
             AddTransactionStateMachineWrapper::Invalid(machine) => {
@@ -289,18 +323,24 @@ impl StateMachine for AddTransactionStateMachineWrapper {
                     match serde_json::from_str::<InvokeResponse>(&response_body) {
                         JsonResult::Ok(invoke_response) => {
                             let valid_tx = match validate_request(request_body) {
-                                Result::Ok(hash) => Felt::from_hex_unchecked(&hash) == invoke_response.transaction_hash,
+                                Result::Ok(hash) => {
+                                    Felt::from_hex_unchecked(&hash)
+                                        == invoke_response.transaction_hash
+                                }
                                 Err(_) => false,
                             };
                             if valid_tx {
-                                machine.transaction_type = Some(AddTransactionResponseType::Invoke(invoke_response));
+                                machine.transaction_type =
+                                    Some(AddTransactionResponseType::Invoke(invoke_response));
                                 AddTransactionStateMachineWrapper::Ok(machine.clone())
                             } else {
                                 machine.transaction_type = None;
                                 AddTransactionStateMachineWrapper::Ok(machine.clone())
                             }
                         }
-                        Err(_) => AddTransactionStateMachineWrapper::Invalid(machine.clone().to_invalid()),
+                        Err(_) => {
+                            AddTransactionStateMachineWrapper::Invalid(machine.clone().to_invalid())
+                        }
                     }
                 }
                 Some(AddTransactionRequestType::Declare) => {
@@ -308,12 +348,14 @@ impl StateMachine for AddTransactionStateMachineWrapper {
                         JsonResult::Ok(delcare_response) => {
                             let valid_tx = match validate_request(request_body) {
                                 Result::Ok(hash) => {
-                                    Felt::from_hex_unchecked(&hash) == delcare_response.transaction_hash
+                                    Felt::from_hex_unchecked(&hash)
+                                        == delcare_response.transaction_hash
                                 }
                                 Err(_) => false,
                             };
                             if valid_tx {
-                                machine.transaction_type = Some(AddTransactionResponseType::Declare(delcare_response));
+                                machine.transaction_type =
+                                    Some(AddTransactionResponseType::Declare(delcare_response));
 
                                 AddTransactionStateMachineWrapper::Ok(machine.clone())
                             } else {
@@ -321,7 +363,9 @@ impl StateMachine for AddTransactionStateMachineWrapper {
                                 AddTransactionStateMachineWrapper::Ok(machine.clone())
                             }
                         }
-                        Err(_) => AddTransactionStateMachineWrapper::Invalid(machine.clone().to_invalid()),
+                        Err(_) => {
+                            AddTransactionStateMachineWrapper::Invalid(machine.clone().to_invalid())
+                        }
                     }
                 }
                 Some(AddTransactionRequestType::DeployAccount) => {
@@ -329,20 +373,24 @@ impl StateMachine for AddTransactionStateMachineWrapper {
                         JsonResult::Ok(deploy_acc_response) => {
                             let valid_tx = match validate_request(request_body) {
                                 Result::Ok(hash) => {
-                                    Felt::from_hex_unchecked(&hash) == deploy_acc_response.transaction_hash
+                                    Felt::from_hex_unchecked(&hash)
+                                        == deploy_acc_response.transaction_hash
                                 }
                                 Err(_) => false,
                             };
                             if valid_tx {
-                                machine.transaction_type =
-                                    Some(AddTransactionResponseType::DeployAccount(deploy_acc_response));
+                                machine.transaction_type = Some(
+                                    AddTransactionResponseType::DeployAccount(deploy_acc_response),
+                                );
                                 AddTransactionStateMachineWrapper::Ok(machine.clone())
                             } else {
                                 machine.transaction_type = None;
                                 AddTransactionStateMachineWrapper::Ok(machine.clone())
                             }
                         }
-                        Err(_) => AddTransactionStateMachineWrapper::Invalid(machine.clone().to_invalid()),
+                        Err(_) => {
+                            AddTransactionStateMachineWrapper::Invalid(machine.clone().to_invalid())
+                        }
                     }
                 }
                 None => AddTransactionStateMachineWrapper::Invalid(machine.clone().to_invalid()),

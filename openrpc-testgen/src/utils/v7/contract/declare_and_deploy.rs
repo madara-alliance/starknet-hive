@@ -26,17 +26,29 @@ use crate::utils::v7::{
     signers::local_wallet::LocalWallet,
 };
 
-pub async fn decalare_and_deploy(url: Url, sierra_path: PathBuf, casm_path: PathBuf) -> Result<(), String> {
+pub async fn decalare_and_deploy(
+    url: Url,
+    sierra_path: PathBuf,
+    casm_path: PathBuf,
+) -> Result<(), String> {
     let provider = JsonRpcClient::new(HttpTransport::new(url.clone()));
-    let create_acc_data = match create_account(&provider, AccountType::Oz, Option::None, Option::None).await {
-        Ok(value) => value,
-        Err(e) => {
-            return Err(e.to_string());
-        }
-    };
+    let create_acc_data =
+        match create_account(&provider, AccountType::Oz, Option::None, Option::None).await {
+            Ok(value) => value,
+            Err(e) => {
+                return Err(e.to_string());
+            }
+        };
 
-    match mint(url.clone(), &MintRequest2 { amount: u128::MAX, address: create_acc_data.address, unit: PriceUnit::Fri })
-        .await
+    match mint(
+        url.clone(),
+        &MintRequest2 {
+            amount: u128::MAX,
+            address: create_acc_data.address,
+            unit: PriceUnit::Fri,
+        },
+    )
+    .await
     {
         Ok(_) => {}
         Err(e) => {
@@ -44,11 +56,22 @@ pub async fn decalare_and_deploy(url: Url, sierra_path: PathBuf, casm_path: Path
         }
     };
 
-    let wait_conifg = WaitForTx { wait: true, wait_params: ValidatedWaitParams::default() };
+    let wait_conifg = WaitForTx {
+        wait: true,
+        wait_params: ValidatedWaitParams::default(),
+    };
 
     let chain_id = get_chain_id(&provider).await.unwrap();
 
-    match deploy_account(&provider, chain_id, wait_conifg, create_acc_data, DeployAccountVersion::V3).await {
+    match deploy_account(
+        &provider,
+        chain_id,
+        wait_conifg,
+        create_acc_data,
+        DeployAccountVersion::V3,
+    )
+    .await
+    {
         Ok(value) => Some(value),
         Err(e) => {
             return Err(e.to_string());
@@ -67,7 +90,9 @@ pub async fn decalare_and_deploy(url: Url, sierra_path: PathBuf, casm_path: Path
     );
     account.set_block_id(BlockId::Tag(BlockTag::Latest));
 
-    let class_hash = declare_contract(&account, sierra_path, casm_path).await.unwrap();
+    let class_hash = declare_contract(&account, sierra_path, casm_path)
+        .await
+        .unwrap();
 
     deploy_contract(&account, class_hash).await;
 

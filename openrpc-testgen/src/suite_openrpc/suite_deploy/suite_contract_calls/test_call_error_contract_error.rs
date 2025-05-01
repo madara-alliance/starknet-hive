@@ -26,7 +26,11 @@ impl RunnableTrait for TestCase {
             calldata: vec![Felt::from_hex("0x50")?],
         };
 
-        let invoke_result = test_input.random_paymaster_account.execute_v3(vec![increase_balance_call]).send().await?;
+        let invoke_result = test_input
+            .random_paymaster_account
+            .execute_v3(vec![increase_balance_call])
+            .send()
+            .await?;
 
         wait_for_sent_transaction(
             invoke_result.transaction_hash,
@@ -48,7 +52,10 @@ impl RunnableTrait for TestCase {
             )
             .await;
 
-        assert_matches_result!(balance.unwrap_err(), ProviderError::StarknetError(StarknetError::ContractError(_)));
+        assert_matches_result!(
+            balance.unwrap_err(),
+            ProviderError::StarknetError(StarknetError::ContractError(_))
+        );
 
         Ok(Self {})
     }

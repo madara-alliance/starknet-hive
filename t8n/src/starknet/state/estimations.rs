@@ -6,7 +6,9 @@ use blockifier::transaction::objects::HasRelatedFeeType;
 use blockifier::transaction::transactions::ExecutableTransaction;
 use starknet_devnet_types::contract_address::ContractAddress;
 use starknet_devnet_types::felt::Felt;
-use starknet_devnet_types::rpc::estimate_message_fee::{EstimateMessageFeeRequestWrapper, FeeEstimateWrapper};
+use starknet_devnet_types::rpc::estimate_message_fee::{
+    EstimateMessageFeeRequestWrapper, FeeEstimateWrapper,
+};
 use starknet_devnet_types::rpc::transactions::BroadcastedTransaction;
 use starknet_rs_core::types::{BlockId, MsgFromL1, PriceUnit};
 
@@ -37,7 +39,9 @@ pub fn estimate_fee(
             estimate_transaction_fee(
                 &mut transactional_state,
                 &block_context,
-                blockifier::transaction::transaction_execution::Transaction::AccountTransaction(transaction),
+                blockifier::transaction::transaction_execution::Transaction::AccountTransaction(
+                    transaction,
+                ),
                 charge_fee,
                 validate,
             )
@@ -65,7 +69,9 @@ pub fn estimate_message_fee(
     estimate_transaction_fee(
         &mut transactional_state,
         &block_context,
-        blockifier::transaction::transaction_execution::Transaction::L1HandlerTransaction(l1_transaction),
+        blockifier::transaction::transaction_execution::Transaction::L1HandlerTransaction(
+            l1_transaction,
+        ),
         None,
         None,
     )
@@ -79,8 +85,12 @@ fn estimate_transaction_fee<S: StateReader>(
     validate: Option<bool>,
 ) -> DevnetResult<FeeEstimateWrapper> {
     let fee_type = match transaction {
-        blockifier::transaction::transaction_execution::Transaction::AccountTransaction(ref tx) => tx.fee_type(),
-        blockifier::transaction::transaction_execution::Transaction::L1HandlerTransaction(ref tx) => tx.fee_type(),
+        blockifier::transaction::transaction_execution::Transaction::AccountTransaction(ref tx) => {
+            tx.fee_type()
+        }
+        blockifier::transaction::transaction_execution::Transaction::L1HandlerTransaction(
+            ref tx,
+        ) => tx.fee_type(),
     };
 
     let transaction_execution_info = transaction.execute(
@@ -94,20 +104,35 @@ fn estimate_transaction_fee<S: StateReader>(
         return Err(Error::ExecutionError { revert_error });
     }
 
-    let gas_vector =
-        fee_utils::calculate_tx_gas_vector(&transaction_execution_info.actual_resources, &get_versioned_constants())?;
+    let gas_vector = fee_utils::calculate_tx_gas_vector(
+        &transaction_execution_info.actual_resources,
+        &get_versioned_constants(),
+    )?;
 
-    let total_fee = fee_utils::get_fee_by_gas_vector(block_context.block_info(), gas_vector, &fee_type);
+    let total_fee =
+        fee_utils::get_fee_by_gas_vector(block_context.block_info(), gas_vector, &fee_type);
 
     let (gas_price, data_gas_price, unit) = match fee_type {
         blockifier::transaction::objects::FeeType::Strk => (
-            block_context.block_info().gas_prices.strk_l1_gas_price.get(),
-            block_context.block_info().gas_prices.strk_l1_data_gas_price.get(),
+            block_context
+                .block_info()
+                .gas_prices
+                .strk_l1_gas_price
+                .get(),
+            block_context
+                .block_info()
+                .gas_prices
+                .strk_l1_data_gas_price
+                .get(),
             PriceUnit::Fri,
         ),
         blockifier::transaction::objects::FeeType::Eth => (
             block_context.block_info().gas_prices.eth_l1_gas_price.get(),
-            block_context.block_info().gas_prices.eth_l1_data_gas_price.get(),
+            block_context
+                .block_info()
+                .gas_prices
+                .eth_l1_data_gas_price
+                .get(),
             PriceUnit::Wei,
         ),
     };

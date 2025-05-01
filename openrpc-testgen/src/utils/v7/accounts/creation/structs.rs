@@ -22,7 +22,9 @@ pub struct AccountCreateResponse {
     pub private_key: Felt,
     pub address: Felt,
     deployed: bool,
-    #[serde(serialize_with = "crate::utils::v7::accounts::creation::structs::serialize_as_decimal")]
+    #[serde(
+        serialize_with = "crate::utils::v7::accounts::creation::structs::serialize_as_decimal"
+    )]
     pub max_fee: Felt,
     pub message: String,
     pub class_hash: Felt,

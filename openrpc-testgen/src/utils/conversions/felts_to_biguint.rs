@@ -13,10 +13,14 @@ fn felts_to_biguint(felts: [Felt; 2]) -> BigUint {
     high + low
 }
 
-pub fn felts_slice_to_biguint(felts_slice: impl AsRef<[Felt]>) -> Result<BigUint, ConversionsError> {
+pub fn felts_slice_to_biguint(
+    felts_slice: impl AsRef<[Felt]>,
+) -> Result<BigUint, ConversionsError> {
     let felts_slice = felts_slice.as_ref();
     if felts_slice.len() != 2 {
-        return Err(ConversionsError::FeltVecToBigUintError("Felts vector needs to be the size of 2".to_string()));
+        return Err(ConversionsError::FeltVecToBigUintError(
+            "Felts vector needs to be the size of 2".to_string(),
+        ));
     }
     let felts_array: [Felt; 2] = [felts_slice[0], felts_slice[1]];
     Ok(felts_to_biguint(felts_array))
@@ -35,7 +39,8 @@ mod test {
         let high = Felt::from_str("123456789").unwrap();
         let low = Felt::from_str("987654321").unwrap();
         let result = felts_to_biguint([high, low]);
-        let expected = (BigUint::from_str("123456789").unwrap() << FELT_BITS) + BigUint::from_str("987654321").unwrap();
+        let expected = (BigUint::from_str("123456789").unwrap() << FELT_BITS)
+            + BigUint::from_str("987654321").unwrap();
         assert_eq!(result, expected);
     }
 
@@ -55,7 +60,8 @@ mod test {
         let high = Felt::from_str("123456789").unwrap();
         let low = Felt::from_str("987654321").unwrap();
         let result = felts_slice_to_biguint([high, low].as_ref()).unwrap();
-        let expected = (BigUint::from_str("123456789").unwrap() << FELT_BITS) + BigUint::from_str("987654321").unwrap();
+        let expected = (BigUint::from_str("123456789").unwrap() << FELT_BITS)
+            + BigUint::from_str("987654321").unwrap();
         assert_eq!(result, expected);
     }
 

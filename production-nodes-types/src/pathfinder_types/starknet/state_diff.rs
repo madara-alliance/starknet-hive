@@ -34,11 +34,16 @@ impl<'de> Deserialize<'de> for HashToStateDiff {
     {
         let map: HashMap<Felt, StateDiff> = HashMap::deserialize(deserializer)?;
         if map.len() != 1 {
-            return Err(D::Error::custom("Expected exactly one block hash in hash_to_state_diff"));
+            return Err(D::Error::custom(
+                "Expected exactly one block hash in hash_to_state_diff",
+            ));
         }
 
         let (block_hash, state_diff) = map.into_iter().next().unwrap();
-        Ok(HashToStateDiff { block_hash, state_diff })
+        Ok(HashToStateDiff {
+            block_hash,
+            state_diff,
+        })
     }
 }
 
@@ -62,19 +67,27 @@ impl From<StateDiff> for reply::state_update::StateDiff {
         let declared_classes = value
             .class_hash_to_compiled_class_hash
             .into_iter()
-            .map(|(class_hash, compiled_class_hash)| reply::state_update::DeclaredSierraClass {
-                class_hash,
-                compiled_class_hash,
-            })
+            .map(
+                |(class_hash, compiled_class_hash)| reply::state_update::DeclaredSierraClass {
+                    class_hash,
+                    compiled_class_hash,
+                },
+            )
             .collect();
 
         let deployed_contracts = value
             .address_to_class_hash
             .into_iter()
-            .map(|(address, class_hash)| reply::state_update::DeployedContract { address, class_hash })
+            .map(
+                |(address, class_hash)| reply::state_update::DeployedContract {
+                    address,
+                    class_hash,
+                },
+            )
             .collect();
 
-        let old_declared_contracts: HashSet<Felt> = value.cairo_0_declared_contracts.into_iter().collect();
+        let old_declared_contracts: HashSet<Felt> =
+            value.cairo_0_declared_contracts.into_iter().collect();
 
         let storage_updates: HashMap<Felt, Vec<(Felt, Felt)>> = value
             .storage_updates
@@ -85,15 +98,19 @@ impl From<StateDiff> for reply::state_update::StateDiff {
         let storage_diffs = storage_updates
             .into_iter()
             .map(|(contract_address, updates)| {
-                let storage_entries =
-                    updates.into_iter().map(|(key, value)| StorageDiff { key, value }).collect::<Vec<StorageDiff>>();
+                let storage_entries = updates
+                    .into_iter()
+                    .map(|(key, value)| StorageDiff { key, value })
+                    .collect::<Vec<StorageDiff>>();
 
                 (contract_address, storage_entries)
             })
             .collect::<HashMap<Felt, Vec<StorageDiff>>>();
 
-        let nonces: HashMap<reply::state_update::ContractAddress, reply::state_update::ContractNonce> =
-            value.address_to_nonce.into_iter().collect();
+        let nonces: HashMap<
+            reply::state_update::ContractAddress,
+            reply::state_update::ContractNonce,
+        > = value.address_to_nonce.into_iter().collect();
 
         let replaced_classes = Vec::new();
 

@@ -54,7 +54,10 @@ impl SetupableTrait for TestSuiteContractCalls {
         let mut rng = StdRng::from_entropy();
         rng.fill_bytes(&mut salt_buffer[1..]);
 
-        let deployment_result = factory.deploy_v3(vec![], Felt::from_bytes_be(&salt_buffer), true).send().await?;
+        let deployment_result = factory
+            .deploy_v3(vec![], Felt::from_bytes_be(&salt_buffer), true)
+            .send()
+            .await?;
 
         wait_for_sent_transaction(
             deployment_result.transaction_hash,
@@ -71,16 +74,23 @@ impl SetupableTrait for TestSuiteContractCalls {
         let deployed_contract_address = match &deployment_receipt {
             TxnReceipt::Deploy(receipt) => receipt.contract_address,
             TxnReceipt::Invoke(receipt) => {
-                if let Some(contract_address) =
-                    receipt.common_receipt_properties.events.first().and_then(|event| event.data.first())
+                if let Some(contract_address) = receipt
+                    .common_receipt_properties
+                    .events
+                    .first()
+                    .and_then(|event| event.data.first())
                 {
                     *contract_address
                 } else {
-                    return Err(OpenRpcTestGenError::CallError(CallError::UnexpectedReceiptType));
+                    return Err(OpenRpcTestGenError::CallError(
+                        CallError::UnexpectedReceiptType,
+                    ));
                 }
             }
             _ => {
-                return Err(OpenRpcTestGenError::CallError(CallError::UnexpectedReceiptType));
+                return Err(OpenRpcTestGenError::CallError(
+                    CallError::UnexpectedReceiptType,
+                ));
             }
         };
 
@@ -94,4 +104,8 @@ impl SetupableTrait for TestSuiteContractCalls {
     }
 }
 
-include!(concat!(env!("OUT_DIR"), "/generated_tests_suite_openrpc_suite_deploy_suite_contract_calls.rs"));
+#[cfg(not(feature = "rust-analyzer"))]
+include!(concat!(
+    env!("OUT_DIR"),
+    "/generated_tests_suite_openrpc_suite_deploy_suite_contract_calls.rs"
+));

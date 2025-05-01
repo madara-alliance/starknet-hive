@@ -10,7 +10,8 @@ use crate::{
         accounts::account::{Account, AccountError, ConnectedAccount},
         endpoints::{
             declare_contract::{
-                extract_class_hash_from_error, get_compiled_contract, parse_class_hash_from_error, RunnerError,
+                extract_class_hash_from_error, get_compiled_contract, parse_class_hash_from_error,
+                RunnerError,
             },
             errors::OpenRpcTestGenError,
             utils::wait_for_sent_transaction,
@@ -43,13 +44,12 @@ impl SetupableTrait for TestSuiteDeploy {
     type Input = super::TestSuiteOpenRpc;
 
     async fn setup(setup_input: &Self::Input) -> Result<Self, OpenRpcTestGenError> {
-        let (flattened_sierra_class, compiled_class_hash) = get_compiled_contract(
-            PathBuf::from_str("target/dev/contracts_contracts_sample_contract_3_HelloStarknet.contract_class.json")?,
-            PathBuf::from_str(
-                "target/dev/contracts_contracts_sample_contract_3_HelloStarknet.compiled_contract_class.json",
-            )?,
-        )
-        .await?;
+        let (flattened_sierra_class, compiled_class_hash) =
+            get_compiled_contract(
+                PathBuf::from_str("target/dev/contracts_contracts_sample_contract_3_HelloStarknet.contract_class.json")?,
+            PathBuf::from_str("target/dev/contracts_contracts_sample_contract_3_HelloStarknet.compiled_contract_class.json")?,
+            )
+            .await?;
 
         let declaration_result = match setup_input
             .random_paymaster_account
@@ -72,10 +72,12 @@ impl SetupableTrait for TestSuiteDeploy {
                         transaction_hash: Felt::ZERO,
                     })
                 } else {
-                    Err(OpenRpcTestGenError::RunnerError(RunnerError::AccountFailure(format!(
-                        "Transaction execution error: {}",
-                        sign_error
-                    ))))
+                    Err(OpenRpcTestGenError::RunnerError(
+                        RunnerError::AccountFailure(format!(
+                            "Transaction execution error: {}",
+                            sign_error
+                        )),
+                    ))
                 }
             }
 
@@ -86,10 +88,12 @@ impl SetupableTrait for TestSuiteDeploy {
                         transaction_hash: Felt::ZERO,
                     })
                 } else {
-                    Err(OpenRpcTestGenError::RunnerError(RunnerError::AccountFailure(format!(
-                        "Transaction execution error: {}",
-                        starkneterror
-                    ))))
+                    Err(OpenRpcTestGenError::RunnerError(
+                        RunnerError::AccountFailure(format!(
+                            "Transaction execution error: {}",
+                            starkneterror
+                        )),
+                    ))
                 }
             }
             Err(e) => {
@@ -108,7 +112,10 @@ impl SetupableTrait for TestSuiteDeploy {
                     };
 
                     let provider = setup_input.random_paymaster_account.provider();
-                    let random_account_address = setup_input.random_paymaster_account.random_accounts()?.address();
+                    let random_account_address = setup_input
+                        .random_paymaster_account
+                        .random_accounts()?
+                        .address();
 
                     let mut continuation_token = None;
                     let mut found_txn_hash = None;
@@ -123,7 +130,8 @@ impl SetupableTrait for TestSuiteDeploy {
                             if event.event.data.contains(&random_account_address) {
                                 let txn_hash = event.transaction_hash;
 
-                                let txn_details = provider.get_transaction_by_hash(txn_hash).await?;
+                                let txn_details =
+                                    provider.get_transaction_by_hash(txn_hash).await?;
 
                                 if let Txn::Declare(DeclareTxn::V3(declare_txn)) = txn_details {
                                     if declare_txn.class_hash == class_hash {
@@ -146,15 +154,22 @@ impl SetupableTrait for TestSuiteDeploy {
                     }
 
                     if let Some(tx_hash) = found_txn_hash {
-                        Ok(ClassAndTxnHash { class_hash, transaction_hash: tx_hash })
+                        Ok(ClassAndTxnHash {
+                            class_hash,
+                            transaction_hash: tx_hash,
+                        })
                     } else {
                         info!("Transaction hash not found for the declared clas");
-                        Err(OpenRpcTestGenError::RunnerError(RunnerError::AccountFailure(
-                            "Transaction hash not found for the declared class.".to_string(),
-                        )))
+                        Err(OpenRpcTestGenError::RunnerError(
+                            RunnerError::AccountFailure(
+                                "Transaction hash not found for the declared class.".to_string(),
+                            ),
+                        ))
                     }
                 } else {
-                    return Err(OpenRpcTestGenError::AccountError(AccountError::Other(full_error_message)));
+                    return Err(OpenRpcTestGenError::AccountError(AccountError::Other(
+                        full_error_message,
+                    )));
                 }
             }
         }?;
@@ -168,4 +183,8 @@ impl SetupableTrait for TestSuiteDeploy {
     }
 }
 
-include!(concat!(env!("OUT_DIR"), "/generated_tests_suite_openrpc_suite_deploy.rs"));
+#[cfg(not(feature = "rust-analyzer"))]
+include!(concat!(
+    env!("OUT_DIR"),
+    "/generated_tests_suite_openrpc_suite_deploy.rs"
+));

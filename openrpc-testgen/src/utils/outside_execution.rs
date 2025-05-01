@@ -5,7 +5,9 @@ use starknet::core::crypto::ecdsa_sign;
 use starknet_types_core::felt::Felt;
 use starknet_types_rpc::{BlockId, BlockTag};
 
-use super::v7::{accounts::call::Call, endpoints::errors::OpenRpcTestGenError, providers::provider::Provider};
+use super::v7::{
+    accounts::call::Call, endpoints::errors::OpenRpcTestGenError, providers::provider::Provider,
+};
 
 pub const STARKNET_DOMAIN_TYPE_HASH: Felt =
     Felt::from_hex_unchecked("0x1ff2f602e42168014d405a94f75e8a93d640751d71d16311266e140d8b0a210");
@@ -39,7 +41,13 @@ pub fn get_starknet_domain_hash(chain_id: Felt) -> Felt {
         revision: Felt::ONE,
     };
 
-    let domain_vec = vec![STARKNET_DOMAIN_TYPE_HASH, domain.name, domain.version, domain.chain_id, domain.revision];
+    let domain_vec = vec![
+        STARKNET_DOMAIN_TYPE_HASH,
+        domain.name,
+        domain.version,
+        domain.chain_id,
+        domain.revision,
+    ];
     poseidon_hash_many(&domain_vec)
 }
 
@@ -85,7 +93,8 @@ pub async fn prepare_outside_execution(
 
     let hash = final_hasher.finalize();
 
-    let starknet::core::crypto::ExtendedSignature { r, s, v: _ } = ecdsa_sign(&signer_private_key, &hash)?;
+    let starknet::core::crypto::ExtendedSignature { r, s, v: _ } =
+        ecdsa_sign(&signer_private_key, &hash)?;
 
     let outside_execution_cairo_serialized = OutsideExecution::cairo_serialize(outside_execution);
 
@@ -98,11 +107,17 @@ pub async fn prepare_outside_execution(
 }
 
 pub async fn get_current_timestamp<P: Provider>(provider: P) -> Result<u64, OpenRpcTestGenError> {
-    let block_with_tx_hashes = provider.get_block_with_tx_hashes(BlockId::Tag(BlockTag::Latest)).await?;
+    let block_with_tx_hashes = provider
+        .get_block_with_tx_hashes(BlockId::Tag(BlockTag::Latest))
+        .await?;
 
     let timestamp = match block_with_tx_hashes {
-        starknet_types_rpc::MaybePendingBlockWithTxHashes::Block(block) => block.block_header.timestamp,
-        starknet_types_rpc::MaybePendingBlockWithTxHashes::Pending(block) => block.pending_block_header.timestamp,
+        starknet_types_rpc::MaybePendingBlockWithTxHashes::Block(block) => {
+            block.block_header.timestamp
+        }
+        starknet_types_rpc::MaybePendingBlockWithTxHashes::Pending(block) => {
+            block.pending_block_header.timestamp
+        }
     };
 
     Ok(timestamp)

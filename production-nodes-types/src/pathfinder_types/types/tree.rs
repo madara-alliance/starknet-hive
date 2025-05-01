@@ -116,12 +116,18 @@ impl<H: FeltHash, const HEIGHT: usize> MerkleTree<H, HEIGHT> {
             match &mut *root.borrow_mut() {
                 // If the root node is unresolved that means that there have been no changes made
                 // to the tree.
-                InternalNode::Unresolved(idx) => {
-                    storage.hash(*idx).context("Fetching root node's hash")?.context("Root node's hash is missing")?
-                }
+                InternalNode::Unresolved(idx) => storage
+                    .hash(*idx)
+                    .context("Fetching root node's hash")?
+                    .context("Root node's hash is missing")?,
                 other => {
-                    let (root_hash, _) =
-                        self.commit_subtree(other, &mut added, &mut removed, storage, BitVec::new())?;
+                    let (root_hash, _) = self.commit_subtree(
+                        other,
+                        &mut added,
+                        &mut removed,
+                        storage,
+                        BitVec::new(),
+                    )?;
                     root_hash
                 }
             }
@@ -132,7 +138,11 @@ impl<H: FeltHash, const HEIGHT: usize> MerkleTree<H, HEIGHT> {
 
         removed.extend(self.nodes_removed);
 
-        Ok(TrieUpdate { nodes_added: added, nodes_removed: removed, root_commitment: root_hash })
+        Ok(TrieUpdate {
+            nodes_added: added,
+            nodes_removed: removed,
+            root_commitment: root_hash,
+        })
     }
 
     /// Persists any changes in this subtree to storage.
@@ -174,12 +184,22 @@ impl<H: FeltHash, const HEIGHT: usize> MerkleTree<H, HEIGHT> {
             InternalNode::Binary(binary) => {
                 let mut left_path = path.clone();
                 left_path.push(Direction::Left.into());
-                let (left_hash, left_child) =
-                    self.commit_subtree(&mut binary.left.borrow_mut(), added, removed, storage, left_path)?;
+                let (left_hash, left_child) = self.commit_subtree(
+                    &mut binary.left.borrow_mut(),
+                    added,
+                    removed,
+                    storage,
+                    left_path,
+                )?;
                 let mut right_path = path.clone();
                 right_path.push(Direction::Right.into());
-                let (right_hash, right_child) =
-                    self.commit_subtree(&mut binary.right.borrow_mut(), added, removed, storage, right_path)?;
+                let (right_hash, right_child) = self.commit_subtree(
+                    &mut binary.right.borrow_mut(),
+                    added,
+                    removed,
+                    storage,
+                    right_path,
+                )?;
                 let hash = BinaryNode::calculate_hash::<H>(left_hash, right_hash);
 
                 let persisted_node = match (left_child, right_child) {
@@ -204,14 +224,24 @@ impl<H: FeltHash, const HEIGHT: usize> MerkleTree<H, HEIGHT> {
             }
             InternalNode::Edge(edge) => {
                 path.extend_from_bitslice(&edge.path);
-                let (child_hash, child) =
-                    self.commit_subtree(&mut edge.child.borrow_mut(), added, removed, storage, path)?;
+                let (child_hash, child) = self.commit_subtree(
+                    &mut edge.child.borrow_mut(),
+                    added,
+                    removed,
+                    storage,
+                    path,
+                )?;
 
                 let hash = EdgeNode::calculate_hash::<H>(child_hash, &edge.path);
 
                 let persisted_node = match child {
-                    None => Node::LeafEdge { path: edge.path.clone() },
-                    Some(child) => Node::Edge { child, path: edge.path.clone() },
+                    None => Node::LeafEdge {
+                        path: edge.path.clone(),
+                    },
+                    Some(child) => Node::Edge {
+                        child,
+                        path: edge.path.clone(),
+                    },
                 };
 
                 let node_index = added.len();
@@ -228,7 +258,12 @@ impl<H: FeltHash, const HEIGHT: usize> MerkleTree<H, HEIGHT> {
     }
 
     /// Sets the value of a key. To delete a key, set the value to [Felt::ZERO].
-    pub fn set(&mut self, storage: &impl Storage, key: BitVec<u8, Msb0>, value: Felt) -> anyhow::Result<()> {
+    pub fn set(
+        &mut self,
+        storage: &impl Storage,
+        key: BitVec<u8, Msb0>,
+        value: Felt,
+    ) -> anyhow::Result<()> {
         if value == Felt::ZERO {
             return self.delete_leaf(storage, &key);
         }
@@ -365,7 +400,11 @@ impl<H: FeltHash, const HEIGHT: usize> MerkleTree<H, HEIGHT> {
     /// This is not an external facing API; the functionality is instead
     /// accessed by calling [`MerkleTree::set`] with value set to
     /// [`Felt::ZERO`].
-    fn delete_leaf(&mut self, storage: &impl Storage, key: &BitSlice<u8, Msb0>) -> anyhow::Result<()> {
+    fn delete_leaf(
+        &mut self,
+        storage: &impl Storage,
+        key: &BitSlice<u8, Msb0>,
+    ) -> anyhow::Result<()> {
         // Algorithm explanation:
         //
         // The leaf's parent node is either an edge, or a binary node.
@@ -417,7 +456,12 @@ impl<H: FeltHash, const HEIGHT: usize> MerkleTree<H, HEIGHT> {
                     let direction = binary.direction(key).invert();
                     let child = binary.get_child(direction);
                     let path = std::iter::once(bool::from(direction)).collect::<BitVec<_, _>>();
-                    let mut edge = EdgeNode { storage_index: None, height: binary.height, path, child };
+                    let mut edge = EdgeNode {
+                        storage_index: None,
+                        height: binary.height,
+                        path,
+                        child,
+                    };
 
                     // Merge the remaining child if it's an edge.
                     self.merge_edges(storage, &mut edge)?;
@@ -454,7 +498,11 @@ impl<H: FeltHash, const HEIGHT: usize> MerkleTree<H, HEIGHT> {
     }
 
     /// Returns the value stored at key, or `None` if it does not exist.
-    pub fn get(&self, storage: &impl Storage, key: BitVec<u8, Msb0>) -> anyhow::Result<Option<Felt>> {
+    pub fn get(
+        &self,
+        storage: &impl Storage,
+        key: BitVec<u8, Msb0>,
+    ) -> anyhow::Result<Option<Felt>> {
         let node = self.traverse(storage, &key)?;
         let node = node.last();
 
@@ -523,7 +571,9 @@ impl<H: FeltHash, const HEIGHT: usize> MerkleTree<H, HEIGHT> {
                     TrieNode::Binary { left, right }
                 }
                 StoredNode::Edge { child, path } => {
-                    let key = key.get(height..height + path.len()).context("Key path is too short for edge node")?;
+                    let key = key
+                        .get(height..height + path.len())
+                        .context("Key path is too short for edge node")?;
                     height += path.len();
 
                     // If the path matches then we continue otherwise the proof is complete.
@@ -542,12 +592,16 @@ impl<H: FeltHash, const HEIGHT: usize> MerkleTree<H, HEIGHT> {
                     // End of the line, get child hashes.
                     let mut path = key[..height].to_bitvec();
                     path.push(Direction::Left.into());
-                    let left =
-                        storage.leaf(&path).context("Querying left leaf hash")?.context("Left leaf is missing")?;
+                    let left = storage
+                        .leaf(&path)
+                        .context("Querying left leaf hash")?
+                        .context("Left leaf is missing")?;
                     path.pop();
                     path.push(Direction::Right.into());
-                    let right =
-                        storage.leaf(&path).context("Querying right leaf hash")?.context("Right leaf is missing")?;
+                    let right = storage
+                        .leaf(&path)
+                        .context("Querying right leaf hash")?
+                        .context("Right leaf is missing")?;
 
                     TrieNode::Binary { left, right }
                 }
@@ -555,8 +609,10 @@ impl<H: FeltHash, const HEIGHT: usize> MerkleTree<H, HEIGHT> {
                     let mut current_path = key[..height].to_bitvec();
                     // End of the line, get hash of the child.
                     current_path.extend_from_bitslice(&path);
-                    let child =
-                        storage.leaf(&current_path).context("Querying leaf hash")?.context("Child leaf is missing")?;
+                    let child = storage
+                        .leaf(&current_path)
+                        .context("Querying leaf hash")?
+                        .context("Child leaf is missing")?;
 
                     TrieNode::Edge { child, path }
                 }
@@ -629,14 +685,21 @@ impl<H: FeltHash, const HEIGHT: usize> MerkleTree<H, HEIGHT> {
     ///
     /// Result will be either a [Binary](InternalNode::Binary),
     /// [Edge](InternalNode::Edge) or [Leaf](InternalNode::Leaf) node.
-    fn resolve(&self, storage: &impl Storage, index: u64, height: usize) -> anyhow::Result<InternalNode> {
+    fn resolve(
+        &self,
+        storage: &impl Storage,
+        index: u64,
+        height: usize,
+    ) -> anyhow::Result<InternalNode> {
         anyhow::ensure!(
             height < HEIGHT,
             "Attempted to resolve a node with height {height} which exceeds the tree height \
              {HEIGHT}"
         );
 
-        let node = storage.get(index)?.with_context(|| format!("Node {index} at height {height} is missing"))?;
+        let node = storage
+            .get(index)?
+            .with_context(|| format!("Node {index} at height {height} is missing"))?;
 
         let node = match node {
             StoredNode::Binary { left, right } => InternalNode::Binary(BinaryNode {
@@ -678,7 +741,9 @@ impl<H: FeltHash, const HEIGHT: usize> MerkleTree<H, HEIGHT> {
     /// subtrees).
     fn merge_edges(&mut self, storage: &impl Storage, parent: &mut EdgeNode) -> anyhow::Result<()> {
         let resolved_child = match &*parent.child.borrow() {
-            InternalNode::Unresolved(hash) => self.resolve(storage, *hash, parent.height + parent.path.len())?,
+            InternalNode::Unresolved(hash) => {
+                self.resolve(storage, *hash, parent.height + parent.path.len())?
+            }
             other => other.clone(),
         };
 
@@ -707,7 +772,11 @@ impl<H: FeltHash, const HEIGHT: usize> MerkleTree<H, HEIGHT> {
     /// full path to that node.
     ///
     /// Upon successful non-breaking visit of the tree, `None` will be returned.
-    pub fn dfs<X, VisitorFn>(&self, storage: &impl Storage, visitor_fn: &mut VisitorFn) -> anyhow::Result<Option<X>>
+    pub fn dfs<X, VisitorFn>(
+        &self,
+        storage: &impl Storage,
+        visitor_fn: &mut VisitorFn,
+    ) -> anyhow::Result<Option<X>>
     where
         VisitorFn: FnMut(&InternalNode, &BitSlice<u8, Msb0>) -> ControlFlow<X, Visit>,
     {
@@ -722,7 +791,10 @@ impl<H: FeltHash, const HEIGHT: usize> MerkleTree<H, HEIGHT> {
             return Ok(None);
         };
 
-        let mut visiting = vec![VisitedNode { node: root.clone(), path: bitvec![u8, Msb0;] }];
+        let mut visiting = vec![VisitedNode {
+            node: root.clone(),
+            path: bitvec![u8, Msb0;],
+        }];
 
         loop {
             match visiting.pop() {
@@ -774,7 +846,11 @@ impl<H: FeltHash, const HEIGHT: usize> MerkleTree<H, HEIGHT> {
                         InternalNode::Leaf => {}
                         InternalNode::Unresolved(idx) => {
                             visiting.push(VisitedNode {
-                                node: Rc::new(RefCell::new(self.resolve(storage, *idx, path.len())?)),
+                                node: Rc::new(RefCell::new(self.resolve(
+                                    storage,
+                                    *idx,
+                                    path.len(),
+                                )?)),
                                 path,
                             });
                         }

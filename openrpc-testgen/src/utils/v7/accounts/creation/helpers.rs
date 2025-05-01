@@ -25,7 +25,10 @@ pub async fn check_class_hash_exists(
     provider: &JsonRpcClient<HttpTransport>,
     class_hash: Felt,
 ) -> Result<(), CreationError> {
-    match provider.get_class(BlockId::Tag(BlockTag::Latest), class_hash).await {
+    match provider
+        .get_class(BlockId::Tag(BlockTag::Latest), class_hash)
+        .await
+    {
         Ok(_) => Ok(()),
         Err(err) => match err {
             ProviderError::StarknetError(StarknetError::ClassHashNotFound) => {
@@ -48,7 +51,9 @@ pub async fn generate_account(
 
     let (address, fee_estimate) = match account_type {
         AccountType::Oz => {
-            let factory = OpenZeppelinAccountFactory::new(class_hash, chain_id, signer, provider).await.unwrap();
+            let factory = OpenZeppelinAccountFactory::new(class_hash, chain_id, signer, provider)
+                .await
+                .unwrap();
             get_address_and_deployment_fee(factory, salt).await?
         }
     };
@@ -79,7 +84,9 @@ where
     Ok((deployment.address(), get_deployment_fee(&deployment).await?))
 }
 
-async fn get_deployment_fee<T>(account_deployment: &AccountDeploymentV3<'_, T>) -> Result<FeeEstimate<Felt>, String>
+async fn get_deployment_fee<'a, T>(
+    account_deployment: &AccountDeploymentV3<'a, T>,
+) -> Result<FeeEstimate<Felt>, String>
 where
     T: AccountFactory + Sync,
 {
@@ -87,6 +94,9 @@ where
 
     match fee_estimate {
         Ok(fee_estimate) => Ok(fee_estimate),
-        Err(err) => Err(format!("Failed to estimate account deployment fee. Reason: {}", err)),
+        Err(err) => Err(format!(
+            "Failed to estimate account deployment fee. Reason: {}",
+            err
+        )),
     }
 }

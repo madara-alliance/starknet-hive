@@ -12,7 +12,9 @@ use crate::{
             endpoints::{
                 declare_contract::get_compiled_contract,
                 errors::{CallError, OpenRpcTestGenError},
-                utils::{get_selector_from_name, get_storage_var_address, wait_for_sent_transaction},
+                utils::{
+                    get_selector_from_name, get_storage_var_address, wait_for_sent_transaction,
+                },
             },
             providers::provider::Provider,
         },
@@ -35,14 +37,21 @@ impl RunnableTrait for TestCase {
 
     async fn run(test_input: &Self::Input) -> Result<Self, OpenRpcTestGenError> {
         let (flattened_sierra_class, compiled_class_hash) = get_compiled_contract(
-            PathBuf::from_str("target/dev/contracts_contracts_smpl22_HelloStarknet.contract_class.json")?,
-            PathBuf::from_str("target/dev/contracts_contracts_smpl22_HelloStarknet.compiled_contract_class.json")?,
+            PathBuf::from_str(
+                "target/dev/contracts_contracts_smpl22_HelloStarknet.contract_class.json",
+            )?,
+            PathBuf::from_str(
+                "target/dev/contracts_contracts_smpl22_HelloStarknet.compiled_contract_class.json",
+            )?,
         )
         .await?;
 
         let sender = test_input.random_paymaster_account.random_accounts()?;
 
-        let declare_result = sender.declare_v3(flattened_sierra_class, compiled_class_hash).send().await?;
+        let declare_result = sender
+            .declare_v3(flattened_sierra_class, compiled_class_hash)
+            .send()
+            .await?;
 
         wait_for_sent_transaction(
             declare_result.transaction_hash,
@@ -58,7 +67,10 @@ impl RunnableTrait for TestCase {
         let unique = true;
         let constructor_calldata = vec![];
 
-        let deployment_result = factory.deploy_v3(constructor_calldata, salt, unique).send().await?;
+        let deployment_result = factory
+            .deploy_v3(constructor_calldata, salt, unique)
+            .send()
+            .await?;
 
         wait_for_sent_transaction(
             deployment_result.transaction_hash,
@@ -75,16 +87,23 @@ impl RunnableTrait for TestCase {
         let deployed_contract_address = match &deployment_receipt {
             TxnReceipt::Deploy(receipt) => receipt.contract_address,
             TxnReceipt::Invoke(receipt) => {
-                if let Some(contract_address) =
-                    receipt.common_receipt_properties.events.first().and_then(|event| event.data.first())
+                if let Some(contract_address) = receipt
+                    .common_receipt_properties
+                    .events
+                    .first()
+                    .and_then(|event| event.data.first())
                 {
                     *contract_address
                 } else {
-                    return Err(OpenRpcTestGenError::CallError(CallError::UnexpectedReceiptType));
+                    return Err(OpenRpcTestGenError::CallError(
+                        CallError::UnexpectedReceiptType,
+                    ));
                 }
             }
             _ => {
-                return Err(OpenRpcTestGenError::CallError(CallError::UnexpectedReceiptType));
+                return Err(OpenRpcTestGenError::CallError(
+                    CallError::UnexpectedReceiptType,
+                ));
             }
         };
 
@@ -103,14 +122,21 @@ impl RunnableTrait for TestCase {
             )
             .await?;
 
-        let initial_storage_proof = storage_proof.contracts_storage_proofs.first().ok_or_else(|| {
-            OpenRpcTestGenError::Proof(ProofError::MissingContractStorageProofData {
-                contract_address: deployed_contract_address,
-                slot: contract_balance_slot,
-            })
-        })?;
+        let initial_storage_proof =
+            storage_proof
+                .contracts_storage_proofs
+                .first()
+                .ok_or_else(|| {
+                    OpenRpcTestGenError::Proof(ProofError::MissingContractStorageProofData {
+                        contract_address: deployed_contract_address,
+                        slot: contract_balance_slot,
+                    })
+                })?;
 
-        assert_result!(initial_storage_proof.is_empty(), "Initial contract storage proof should be empty");
+        assert_result!(
+            initial_storage_proof.is_empty(),
+            "Initial contract storage proof should be empty"
+        );
 
         let balance_increase = Felt::from_hex("0x50")?;
         let increase_balance_call = Call {
@@ -119,8 +145,11 @@ impl RunnableTrait for TestCase {
             calldata: vec![balance_increase],
         };
 
-        let invoke_result =
-            test_input.random_paymaster_account.execute_v3(vec![increase_balance_call.clone()]).send().await?;
+        let invoke_result = test_input
+            .random_paymaster_account
+            .execute_v3(vec![increase_balance_call.clone()])
+            .send()
+            .await?;
 
         wait_for_sent_transaction(
             invoke_result.transaction_hash,
@@ -142,12 +171,16 @@ impl RunnableTrait for TestCase {
             )
             .await?;
 
-        let contract_storage_proof = storage_proof.contracts_storage_proofs.first().cloned().ok_or_else(|| {
-            OpenRpcTestGenError::Proof(ProofError::MissingContractStorageProofData {
-                contract_address: deployed_contract_address,
-                slot: contract_balance_slot,
-            })
-        })?;
+        let contract_storage_proof = storage_proof
+            .contracts_storage_proofs
+            .first()
+            .cloned()
+            .ok_or_else(|| {
+                OpenRpcTestGenError::Proof(ProofError::MissingContractStorageProofData {
+                    contract_address: deployed_contract_address,
+                    slot: contract_balance_slot,
+                })
+            })?;
 
         let merkle_tree = MerkleTree::from_proof(contract_storage_proof, None);
         let expected_child = balance_increase;

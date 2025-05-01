@@ -24,10 +24,18 @@ impl RunnableTrait for TestCase {
             "0x04718f5a0fc34cc1af16a1cdee98ffb20c31f5cd61d6ab07201858f4287c938d", //DEFAULT_STRK_FEE_TOKEN_ADDRESS
         );
         let selector = get_selector_from_name("transfer")?;
-        let calldata = vec![Felt::from_hex_unchecked("0x1"), Felt::from_hex_unchecked("0x1"), Felt::ZERO];
+        let calldata = vec![
+            Felt::from_hex_unchecked("0x1"),
+            Felt::from_hex_unchecked("0x1"),
+            Felt::ZERO,
+        ];
 
         let res = account
-            .execute_v3(vec![Call { to, selector, calldata }])
+            .execute_v3(vec![Call {
+                to,
+                selector,
+                calldata,
+            }])
             .gas(100000000000)
             .send()
             .await

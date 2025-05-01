@@ -17,7 +17,9 @@ struct Cli {
 async fn main() -> Result<(), ProxyError> {
     colored::control::set_override(true);
 
-    tracing_subscriber::fmt().with_max_level(tracing::Level::INFO).init();
+    tracing_subscriber::fmt()
+        .with_max_level(tracing::Level::INFO)
+        .init();
 
     let cli = Cli::parse();
     let addr = SocketAddr::from(([0, 0, 0, 0], cli.port));

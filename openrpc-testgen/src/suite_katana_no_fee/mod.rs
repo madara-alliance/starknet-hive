@@ -4,8 +4,8 @@ use std::{path::PathBuf, str::FromStr, time::Duration};
 use rand::{rngs::StdRng, RngCore, SeedableRng};
 use starknet_types_core::felt::Felt;
 use starknet_types_rpc::{
-    BlockId, BlockTag, ClassAndTxnHash, DeclareTxn, EventFilterWithPageRequest, Txn, TxnExecutionStatus,
-    TxnFinalityAndExecutionStatus, TxnReceipt, TxnStatus,
+    BlockId, BlockTag, ClassAndTxnHash, DeclareTxn, EventFilterWithPageRequest, Txn,
+    TxnExecutionStatus, TxnFinalityAndExecutionStatus, TxnReceipt, TxnStatus,
 };
 use tracing::info;
 use url::Url;
@@ -26,7 +26,8 @@ use crate::{
             contract::factory::ContractFactory,
             endpoints::{
                 declare_contract::{
-                    extract_class_hash_from_error, get_compiled_contract, parse_class_hash_from_error, RunnerError,
+                    extract_class_hash_from_error, get_compiled_contract,
+                    parse_class_hash_from_error, RunnerError,
                 },
                 errors::{CallError, ContinuationTokenError, OpenRpcTestGenError},
                 utils::get_selector_from_name,
@@ -70,7 +71,9 @@ impl SetupableTrait for TestSuiteKatanaNoFee {
         let (executable_account_flattened_sierra_class, executable_account_compiled_class_hash) =
             get_compiled_contract(
                 PathBuf::from_str("target/dev/contracts_ExecutableAccount.contract_class.json")?,
-                PathBuf::from_str("target/dev/contracts_ExecutableAccount.compiled_contract_class.json")?,
+                PathBuf::from_str(
+                    "target/dev/contracts_ExecutableAccount.compiled_contract_class.json",
+                )?,
             )
             .await?;
 
@@ -79,7 +82,8 @@ impl SetupableTrait for TestSuiteKatanaNoFee {
         let provider = JsonRpcClient::new(HttpTransport::new(setup_input.urls[0].clone()));
         let chain_id = get_chain_id(&provider).await?;
 
-        let paymaster_private_key = SigningKey::from_secret_scalar(setup_input.paymaster_private_key);
+        let paymaster_private_key =
+            SigningKey::from_secret_scalar(setup_input.paymaster_private_key);
 
         let mut paymaster_account = SingleOwnerAccount::new(
             provider.clone(),
@@ -92,12 +96,16 @@ impl SetupableTrait for TestSuiteKatanaNoFee {
         paymaster_account.set_block_id(BlockId::Tag(BlockTag::Pending));
 
         let declare_executable_account_hash = match paymaster_account
-            .declare_v3(executable_account_flattened_sierra_class.clone(), executable_account_compiled_class_hash)
+            .declare_v3(
+                executable_account_flattened_sierra_class.clone(),
+                executable_account_compiled_class_hash,
+            )
             .send()
             .await
         {
             Ok(result) => {
-                wait_for_sent_transaction_katana(result.transaction_hash, &paymaster_account).await?;
+                wait_for_sent_transaction_katana(result.transaction_hash, &paymaster_account)
+                    .await?;
                 dev_client.generate_block().await?;
                 Ok(result.class_hash)
             }
@@ -105,10 +113,12 @@ impl SetupableTrait for TestSuiteKatanaNoFee {
                 if sign_error.to_string().contains("is already declared") {
                     Ok(parse_class_hash_from_error(&sign_error.to_string())?)
                 } else {
-                    Err(OpenRpcTestGenError::RunnerError(RunnerError::AccountFailure(format!(
-                        "Transaction execution error: {}",
-                        sign_error
-                    ))))
+                    Err(OpenRpcTestGenError::RunnerError(
+                        RunnerError::AccountFailure(format!(
+                            "Transaction execution error: {}",
+                            sign_error
+                        )),
+                    ))
                 }
             }
 
@@ -116,10 +126,12 @@ impl SetupableTrait for TestSuiteKatanaNoFee {
                 if starkneterror.to_string().contains("is already declared") {
                     Ok(parse_class_hash_from_error(&starkneterror.to_string())?)
                 } else {
-                    Err(OpenRpcTestGenError::RunnerError(RunnerError::AccountFailure(format!(
-                        "Transaction execution error: {}",
-                        starkneterror
-                    ))))
+                    Err(OpenRpcTestGenError::RunnerError(
+                        RunnerError::AccountFailure(format!(
+                            "Transaction execution error: {}",
+                            starkneterror
+                        )),
+                    ))
                 }
             }
             Err(e) => {
@@ -127,13 +139,20 @@ impl SetupableTrait for TestSuiteKatanaNoFee {
                 if full_error_message.contains("is already declared") {
                     Ok(extract_class_hash_from_error(&full_error_message)?)
                 } else {
-                    Err(OpenRpcTestGenError::AccountError(AccountError::Other(full_error_message)))
+                    Err(OpenRpcTestGenError::AccountError(AccountError::Other(
+                        full_error_message,
+                    )))
                 }
             }
         }?;
 
-        let executable_account_data =
-            create_account(&provider, AccountType::Oz, Option::None, Some(declare_executable_account_hash)).await?;
+        let executable_account_data = create_account(
+            &provider,
+            AccountType::Oz,
+            Option::None,
+            Some(declare_executable_account_hash),
+        )
+        .await?;
 
         let deploy_executable_account_call: Call = Call {
             to: setup_input.udc_address,
@@ -147,10 +166,16 @@ impl SetupableTrait for TestSuiteKatanaNoFee {
             ],
         };
 
-        let deploy_executable_account_result =
-            paymaster_account.execute_v3(vec![deploy_executable_account_call]).send().await?;
+        let deploy_executable_account_result = paymaster_account
+            .execute_v3(vec![deploy_executable_account_call])
+            .send()
+            .await?;
 
-        wait_for_sent_transaction_katana(deploy_executable_account_result.transaction_hash, &paymaster_account).await?;
+        wait_for_sent_transaction_katana(
+            deploy_executable_account_result.transaction_hash,
+            &paymaster_account,
+        )
+        .await?;
 
         dev_client.generate_block().await?;
 
@@ -190,14 +215,17 @@ impl SetupableTrait for TestSuiteKatanaNoFee {
             executable_accounts.push(executable_account);
         }
 
-        let random_executable_account = RandomSingleOwnerAccount { accounts: executable_accounts };
-        let random_paymaster_account = RandomSingleOwnerAccount { accounts: paymaster_accounts };
+        let random_executable_account = RandomSingleOwnerAccount {
+            accounts: executable_accounts,
+        };
+        let random_paymaster_account = RandomSingleOwnerAccount {
+            accounts: paymaster_accounts,
+        };
 
-        let (flattened_sierra_class, compiled_class_hash) = get_compiled_contract(
+        let (flattened_sierra_class, compiled_class_hash) =
+        get_compiled_contract(
             PathBuf::from_str("target/dev/contracts_contracts_sample_contract_1_HelloStarknet.contract_class.json")?,
-            PathBuf::from_str(
-                "target/dev/contracts_contracts_sample_contract_1_HelloStarknet.compiled_contract_class.json",
-            )?,
+        PathBuf::from_str("target/dev/contracts_contracts_sample_contract_1_HelloStarknet.compiled_contract_class.json")?,
         )
         .await?;
 
@@ -207,8 +235,11 @@ impl SetupableTrait for TestSuiteKatanaNoFee {
             .await
         {
             Ok(result) => {
-                wait_for_sent_transaction_katana(result.transaction_hash, &random_paymaster_account.random_accounts()?)
-                    .await?;
+                wait_for_sent_transaction_katana(
+                    result.transaction_hash,
+                    &random_paymaster_account.random_accounts()?,
+                )
+                .await?;
                 dev_client.generate_block().await?;
                 Ok(result)
             }
@@ -219,10 +250,12 @@ impl SetupableTrait for TestSuiteKatanaNoFee {
                         transaction_hash: Felt::ZERO,
                     })
                 } else {
-                    Err(OpenRpcTestGenError::RunnerError(RunnerError::AccountFailure(format!(
-                        "Transaction execution error: {}",
-                        sign_error
-                    ))))
+                    Err(OpenRpcTestGenError::RunnerError(
+                        RunnerError::AccountFailure(format!(
+                            "Transaction execution error: {}",
+                            sign_error
+                        )),
+                    ))
                 }
             }
 
@@ -233,10 +266,12 @@ impl SetupableTrait for TestSuiteKatanaNoFee {
                         transaction_hash: Felt::ZERO,
                     })
                 } else {
-                    Err(OpenRpcTestGenError::RunnerError(RunnerError::AccountFailure(format!(
-                        "Transaction execution error: {}",
-                        starkneterror
-                    ))))
+                    Err(OpenRpcTestGenError::RunnerError(
+                        RunnerError::AccountFailure(format!(
+                            "Transaction execution error: {}",
+                            starkneterror
+                        )),
+                    ))
                 }
             }
             Err(e) => {
@@ -255,7 +290,8 @@ impl SetupableTrait for TestSuiteKatanaNoFee {
                     };
 
                     let provider = random_paymaster_account.provider();
-                    let random_account_address = random_paymaster_account.random_accounts()?.address();
+                    let random_account_address =
+                        random_paymaster_account.random_accounts()?.address();
 
                     let mut continuation_token = None;
                     let mut found_txn_hash = None;
@@ -270,7 +306,8 @@ impl SetupableTrait for TestSuiteKatanaNoFee {
                             if event.event.data.contains(&random_account_address) {
                                 let txn_hash = event.transaction_hash;
 
-                                let txn_details = provider.get_transaction_by_hash(txn_hash).await?;
+                                let txn_details =
+                                    provider.get_transaction_by_hash(txn_hash).await?;
 
                                 if let Txn::Declare(DeclareTxn::V3(declare_txn)) = txn_details {
                                     if declare_txn.class_hash == class_hash {
@@ -293,25 +330,38 @@ impl SetupableTrait for TestSuiteKatanaNoFee {
                     }
 
                     if let Some(tx_hash) = found_txn_hash {
-                        Ok(ClassAndTxnHash { class_hash, transaction_hash: tx_hash })
+                        Ok(ClassAndTxnHash {
+                            class_hash,
+                            transaction_hash: tx_hash,
+                        })
                     } else {
                         info!("Transaction hash not found for the declared clas");
-                        Err(OpenRpcTestGenError::RunnerError(RunnerError::AccountFailure(
-                            "Transaction hash not found for the declared class.".to_string(),
-                        )))
+                        Err(OpenRpcTestGenError::RunnerError(
+                            RunnerError::AccountFailure(
+                                "Transaction hash not found for the declared class.".to_string(),
+                            ),
+                        ))
                     }
                 } else {
-                    return Err(OpenRpcTestGenError::AccountError(AccountError::Other(full_error_message)));
+                    return Err(OpenRpcTestGenError::AccountError(AccountError::Other(
+                        full_error_message,
+                    )));
                 }
             }
         }?;
 
-        let factory = ContractFactory::new(declaration_result.class_hash, random_paymaster_account.random_accounts()?);
+        let factory = ContractFactory::new(
+            declaration_result.class_hash,
+            random_paymaster_account.random_accounts()?,
+        );
         let mut salt_buffer = [0u8; 32];
         let mut rng = StdRng::from_entropy();
         rng.fill_bytes(&mut salt_buffer[1..]);
 
-        let deployment_result = factory.deploy_v3(vec![], Felt::from_bytes_be(&salt_buffer), true).send().await?;
+        let deployment_result = factory
+            .deploy_v3(vec![], Felt::from_bytes_be(&salt_buffer), true)
+            .send()
+            .await?;
 
         wait_for_sent_transaction_katana(
             deployment_result.transaction_hash,
@@ -320,22 +370,31 @@ impl SetupableTrait for TestSuiteKatanaNoFee {
         .await?;
         dev_client.generate_block().await?;
 
-        let deployment_receipt =
-            random_paymaster_account.provider().get_transaction_receipt(deployment_result.transaction_hash).await?;
+        let deployment_receipt = random_paymaster_account
+            .provider()
+            .get_transaction_receipt(deployment_result.transaction_hash)
+            .await?;
 
         let deployed_contract_address = match &deployment_receipt {
             TxnReceipt::Deploy(receipt) => receipt.contract_address,
             TxnReceipt::Invoke(receipt) => {
-                if let Some(contract_address) =
-                    receipt.common_receipt_properties.events.first().and_then(|event| event.data.first())
+                if let Some(contract_address) = receipt
+                    .common_receipt_properties
+                    .events
+                    .first()
+                    .and_then(|event| event.data.first())
                 {
                     *contract_address
                 } else {
-                    return Err(OpenRpcTestGenError::CallError(CallError::UnexpectedReceiptType));
+                    return Err(OpenRpcTestGenError::CallError(
+                        CallError::UnexpectedReceiptType,
+                    ));
                 }
             }
             _ => {
-                return Err(OpenRpcTestGenError::CallError(CallError::UnexpectedReceiptType));
+                return Err(OpenRpcTestGenError::CallError(
+                    CallError::UnexpectedReceiptType,
+                ));
             }
         };
 
@@ -387,7 +446,10 @@ pub async fn wait_for_sent_transaction_katana(
     let start_fetching = std::time::Instant::now();
     let wait_for = Duration::from_secs(60);
 
-    info!("⏳ Waiting for transaction: {:?} to be mined.", transaction_hash);
+    info!(
+        "⏳ Waiting for transaction: {:?} to be mined.",
+        transaction_hash
+    );
 
     loop {
         if start_fetching.elapsed() > wait_for {
@@ -398,10 +460,17 @@ pub async fn wait_for_sent_transaction_katana(
         }
 
         // Check transaction status
-        let status = match user_passed_account.provider().get_transaction_status(transaction_hash).await {
+        let status = match user_passed_account
+            .provider()
+            .get_transaction_status(transaction_hash)
+            .await
+        {
             Ok(status) => status,
             Err(_e) => {
-                info!("Error while checking status for transaction: {:?}. Retrying...", transaction_hash);
+                info!(
+                    "Error while checking status for transaction: {:?}. Retrying...",
+                    transaction_hash
+                );
                 tokio::time::sleep(Duration::from_secs(1)).await;
                 continue;
             }
@@ -413,7 +482,10 @@ pub async fn wait_for_sent_transaction_katana(
                 execution_status: Some(TxnExecutionStatus::Succeeded),
                 ..
             } => {
-                info!("✅ Transaction {:?} Succeeded and accepted on L2. Finishing...", transaction_hash);
+                info!(
+                    "✅ Transaction {:?} Succeeded and accepted on L2. Finishing...",
+                    transaction_hash
+                );
                 return Ok(status);
             }
             TxnFinalityAndExecutionStatus {
@@ -421,25 +493,50 @@ pub async fn wait_for_sent_transaction_katana(
                 execution_status: Some(TxnExecutionStatus::Reverted),
                 ..
             } => {
-                info!("❌ Transaction {:?} reverted on L2. Stopping...", transaction_hash);
-                return Err(OpenRpcTestGenError::TransactionFailed(transaction_hash.to_string()));
+                info!(
+                    "❌ Transaction {:?} reverted on L2. Stopping...",
+                    transaction_hash
+                );
+                return Err(OpenRpcTestGenError::TransactionFailed(
+                    transaction_hash.to_string(),
+                ));
             }
-            TxnFinalityAndExecutionStatus { finality_status: TxnStatus::Rejected, .. } => {
-                info!("❌ Transaction {:?} rejected. Stopping...", transaction_hash);
-                return Err(OpenRpcTestGenError::TransactionRejected(transaction_hash.to_string()));
+            TxnFinalityAndExecutionStatus {
+                finality_status: TxnStatus::Rejected,
+                ..
+            } => {
+                info!(
+                    "❌ Transaction {:?} rejected. Stopping...",
+                    transaction_hash
+                );
+                return Err(OpenRpcTestGenError::TransactionRejected(
+                    transaction_hash.to_string(),
+                ));
             }
-            TxnFinalityAndExecutionStatus { finality_status: TxnStatus::Received, .. } => {
-                info!("🛎️ Transaction {:?} received. Retrying...", transaction_hash);
+            TxnFinalityAndExecutionStatus {
+                finality_status: TxnStatus::Received,
+                ..
+            } => {
+                info!(
+                    "🛎️ Transaction {:?} received. Retrying...",
+                    transaction_hash
+                );
                 tokio::time::sleep(Duration::from_secs(2)).await;
                 continue;
             }
-            TxnFinalityAndExecutionStatus { finality_status: TxnStatus::AcceptedOnL1, .. } => {
+            TxnFinalityAndExecutionStatus {
+                finality_status: TxnStatus::AcceptedOnL1,
+                ..
+            } => {
                 info!("✅ Transaction acceoted on L1. Finishing...");
                 return Ok(status);
             }
 
             _ => {
-                info!("⏳ Transaction {} status not finalized. Retrying...", transaction_hash);
+                info!(
+                    "⏳ Transaction {} status not finalized. Retrying...",
+                    transaction_hash
+                );
                 tokio::time::sleep(Duration::from_secs(2)).await;
                 continue;
             }
@@ -471,11 +568,18 @@ impl ContinuationToken {
         if arr.len() != 3 {
             return Err(ContinuationTokenError::InvalidToken);
         }
-        let block_n = u64::from_str_radix(arr[0], 16).map_err(ContinuationTokenError::ParseFailed)?;
-        let receipt_n = u64::from_str_radix(arr[1], 16).map_err(ContinuationTokenError::ParseFailed)?;
-        let event_n = u64::from_str_radix(arr[2], 16).map_err(ContinuationTokenError::ParseFailed)?;
+        let block_n =
+            u64::from_str_radix(arr[0], 16).map_err(ContinuationTokenError::ParseFailed)?;
+        let receipt_n =
+            u64::from_str_radix(arr[1], 16).map_err(ContinuationTokenError::ParseFailed)?;
+        let event_n =
+            u64::from_str_radix(arr[2], 16).map_err(ContinuationTokenError::ParseFailed)?;
 
-        Ok(ContinuationToken { block_n, txn_n: receipt_n, event_n })
+        Ok(ContinuationToken {
+            block_n,
+            txn_n: receipt_n,
+            event_n,
+        })
     }
 }
 
@@ -485,4 +589,8 @@ impl fmt::Display for ContinuationToken {
     }
 }
 
-include!(concat!(env!("OUT_DIR"), "/generated_tests_suite_katana_no_fee.rs"));
+#[cfg(not(feature = "rust-analyzer"))]
+include!(concat!(
+    env!("OUT_DIR"),
+    "/generated_tests_suite_katana_no_fee.rs"
+));

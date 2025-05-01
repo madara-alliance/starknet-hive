@@ -26,15 +26,24 @@ impl<S> BlockNumberStateMachine<S> {
 
 impl BlockNumberStateMachine<Ok> {
     pub fn new() -> Self {
-        Self { path: "/feeder_gateway/get_block?blockNumber=latest&headerOnly=true".to_string(), state: Ok }
+        Self {
+            path: "/feeder_gateway/get_block?blockNumber=latest&headerOnly=true".to_string(),
+            state: Ok,
+        }
     }
 
     pub fn to_invalid(self) -> BlockNumberStateMachine<Invalid> {
-        BlockNumberStateMachine { path: self.path, state: Invalid }
+        BlockNumberStateMachine {
+            path: self.path,
+            state: Invalid,
+        }
     }
 
     pub fn to_skipped(&self) -> BlockNumberStateMachine<Skipped> {
-        BlockNumberStateMachine { path: self.path.clone(), state: Skipped }
+        BlockNumberStateMachine {
+            path: self.path.clone(),
+            state: Skipped,
+        }
     }
 }
 
@@ -46,13 +55,19 @@ impl Default for BlockNumberStateMachine<Ok> {
 
 impl BlockNumberStateMachine<Invalid> {
     pub fn to_skipped(self) -> BlockNumberStateMachine<Skipped> {
-        BlockNumberStateMachine { path: self.path, state: Skipped }
+        BlockNumberStateMachine {
+            path: self.path,
+            state: Skipped,
+        }
     }
 }
 
 impl BlockNumberStateMachine<Skipped> {
     pub fn to_okk(self) -> BlockNumberStateMachine<Ok> {
-        BlockNumberStateMachine { path: self.path, state: Ok }
+        BlockNumberStateMachine {
+            path: self.path,
+            state: Ok,
+        }
     }
 }
 
@@ -63,7 +78,12 @@ pub enum BlockNumberStateMachineWrapper {
 }
 
 impl StateMachine for BlockNumberStateMachineWrapper {
-    fn run(&mut self, request_body: String, response_body: String, path: String) -> StateMachineResult {
+    fn run(
+        &mut self,
+        request_body: String,
+        response_body: String,
+        path: String,
+    ) -> StateMachineResult {
         if self.filter(path) {
             self.step(request_body, response_body)
         } else {
@@ -87,24 +107,29 @@ impl StateMachine for BlockNumberStateMachineWrapper {
     fn step(&mut self, _request_body: String, response_body: String) -> StateMachineResult {
         *self = match self {
             BlockNumberStateMachineWrapper::Ok(machine) => {
-                let valid_hash = match serde_json::from_str::<BlockHashAndNumber<String>>(&response_body) {
-                    std::result::Result::Ok(deserialized_response) => {
-                        let block_hash_str = deserialized_response.block_hash.trim_start_matches("0x").to_string();
-                        match (
+                let valid_hash =
+                    match serde_json::from_str::<BlockHashAndNumber<String>>(&response_body) {
+                        std::result::Result::Ok(deserialized_response) => {
+                            let block_hash_str = deserialized_response
+                                .block_hash
+                                .trim_start_matches("0x")
+                                .to_string();
+                            match (
                             num_bigint::BigUint::from_str_radix(&block_hash_str, 16),
                             num_bigint::BigUint::from_str_radix(
                                 "800000000000011000000000000000000000000000000000000000000000001",
                                 16,
                             ),
                         ) {
-                            (std::result::Result::Ok(block_hash_int), std::result::Result::Ok(stark_prime)) => {
-                                block_hash_int < stark_prime
-                            }
+                            (
+                                std::result::Result::Ok(block_hash_int),
+                                std::result::Result::Ok(stark_prime),
+                            ) => block_hash_int < stark_prime,
                             _ => false,
                         }
-                    }
-                    Err(_) => false,
-                };
+                        }
+                        Err(_) => false,
+                    };
                 if valid_hash {
                     BlockNumberStateMachineWrapper::Ok(machine.clone())
                 } else {

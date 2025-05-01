@@ -32,7 +32,9 @@ impl RunnableTrait for TestCase {
             )
             .await?
             .first()
-            .ok_or(OpenRpcTestGenError::Other("Empty initial contract balance".to_string()))?;
+            .ok_or(OpenRpcTestGenError::Other(
+                "Empty initial contract balance".to_string(),
+            ))?;
 
         let amount_to_increase = Felt::from_hex_unchecked("0x50");
         let increase_balance_call = Call {
@@ -41,7 +43,11 @@ impl RunnableTrait for TestCase {
             calldata: vec![amount_to_increase],
         };
 
-        let invoke_result = test_input.random_paymaster_account.execute_v3(vec![increase_balance_call]).send().await?;
+        let invoke_result = test_input
+            .random_paymaster_account
+            .execute_v3(vec![increase_balance_call])
+            .send()
+            .await?;
 
         wait_for_sent_transaction(
             invoke_result.transaction_hash,
@@ -66,9 +72,9 @@ impl RunnableTrait for TestCase {
 
         assert_result!(result);
 
-        let updated_balance = *updated_balance?
-            .first()
-            .ok_or(OpenRpcTestGenError::Other("Empty updated contract balance".to_string()))?;
+        let updated_balance = *updated_balance?.first().ok_or(OpenRpcTestGenError::Other(
+            "Empty updated contract balance".to_string(),
+        ))?;
 
         assert_result!(
             updated_balance == initial_balance + amount_to_increase,

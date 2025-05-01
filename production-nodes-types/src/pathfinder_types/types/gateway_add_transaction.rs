@@ -58,7 +58,9 @@ impl fmt::Display for AddTransactionResponseType {
                 write!(
                     f,
                     "DECLARE - Code: {}, Transaction Hash: {:?}, Class Hash: {:?}",
-                    declare_response.code, declare_response.transaction_hash, declare_response.class_hash
+                    declare_response.code,
+                    declare_response.transaction_hash,
+                    declare_response.class_hash
                 )
             }
             AddTransactionResponseType::DeployAccount(deploy_account_response) => {

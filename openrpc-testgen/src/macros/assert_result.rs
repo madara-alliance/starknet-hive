@@ -35,26 +35,36 @@ macro_rules! assert_result {
         if let Ok(result) = std::panic::catch_unwind(|| $cond) {
             if result {
             } else {
-                Err($crate::macros::macros_errors::AssertionNoPanicError::AssertionNoPanicFailed(
-                    $crate::macros::assert_result::DEFAULT_ASSERTION_ERROR.to_string(),
-                ))?
+                Err(
+                    $crate::macros::macros_errors::AssertionNoPanicError::AssertionNoPanicFailed(
+                        $crate::macros::assert_result::DEFAULT_ASSERTION_ERROR.to_string(),
+                    ),
+                )?
             }
         } else {
-            Err($crate::macros::macros_errors::AssertionNoPanicError::AssertionNoPanicFailed(
-                "Expression evaluation panicked".to_string(),
-            ))?
+            Err(
+                $crate::macros::macros_errors::AssertionNoPanicError::AssertionNoPanicFailed(
+                    "Expression evaluation panicked".to_string(),
+                ),
+            )?
         }
     }};
     ($cond:expr, $msg:expr) => {{
         if let Ok(result) = std::panic::catch_unwind(|| $cond) {
             if result {
             } else {
-                Err($crate::macros::macros_errors::AssertionNoPanicError::AssertionNoPanicFailed($msg.to_string()))?
+                Err(
+                    $crate::macros::macros_errors::AssertionNoPanicError::AssertionNoPanicFailed(
+                        $msg.to_string(),
+                    ),
+                )?
             }
         } else {
-            Err($crate::macros::macros_errors::AssertionNoPanicError::AssertionNoPanicFailed(
-                "Expression evaluation panicked".to_string(),
-            ))?
+            Err(
+                $crate::macros::macros_errors::AssertionNoPanicError::AssertionNoPanicFailed(
+                    "Expression evaluation panicked".to_string(),
+                ),
+            )?
         }
     }};
 }

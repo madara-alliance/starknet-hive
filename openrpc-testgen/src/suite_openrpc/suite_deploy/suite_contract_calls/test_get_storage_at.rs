@@ -37,7 +37,9 @@ impl RunnableTrait for TestCase {
             )
             .await?
             .first()
-            .ok_or(OpenRpcTestGenError::Other("Empty initial contract balance".to_string()))?;
+            .ok_or(OpenRpcTestGenError::Other(
+                "Empty initial contract balance".to_string(),
+            ))?;
 
         // Step 2: Get the storage value and get the storage value
         let contract_balance_slot = get_storage_var_address("balance", &[])?;
@@ -45,7 +47,11 @@ impl RunnableTrait for TestCase {
         let initial_storage_value = test_input
             .random_paymaster_account
             .provider()
-            .get_storage_at(test_input.deployed_contract_address, contract_balance_slot, BlockId::Tag(BlockTag::Latest))
+            .get_storage_at(
+                test_input.deployed_contract_address,
+                contract_balance_slot,
+                BlockId::Tag(BlockTag::Latest),
+            )
             .await?;
 
         // Step 3: Update the storage value
@@ -56,7 +62,11 @@ impl RunnableTrait for TestCase {
             calldata: vec![balance_increase],
         };
 
-        let invoke_result = test_input.random_paymaster_account.execute_v3(vec![increase_balance_call]).send().await?;
+        let invoke_result = test_input
+            .random_paymaster_account
+            .execute_v3(vec![increase_balance_call])
+            .send()
+            .await?;
 
         wait_for_sent_transaction(
             invoke_result.transaction_hash,
@@ -78,12 +88,18 @@ impl RunnableTrait for TestCase {
             )
             .await?
             .first()
-            .ok_or(OpenRpcTestGenError::Other("Empty updated contract balance".to_string()))?;
+            .ok_or(OpenRpcTestGenError::Other(
+                "Empty updated contract balance".to_string(),
+            ))?;
 
         let updated_storage_value = test_input
             .random_paymaster_account
             .provider()
-            .get_storage_at(test_input.deployed_contract_address, contract_balance_slot, BlockId::Tag(BlockTag::Latest))
+            .get_storage_at(
+                test_input.deployed_contract_address,
+                contract_balance_slot,
+                BlockId::Tag(BlockTag::Latest),
+            )
             .await;
 
         // Step 5: Assert the updated balance and storage value
@@ -94,7 +110,10 @@ impl RunnableTrait for TestCase {
 
         assert_result!(
             updated_balance == initial_balance + balance_increase,
-            format!("Mismatch in updated balance. Expected: {}, Found: {}.", balance_increase, updated_balance)
+            format!(
+                "Mismatch in updated balance. Expected: {}, Found: {}.",
+                balance_increase, updated_balance
+            )
         );
 
         assert_result!(
@@ -113,7 +132,10 @@ impl RunnableTrait for TestCase {
             )
         );
 
-        println!("deployed_contract_address {:#?}", test_input.deployed_contract_address,);
+        println!(
+            "deployed_contract_address {:#?}",
+            test_input.deployed_contract_address,
+        );
 
         println!("contract_balance_slot {:#?}", contract_balance_slot);
 

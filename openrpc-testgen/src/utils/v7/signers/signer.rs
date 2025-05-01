@@ -11,10 +11,14 @@ pub trait Signer {
     type GetPublicKeyError: Error + Send + Sync;
     type SignError: Error + Send + Sync;
 
-    fn get_public_key(&self)
-        -> impl std::future::Future<Output = Result<VerifyingKey, Self::GetPublicKeyError>> + Send;
+    fn get_public_key(
+        &self,
+    ) -> impl std::future::Future<Output = Result<VerifyingKey, Self::GetPublicKeyError>> + Send;
 
-    fn sign_hash(&self, hash: &Felt) -> impl std::future::Future<Output = Result<Signature, Self::SignError>> + Send;
+    fn sign_hash(
+        &self,
+        hash: &Felt,
+    ) -> impl std::future::Future<Output = Result<Signature, Self::SignError>> + Send;
 
     /// Whether the underlying signer implementation is interactive, such as a hardware wallet.
     /// Implementations should return `true` if the signing operation is very expensive, even if not

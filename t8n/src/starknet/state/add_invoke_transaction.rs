@@ -15,14 +15,18 @@ pub fn add_invoke_transaction(
     broadcasted_invoke_transaction: BroadcastedInvokeTransaction,
 ) -> DevnetResult<TransactionHash> {
     if broadcasted_invoke_transaction.is_max_fee_zero_value() {
-        return Err(Error::MaxFeeZeroError { tx_type: broadcasted_invoke_transaction.to_string() });
+        return Err(Error::MaxFeeZeroError {
+            tx_type: broadcasted_invoke_transaction.to_string(),
+        });
     }
 
-    let blockifier_invoke_transaction =
-        broadcasted_invoke_transaction.create_blockifier_invoke_transaction(&starknet.chain_id().to_felt())?;
+    let blockifier_invoke_transaction = broadcasted_invoke_transaction
+        .create_blockifier_invoke_transaction(&starknet.chain_id().to_felt())?;
 
     if blockifier_invoke_transaction.only_query {
-        return Err(Error::UnsupportedAction { msg: "query-only transactions are not supported".to_string() });
+        return Err(Error::UnsupportedAction {
+            msg: "query-only transactions are not supported".to_string(),
+        });
     }
 
     let transaction_hash = blockifier_invoke_transaction.tx_hash.0.into();
@@ -37,13 +41,22 @@ pub fn add_invoke_transaction(
     };
 
     let blockifier_execution_result =
-        blockifier::transaction::account_transaction::AccountTransaction::Invoke(blockifier_invoke_transaction)
-            .execute(&mut starknet.state.state, &starknet.block_context, true, true);
+        blockifier::transaction::account_transaction::AccountTransaction::Invoke(
+            blockifier_invoke_transaction,
+        )
+        .execute(
+            &mut starknet.state.state,
+            &starknet.block_context,
+            true,
+            true,
+        );
 
     let transaction = TransactionWithHash::new(transaction_hash, invoke_transaction);
 
     starknet.handle_transaction_result(transaction, None, blockifier_execution_result)?;
-    starknet.handle_dump_event(DumpEvent::AddInvokeTransaction(broadcasted_invoke_transaction))?;
+    starknet.handle_dump_event(DumpEvent::AddInvokeTransaction(
+        broadcasted_invoke_transaction,
+    ))?;
 
     Ok(transaction_hash)
 }

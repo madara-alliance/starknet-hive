@@ -82,13 +82,23 @@ impl RunnableTrait for TestCase {
         // check the status of each txs
         for hash in txs.iter() {
             let txn_finality_and_execution_status = provider.get_transaction_status(*hash).await?;
-            assert_eq_result!(txn_finality_and_execution_status.execution_status, Some(TxnExecutionStatus::Succeeded));
-            assert_eq_result!(txn_finality_and_execution_status.finality_status, TxnStatus::AcceptedOnL2);
+            assert_eq_result!(
+                txn_finality_and_execution_status.execution_status,
+                Some(TxnExecutionStatus::Succeeded)
+            );
+            assert_eq_result!(
+                txn_finality_and_execution_status.finality_status,
+                TxnStatus::AcceptedOnL2
+            );
         }
 
         let nonce = account.get_nonce().await?;
 
-        assert_eq_result!(nonce, initial_nonce + Felt::from(N), "Nonce should be incremented by {N} time");
+        assert_eq_result!(
+            nonce,
+            initial_nonce + Felt::from(N),
+            "Nonce should be incremented by {N} time"
+        );
 
         Ok(Self {})
     }

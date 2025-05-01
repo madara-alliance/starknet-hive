@@ -40,5 +40,9 @@ pub async fn deploy_contract<P: Provider + Send + Sync + Debug>(
     let mut rng = StdRng::from_entropy();
     rng.fill_bytes(&mut salt_buffer[1..]);
 
-    factory.deploy_v3(vec![], Felt::from_bytes_be(&salt_buffer), true).send().await.unwrap()
+    factory
+        .deploy_v3(vec![], Felt::from_bytes_be(&salt_buffer), true)
+        .send()
+        .await
+        .unwrap()
 }

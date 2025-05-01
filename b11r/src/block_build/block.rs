@@ -4,8 +4,8 @@ use production_nodes_types::pathfinder_types::{
         block::{Block, BlockHeader, BlockHeaderData},
         block_builder_input::{B11rInput, BlockHash},
         block_hash::{
-            calculate_event_commitment, calculate_receipt_commitment, calculate_transaction_commitment,
-            compute_final_hash,
+            calculate_event_commitment, calculate_receipt_commitment,
+            calculate_transaction_commitment, compute_final_hash,
         },
         event::{extract_emmited_events, get_events_count, Event},
         receipt::{convert_receipts, Receipt},
@@ -52,8 +52,10 @@ pub fn build_block_tx_hashes_thin(b11r_input: B11rInput) -> Result<Block, Error>
         &state_update_common.declared_sierra_classes,
     );
 
-    let receipts: Vec<Receipt> =
-        convert_receipts(transaction_receipts.clone()).into_iter().map(|receipt| receipt.into()).collect();
+    let receipts: Vec<Receipt> = convert_receipts(transaction_receipts.clone())
+        .into_iter()
+        .map(|receipt| receipt.into())
+        .collect();
 
     let receipt_commitment = calculate_receipt_commitment(&receipts)?;
 
@@ -72,19 +74,35 @@ pub fn build_block_tx_hashes_thin(b11r_input: B11rInput) -> Result<Block, Error>
         state_diff_length: state_update_common.state_diff_length(),
         starknet_version: block_header.starknet_version,
         eth_l1_gas_price: u128::from_str_radix(
-            block_header.l1_gas_price.price_in_wei.as_str().trim_start_matches("0x"),
+            block_header
+                .l1_gas_price
+                .price_in_wei
+                .as_str()
+                .trim_start_matches("0x"),
             16,
         )?,
         strk_l1_gas_price: u128::from_str_radix(
-            block_header.l1_gas_price.price_in_fri.as_str().trim_start_matches("0x"),
+            block_header
+                .l1_gas_price
+                .price_in_fri
+                .as_str()
+                .trim_start_matches("0x"),
             16,
         )?,
         eth_l1_data_gas_price: u128::from_str_radix(
-            block_header.l1_data_gas_price.price_in_wei.as_str().trim_start_matches("0x"),
+            block_header
+                .l1_data_gas_price
+                .price_in_wei
+                .as_str()
+                .trim_start_matches("0x"),
             16,
         )?,
         strk_l1_data_gas_price: u128::from_str_radix(
-            block_header.l1_data_gas_price.price_in_fri.as_str().trim_start_matches("0x"),
+            block_header
+                .l1_data_gas_price
+                .price_in_fri
+                .as_str()
+                .trim_start_matches("0x"),
             16,
         )?,
         receipt_commitment,
@@ -93,6 +111,9 @@ pub fn build_block_tx_hashes_thin(b11r_input: B11rInput) -> Result<Block, Error>
 
     block_header_data.hash = compute_final_hash(&block_header_data)?;
 
-    let block = Block { header: block_header_data, transactions };
+    let block = Block {
+        header: block_header_data,
+        transactions,
+    };
     Ok(block)
 }

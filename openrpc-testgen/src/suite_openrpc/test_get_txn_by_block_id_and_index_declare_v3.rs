@@ -5,7 +5,8 @@ use crate::{
     utils::v7::{
         accounts::account::{Account, ConnectedAccount},
         endpoints::{
-            declare_contract::get_compiled_contract, errors::OpenRpcTestGenError, utils::wait_for_sent_transaction,
+            declare_contract::get_compiled_contract, errors::OpenRpcTestGenError,
+            utils::wait_for_sent_transaction,
         },
         providers::provider::Provider,
     },
@@ -22,17 +23,25 @@ impl RunnableTrait for TestCase {
 
     async fn run(test_input: &Self::Input) -> Result<Self, OpenRpcTestGenError> {
         let (flattened_sierra_class, compiled_class_hash) = get_compiled_contract(
-            PathBuf::from_str("target/dev/contracts_contracts_smpl16_HelloStarknet.contract_class.json")?,
-            PathBuf::from_str("target/dev/contracts_contracts_smpl16_HelloStarknet.compiled_contract_class.json")?,
+            PathBuf::from_str(
+                "target/dev/contracts_contracts_smpl16_HelloStarknet.contract_class.json",
+            )?,
+            PathBuf::from_str(
+                "target/dev/contracts_contracts_smpl16_HelloStarknet.compiled_contract_class.json",
+            )?,
         )
         .await?;
 
         let sender = test_input.random_paymaster_account.random_accounts()?;
         let initial_sender_nonce = sender.get_nonce().await?;
-        let declare = sender.declare_v3(flattened_sierra_class, compiled_class_hash);
-        let prepared_declaration_v3 = declare.prepare().await?;
+        let prepared_declaration_v3 = sender
+            .declare_v3(flattened_sierra_class, compiled_class_hash)
+            .prepare()
+            .await?;
 
-        let declare_v3_request = prepared_declaration_v3.get_declare_request(false, false).await?;
+        let declare_v3_request = prepared_declaration_v3
+            .get_declare_request(false, false)
+            .await?;
 
         let (valid_signature, declare_hash) = verify_declare_v3_signature(
             &declare_v3_request,
@@ -42,7 +51,9 @@ impl RunnableTrait for TestCase {
 
         let signature = declare_v3_request.clone().signature;
 
-        let declaration_result = prepared_declaration_v3.send_from_request(declare_v3_request).await?;
+        let declaration_result = prepared_declaration_v3
+            .send_from_request(declare_v3_request)
+            .await?;
 
         wait_for_sent_transaction(
             declaration_result.transaction_hash,
@@ -58,18 +69,28 @@ impl RunnableTrait for TestCase {
             )
         );
 
-        let block_hash = test_input.random_paymaster_account.provider().block_hash_and_number().await?.block_hash;
+        let block_hash = test_input
+            .random_paymaster_account
+            .provider()
+            .block_hash_and_number()
+            .await?
+            .block_hash;
 
         // Looking for txn index in the block
-        let block_with_txns =
-            test_input.random_paymaster_account.provider().get_block_with_txs(BlockId::Hash(block_hash)).await?;
+        let block_with_txns = test_input
+            .random_paymaster_account
+            .provider()
+            .get_block_with_txs(BlockId::Hash(block_hash))
+            .await?;
         let txn_index: u64 = match block_with_txns {
             MaybePendingBlockWithTxs::Block(block_with_txs) => block_with_txs
                 .transactions
                 .iter()
                 .position(|tx| tx.transaction_hash == declaration_result.transaction_hash)
                 .ok_or_else(|| {
-                    OpenRpcTestGenError::TransactionNotFound(declaration_result.transaction_hash.to_string())
+                    OpenRpcTestGenError::TransactionNotFound(
+                        declaration_result.transaction_hash.to_string(),
+                    )
                 })?
                 .try_into()
                 .map_err(|_| OpenRpcTestGenError::TransactionIndexOverflow)?,
@@ -78,7 +99,9 @@ impl RunnableTrait for TestCase {
                 .iter()
                 .position(|tx| tx.transaction_hash == declaration_result.transaction_hash)
                 .ok_or_else(|| {
-                    OpenRpcTestGenError::TransactionNotFound(declaration_result.transaction_hash.to_string())
+                    OpenRpcTestGenError::TransactionNotFound(
+                        declaration_result.transaction_hash.to_string(),
+                    )
                 })?
                 .try_into()
                 .map_err(|_| OpenRpcTestGenError::TransactionIndexOverflow)?,
@@ -96,18 +119,26 @@ impl RunnableTrait for TestCase {
         let txn = match txn? {
             Txn::Declare(DeclareTxn::V3(txn)) => txn,
             _ => {
-                return Err(OpenRpcTestGenError::UnexpectedTxnType("Unexpected txn type ".to_string()));
+                return Err(OpenRpcTestGenError::UnexpectedTxnType(
+                    "Unexpected txn type ".to_string(),
+                ));
             }
         };
 
         assert_result!(
             txn.account_deployment_data.is_empty(),
-            format!("Expected no account deployment data, but got {:?}", txn.account_deployment_data)
+            format!(
+                "Expected no account deployment data, but got {:?}",
+                txn.account_deployment_data
+            )
         );
 
         assert_result!(
             txn.class_hash == declaration_result.class_hash,
-            format!("Expected class hash to be {:?}, but got {:?}", declaration_result.class_hash, txn.class_hash)
+            format!(
+                "Expected class hash to be {:?}, but got {:?}",
+                declaration_result.class_hash, txn.class_hash
+            )
         );
 
         assert_result!(
@@ -137,11 +168,17 @@ impl RunnableTrait for TestCase {
             )
         );
 
-        assert_result!(valid_signature, format!("Invalid signature, checked by t9n.",));
+        assert_result!(
+            valid_signature,
+            format!("Invalid signature, checked by t9n.",)
+        );
 
         assert_result!(
             txn.signature == signature,
-            format!("Expected signature: {:?}, got {:?}", signature, txn.signature)
+            format!(
+                "Expected signature: {:?}, got {:?}",
+                signature, txn.signature
+            )
         );
 
         let expected_nonce_damode = DaMode::L1;
@@ -156,7 +193,10 @@ impl RunnableTrait for TestCase {
 
         assert_result!(
             txn.paymaster_data.is_empty(),
-            format!("Expected no paymaster data, but got {:?}", txn.paymaster_data)
+            format!(
+                "Expected no paymaster data, but got {:?}",
+                txn.paymaster_data
+            )
         );
 
         let expected_l1gas_maxamount = String::from("0xb800");
@@ -200,13 +240,19 @@ impl RunnableTrait for TestCase {
 
         assert_result!(
             txn.sender_address == sender_address,
-            format!("Expected sender address to be {:?}, but got {:?}", sender_address, txn.sender_address)
+            format!(
+                "Expected sender address to be {:?}, but got {:?}",
+                sender_address, txn.sender_address
+            )
         );
 
         let expected_tip = String::from("0x0");
         assert_result!(
             txn.tip == expected_tip,
-            format!("Expected tip to be {:?}, but got {:?}", expected_tip, txn.tip)
+            format!(
+                "Expected tip to be {:?}, but got {:?}",
+                expected_tip, txn.tip
+            )
         );
 
         Ok(Self {})

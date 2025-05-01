@@ -2,13 +2,15 @@ use std::num::NonZeroU128;
 
 use serde::Serialize;
 use starknet_devnet_types::{
-    chain_id::ChainId, contract_class::ContractClass, felt::Felt, rpc::state::Balance, traits::HashProducer,
+    chain_id::ChainId, contract_class::ContractClass, felt::Felt, rpc::state::Balance,
+    traits::HashProducer,
 };
 use url::Url;
 
 use super::constants::{
-    CAIRO_1_ACCOUNT_CONTRACT_SIERRA, DEVNET_DEFAULT_CHAIN_ID, DEVNET_DEFAULT_DATA_GAS_PRICE, DEVNET_DEFAULT_GAS_PRICE,
-    DEVNET_DEFAULT_INITIAL_BALANCE, DEVNET_DEFAULT_TEST_SEED, DEVNET_DEFAULT_TOTAL_ACCOUNTS,
+    CAIRO_1_ACCOUNT_CONTRACT_SIERRA, DEVNET_DEFAULT_CHAIN_ID, DEVNET_DEFAULT_DATA_GAS_PRICE,
+    DEVNET_DEFAULT_GAS_PRICE, DEVNET_DEFAULT_INITIAL_BALANCE, DEVNET_DEFAULT_TEST_SEED,
+    DEVNET_DEFAULT_TOTAL_ACCOUNTS,
 };
 
 #[derive(Copy, Clone, Debug, Eq, PartialEq, clap::ValueEnum, Serialize)]
@@ -55,7 +57,9 @@ pub struct StarknetConfig {
 impl Default for StarknetConfig {
     fn default() -> Self {
         let account_contract_class: ContractClass =
-            ContractClass::cairo_1_from_sierra_json_str(CAIRO_1_ACCOUNT_CONTRACT_SIERRA).unwrap().into();
+            ContractClass::cairo_1_from_sierra_json_str(CAIRO_1_ACCOUNT_CONTRACT_SIERRA)
+                .unwrap()
+                .into();
         StarknetConfig {
             seed: DEVNET_DEFAULT_TEST_SEED,
             total_accounts: DEVNET_DEFAULT_TOTAL_ACCOUNTS,

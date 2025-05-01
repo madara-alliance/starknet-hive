@@ -27,7 +27,11 @@ impl RunnableTrait for TestCase {
             calldata: vec![Felt::from_hex("0x50")?],
         };
 
-        let invoke_result = test_input.random_paymaster_account.execute_v1(vec![increase_balance_call]).send().await?;
+        let invoke_result = test_input
+            .random_paymaster_account
+            .execute_v1(vec![increase_balance_call])
+            .send()
+            .await?;
 
         wait_for_sent_transaction(
             invoke_result.transaction_hash,
@@ -35,24 +39,40 @@ impl RunnableTrait for TestCase {
         )
         .await?;
 
-        let block_number = test_input.random_paymaster_account.provider().block_hash_and_number().await?.block_number;
+        let block_number = test_input
+            .random_paymaster_account
+            .provider()
+            .block_hash_and_number()
+            .await?
+            .block_number;
 
-        let block_with_txns =
-            test_input.random_paymaster_account.provider().get_block_with_txs(BlockId::Number(block_number)).await?;
+        let block_with_txns = test_input
+            .random_paymaster_account
+            .provider()
+            .get_block_with_txs(BlockId::Number(block_number))
+            .await?;
 
         let txn_index: u64 = match block_with_txns {
             MaybePendingBlockWithTxs::Block(block_with_txs) => block_with_txs
                 .transactions
                 .iter()
                 .position(|tx| tx.transaction_hash == invoke_result.transaction_hash)
-                .ok_or_else(|| OpenRpcTestGenError::TransactionNotFound(invoke_result.transaction_hash.to_string()))?
+                .ok_or_else(|| {
+                    OpenRpcTestGenError::TransactionNotFound(
+                        invoke_result.transaction_hash.to_string(),
+                    )
+                })?
                 .try_into()
                 .map_err(|_| OpenRpcTestGenError::TransactionIndexOverflow)?,
             MaybePendingBlockWithTxs::Pending(block_with_txs) => block_with_txs
                 .transactions
                 .iter()
                 .position(|tx| tx.transaction_hash == invoke_result.transaction_hash)
-                .ok_or_else(|| OpenRpcTestGenError::TransactionNotFound(invoke_result.transaction_hash.to_string()))?
+                .ok_or_else(|| {
+                    OpenRpcTestGenError::TransactionNotFound(
+                        invoke_result.transaction_hash.to_string(),
+                    )
+                })?
                 .try_into()
                 .map_err(|_| OpenRpcTestGenError::TransactionIndexOverflow)?,
         };

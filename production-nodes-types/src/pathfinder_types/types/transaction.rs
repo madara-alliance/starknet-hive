@@ -20,7 +20,9 @@ pub struct TransactionOrEventTree<H: FeltHash> {
 
 impl<H: FeltHash> Default for TransactionOrEventTree<H> {
     fn default() -> Self {
-        Self { tree: MerkleTree::empty() }
+        Self {
+            tree: MerkleTree::empty(),
+        }
     }
 }
 
@@ -36,7 +38,10 @@ impl crate::pathfinder_types::types::storage::Storage for NullStorage {
         Ok(None)
     }
 
-    fn leaf(&self, _: &bitvec::slice::BitSlice<u8, bitvec::prelude::Msb0>) -> anyhow::Result<Option<Felt>> {
+    fn leaf(
+        &self,
+        _: &bitvec::slice::BitSlice<u8, bitvec::prelude::Msb0>,
+    ) -> anyhow::Result<Option<Felt>> {
         Ok(None)
     }
 }
@@ -48,7 +53,9 @@ impl<H: FeltHash> TransactionOrEventTree<H> {
     }
 
     pub fn commit(self) -> anyhow::Result<Felt> {
-        self.tree.commit(&NullStorage {}).map(|update| update.root_commitment)
+        self.tree
+            .commit(&NullStorage {})
+            .map(|update| update.root_commitment)
     }
 }
 
@@ -72,8 +79,9 @@ mod tests {
         // produced by the cairo-lang Python implementation:
         // `hex(asyncio.run(calculate_patricia_root([1, 2, 3, 4], height=64,
         // ffc=ffc))))`
-        let expected_root_hash =
-            Felt::from_hex_unchecked("0x1a0e579b6b444769e4626331230b5ae39bd880f47e703b73fa56bf77e52e461");
+        let expected_root_hash = Felt::from_hex_unchecked(
+            "0x1a0e579b6b444769e4626331230b5ae39bd880f47e703b73fa56bf77e52e461",
+        );
         let computed_root_hash = tree.commit().unwrap();
 
         assert_eq!(expected_root_hash, computed_root_hash);

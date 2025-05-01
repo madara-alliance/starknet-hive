@@ -47,7 +47,9 @@ impl StateDiff {
                 starknet_devnet_types::contract_class::ContractClass::Cairo0(_) => {
                     cairo_0_declared_contracts.push(class_hash)
                 }
-                starknet_devnet_types::contract_class::ContractClass::Cairo1(_) => declared_contracts.push(class_hash),
+                starknet_devnet_types::contract_class::ContractClass::Cairo1(_) => {
+                    declared_contracts.push(class_hash)
+                }
             }
         }
 
@@ -55,7 +57,9 @@ impl StateDiff {
         let class_hash_to_compiled_class_hash = diff
             .class_hash_to_compiled_class_hash
             .into_iter()
-            .map(|(class_hash, compiled_class_hash)| (Felt::from(class_hash.0), Felt::from(compiled_class_hash.0)))
+            .map(|(class_hash, compiled_class_hash)| {
+                (Felt::from(class_hash.0), Felt::from(compiled_class_hash.0))
+            })
             .collect();
 
         let address_to_class_hash = diff
@@ -112,7 +116,10 @@ impl StateDiff {
 
 impl From<StateDiff> for ThinStateDiff {
     fn from(value: StateDiff) -> Self {
-        let declared_classes: Vec<(Felt, Felt)> = value.class_hash_to_compiled_class_hash.into_iter().collect();
+        let declared_classes: Vec<(Felt, Felt)> = value
+            .class_hash_to_compiled_class_hash
+            .into_iter()
+            .collect();
 
         // cairo 0 declarations
         let cairo_0_declared_classes: Vec<Felt> = value.cairo_0_declared_contracts;
@@ -128,27 +135,40 @@ impl From<StateDiff> for ThinStateDiff {
         let nonces: Vec<(ContractAddress, Felt)> = value.address_to_nonce.into_iter().collect();
 
         // deployed contracts (address -> class hash)
-        let deployed_contracts: Vec<(ContractAddress, Felt)> = value.address_to_class_hash.into_iter().collect();
+        let deployed_contracts: Vec<(ContractAddress, Felt)> =
+            value.address_to_class_hash.into_iter().collect();
 
         ThinStateDiff {
             deployed_contracts: deployed_contracts
                 .into_iter()
-                .map(|(address, class_hash)| DeployedContract { address, class_hash })
+                .map(|(address, class_hash)| DeployedContract {
+                    address,
+                    class_hash,
+                })
                 .collect(),
             declared_classes: declared_classes
                 .into_iter()
-                .map(|(class_hash, compiled_class_hash)| ClassHashes { class_hash, compiled_class_hash })
+                .map(|(class_hash, compiled_class_hash)| ClassHashes {
+                    class_hash,
+                    compiled_class_hash,
+                })
                 .collect(),
             deprecated_declared_classes: cairo_0_declared_classes,
             nonces: nonces
                 .into_iter()
-                .map(|(address, nonce)| ContractNonce { contract_address: address, nonce })
+                .map(|(address, nonce)| ContractNonce {
+                    contract_address: address,
+                    nonce,
+                })
                 .collect(),
             storage_diffs: storage_updates
                 .into_iter()
                 .map(|(contract_address, updates)| StorageDiff {
                     address: contract_address,
-                    storage_entries: updates.into_iter().map(|(key, value)| StorageEntry { key, value }).collect(),
+                    storage_entries: updates
+                        .into_iter()
+                        .map(|(key, value)| StorageEntry { key, value })
+                        .collect(),
                 })
                 .collect(),
             replaced_classes: vec![],

@@ -7,7 +7,9 @@ use serde_json_pythonic::to_string_pythonic;
 use serde_with::serde_as;
 
 use super::{
-    accounts::account::{cairo_short_string_to_felt, normalize_address, starknet_keccak, CairoShortStringToFeltError},
+    accounts::account::{
+        cairo_short_string_to_felt, normalize_address, starknet_keccak, CairoShortStringToFeltError,
+    },
     contract::unsigned_felt::UfeHex,
 };
 use starknet_types_core::felt::Felt;
@@ -17,12 +19,20 @@ use starknet_types_rpc::v0_7_1::{ContractClass, DeprecatedContractClass};
 use std::boxed;
 
 /// Cairo string for "CONTRACT_CLASS_V0.1.0"
-const PREFIX_CONTRACT_CLASS_V0_1_0: Felt =
-    Felt::from_raw([37302452645455172, 18446734822722598327, 15539482671244488427, 5800711240972404213]);
+const PREFIX_CONTRACT_CLASS_V0_1_0: Felt = Felt::from_raw([
+    37302452645455172,
+    18446734822722598327,
+    15539482671244488427,
+    5800711240972404213,
+]);
 
 /// Cairo string for `COMPILED_CLASS_V1`
-const PREFIX_COMPILED_CLASS_V1: Felt =
-    Felt::from_raw([324306817650036332, 18446744073709549462, 1609463842841646376, 2291010424822318237]);
+const PREFIX_COMPILED_CLASS_V1: Felt = Felt::from_raw([
+    324306817650036332,
+    18446744073709549462,
+    1609463842841646376,
+    2291010424822318237,
+]);
 
 #[derive(Debug, Clone, Serialize)]
 #[serde(untagged)]
@@ -369,8 +379,8 @@ mod errors {
     }
 }
 pub use errors::{
-    BytecodeSegmentLengthMismatchError, ComputeClassHashError, InvalidBytecodeSegmentError, JsonError,
-    PcOutOfRangeError,
+    BytecodeSegmentLengthMismatchError, ComputeClassHashError, InvalidBytecodeSegmentError,
+    JsonError, PcOutOfRangeError,
 };
 
 use starknet_types_rpc::v0_7_1::{EntryPointsByType, SierraEntryPoint};
@@ -383,8 +393,11 @@ pub trait HashAndFlatten {
 
 impl HashAndFlatten for SierraClass {
     fn class_hash(&self) -> Result<Felt, ComputeClassHashError> {
-        let abi_str = to_string_pythonic(&self.abi)
-            .map_err(|err| ComputeClassHashError::Json(JsonError { message: format!("{}", err) }))?;
+        let abi_str = to_string_pythonic(&self.abi).map_err(|err| {
+            ComputeClassHashError::Json(JsonError {
+                message: format!("{}", err),
+            })
+        })?;
 
         let data = vec![
             PREFIX_CONTRACT_CLASS_V0_1_0,
@@ -399,7 +412,9 @@ impl HashAndFlatten for SierraClass {
     }
 
     fn flatten(self) -> Result<ContractClass<Felt>, JsonError> {
-        let abi = to_string_pythonic(&self.abi).map_err(|err| JsonError { message: format!("{}", err) })?;
+        let abi = to_string_pythonic(&self.abi).map_err(|err| JsonError {
+            message: format!("{}", err),
+        })?;
 
         Ok(ContractClass {
             sierra_program: self.sierra_program,
@@ -436,10 +451,12 @@ impl CompiledClass {
             )?;
 
             if total_len != self.bytecode.len() as u64 {
-                return Err(ComputeClassHashError::BytecodeSegmentLengthMismatch(BytecodeSegmentLengthMismatchError {
-                    segment_length: total_len as usize,
-                    bytecode_length: self.bytecode.len(),
-                }));
+                return Err(ComputeClassHashError::BytecodeSegmentLengthMismatch(
+                    BytecodeSegmentLengthMismatchError {
+                        segment_length: total_len as usize,
+                        bytecode_length: self.bytecode.len(),
+                    },
+                ));
             }
             if !rev_visited_pcs.is_empty() {
                 return Err(ComputeClassHashError::PcOutOfRange(PcOutOfRangeError {
@@ -454,7 +471,9 @@ impl CompiledClass {
         Ok(Poseidon::hash_array(&data))
     }
 
-    fn hash_entrypoints(entrypoints: &[CompiledClassEntrypoint]) -> Result<Felt, CairoShortStringToFeltError> {
+    fn hash_entrypoints(
+        entrypoints: &[CompiledClassEntrypoint],
+    ) -> Result<Felt, CairoShortStringToFeltError> {
         let mut data = Vec::new();
 
         for entry in entrypoints {
@@ -496,7 +515,8 @@ impl CompiledClass {
 
                 Ok((
                     BytecodeSegmentStructure::BytecodeLeaf(BytecodeLeaf {
-                        data: bytecode[(*bytecode_offset as usize)..(segment_end as usize)].to_vec(),
+                        data: bytecode[(*bytecode_offset as usize)..(segment_end as usize)]
+                            .to_vec(),
                     }),
                     *bytecode_segment_lengths,
                 ))
@@ -506,22 +526,35 @@ impl CompiledClass {
                 let mut total_len = 0;
 
                 for item in bytecode_segment_lengths {
-                    let visited_pc_before =
-                        if !visited_pcs.is_empty() { Some(visited_pcs[visited_pcs.len() - 1]) } else { None };
+                    let visited_pc_before = if !visited_pcs.is_empty() {
+                        Some(visited_pcs[visited_pcs.len() - 1])
+                    } else {
+                        None
+                    };
 
                     let (current_structure, item_len) =
-                        Self::create_bytecode_segment_structure_inner(bytecode, item, visited_pcs, bytecode_offset)?;
+                        Self::create_bytecode_segment_structure_inner(
+                            bytecode,
+                            item,
+                            visited_pcs,
+                            bytecode_offset,
+                        )?;
 
-                    let visited_pc_after =
-                        if !visited_pcs.is_empty() { Some(visited_pcs[visited_pcs.len() - 1]) } else { None };
+                    let visited_pc_after = if !visited_pcs.is_empty() {
+                        Some(visited_pcs[visited_pcs.len() - 1])
+                    } else {
+                        None
+                    };
                     let is_used = visited_pc_after != visited_pc_before;
 
                     if let Some(visited_pc_before) = visited_pc_before {
                         if is_used && visited_pc_before != *bytecode_offset {
-                            return Err(ComputeClassHashError::InvalidBytecodeSegment(InvalidBytecodeSegmentError {
-                                visited_pc: visited_pc_before,
-                                segment_start: *bytecode_offset,
-                            }));
+                            return Err(ComputeClassHashError::InvalidBytecodeSegment(
+                                InvalidBytecodeSegmentError {
+                                    visited_pc: visited_pc_before,
+                                    segment_start: *bytecode_offset,
+                                },
+                            ));
                         }
                     }
 
@@ -536,7 +569,9 @@ impl CompiledClass {
                 }
 
                 Ok((
-                    BytecodeSegmentStructure::BytecodeSegmentedNode(BytecodeSegmentedNode { segments: res }),
+                    BytecodeSegmentStructure::BytecodeSegmentedNode(BytecodeSegmentedNode {
+                        segments: res,
+                    }),
                     total_len,
                 ))
             }
@@ -589,7 +624,9 @@ impl<'de> Deserialize<'de> for ContractArtifact {
         if let Ok(value) = DeprecatedContractClass::deserialize(&temp_value) {
             return Ok(Self::LegacyClass(value));
         }
-        Err(serde::de::Error::custom("data did not match any variant of enum ContractArtifact"))
+        Err(serde::de::Error::custom(
+            "data did not match any variant of enum ContractArtifact",
+        ))
     }
 }
 
@@ -617,14 +654,15 @@ impl<'de> Deserialize<'de> for PythonicHint {
             }
 
             let code = array.pop().unwrap();
-            let code = Vec::<String>::deserialize(code)
-                .map_err(|err| serde::de::Error::custom(format!("unable to deserialize Location: {err}")))?;
+            let code = Vec::<String>::deserialize(code).map_err(|err| {
+                serde::de::Error::custom(format!("unable to deserialize Location: {err}"))
+            })?;
 
             let id = array.pop().unwrap();
             let id = match id {
-                serde_json::Value::Number(id) => {
-                    id.as_u64().ok_or_else(|| serde::de::Error::custom("id value out of range"))?
-                }
+                serde_json::Value::Number(id) => id
+                    .as_u64()
+                    .ok_or_else(|| serde::de::Error::custom("id value out of range"))?,
                 _ => return Err(serde::de::Error::custom("unexpected value type")),
             };
 
@@ -657,12 +695,21 @@ impl Serialize for TypedAbiEvent {
 
         match self {
             TypedAbiEvent::Struct(inner) => StructRef::serialize(
-                &StructRef { name: &inner.name, kind: "struct", members: &inner.members },
+                &StructRef {
+                    name: &inner.name,
+                    kind: "struct",
+                    members: &inner.members,
+                },
                 serializer,
             ),
-            TypedAbiEvent::Enum(inner) => {
-                EnumRef::serialize(&EnumRef { name: &inner.name, kind: "enum", variants: &inner.variants }, serializer)
-            }
+            TypedAbiEvent::Enum(inner) => EnumRef::serialize(
+                &EnumRef {
+                    name: &inner.name,
+                    kind: "enum",
+                    variants: &inner.variants,
+                },
+                serializer,
+            ),
         }
     }
 }
