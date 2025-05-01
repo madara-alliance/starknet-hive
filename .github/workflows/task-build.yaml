@@ -16,6 +16,11 @@ jobs:
       - name: Checkout Repository
         uses: actions/checkout@v4
 
+      - name: Setup Rust toolchain
+        uses: ./.github/actions/setup-rust
+        with:
+          rust-version: ${{ inputs.rust-version }}
+
       - name: Cache Rust dependencies
         uses: actions/cache@v4
         with:
@@ -23,11 +28,6 @@ jobs:
             ~/.cargo
             target
           key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
-
-      - name: Setup Rust toolchain
-        uses: ./.github/actions/setup-rust
-        with:
-          rust-version: ${{ inputs.rust-version }}
 
       - name: Setup Cargo Hack
         run: |

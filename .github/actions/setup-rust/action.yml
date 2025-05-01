@@ -21,5 +21,4 @@ runs:
 
     - name: Rust version
       shell: bash
-      run: 
-        echo rustc --version
+      run: rustc --version
