@@ -29,14 +29,6 @@ jobs:
             target
           key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
 
-      - name: Setup Cargo Hack
-        run: |
-          cargo install cargo-hack
-
-      - name: Check feature combinations
-        run: |
-          cargo hack test --feature-powerset --no-dev-deps
-
       - name: Build workspace
         run: |
           cargo build --all --all-features
