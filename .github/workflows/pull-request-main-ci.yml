@@ -12,23 +12,32 @@ env:
   NODE_VERSION: 22
 
 jobs:
-  lint-cargo:
+  env-expose:
     if: github.event.pull_request.draft == false
+    runs-on: ubuntu-latest
+    steps:
+      - run: echo "Exposing env vars..."
+    outputs:
+      rust-version: ${{ env.RUST_VERSION }}
+      node-version: ${{ env.NODE_VERSION }}
+
+  lint-cargo:
+    needs: env-expose
     uses: ./.github/workflows/task-lint-cargo.yaml
     with:
-      rust-version: ${{ env.RUST_VERSION }}
+      rust-version: ${{ needs.env-expose.outputs.rust-version }}
     secrets: inherit
 
   lint-prettier:
-    needs: lint-cargo
+    needs: [env-expose, lint-cargo]
     uses: ./.github/workflows/task-lint-prettier.yaml
     with:
-      node-version: ${{ env.NODE_VERSION }}
+      node-version: ${{ needs.env-expose.outputs.node-version }}
     secrets: inherit
 
   build:
-    needs: lint-prettier
+    needs: [env-expose, lint-prettier]
     uses: ./.github/workflows/task-build.yaml
     with:
-      rust-version: ${{ env.RUST_VERSION }}
+      rust-version: ${{ needs.env-expose.outputs.rust-version }}
     secrets: inherit
