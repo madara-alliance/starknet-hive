@@ -341,5 +341,4 @@ impl SetupableTrait for TestSuiteKatana {
     }
 }
 
-#[cfg(not(feature = "rust-analyzer"))]
 include!(concat!(env!("OUT_DIR"), "/generated_tests_suite_katana.rs"));

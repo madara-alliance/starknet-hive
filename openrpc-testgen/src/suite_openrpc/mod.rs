@@ -238,5 +238,4 @@ impl SetupableTrait for TestSuiteOpenRpc {
     }
 }
 
-#[cfg(not(feature = "rust-analyzer"))]
 include!(concat!(env!("OUT_DIR"), "/generated_tests_suite_openrpc.rs"));

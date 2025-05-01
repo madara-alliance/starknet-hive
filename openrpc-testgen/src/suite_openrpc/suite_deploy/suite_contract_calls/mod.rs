@@ -94,5 +94,4 @@ impl SetupableTrait for TestSuiteContractCalls {
     }
 }
 
-#[cfg(not(feature = "rust-analyzer"))]
 include!(concat!(env!("OUT_DIR"), "/generated_tests_suite_openrpc_suite_deploy_suite_contract_calls.rs"));

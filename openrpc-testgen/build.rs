@@ -110,7 +110,7 @@ fn process_module_directory(module_path: &Path, out_dir: &str, parent_output_typ
 
     writeln!(
         file,
-        "        tracing::info!(\"\\x1b[33m\n\n🚀 Starting Test Suite: {}::{} 🚀\\x1b[0m\");",
+        "        tracing::info!(\"\\x1b[33m🚀 Starting Test Suite: {}::{} 🚀\\x1b[0m\");",
         module_prefix, struct_name
     )
     .unwrap();

@@ -485,5 +485,4 @@ impl fmt::Display for ContinuationToken {
     }
 }
 
-#[cfg(not(feature = "rust-analyzer"))]
 include!(concat!(env!("OUT_DIR"), "/generated_tests_suite_katana_no_account_validation.rs"));
