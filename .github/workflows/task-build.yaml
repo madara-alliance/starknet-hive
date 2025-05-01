@@ -3,6 +3,11 @@ name: Task - Build Project
 on:
   workflow_dispatch:
   workflow_call:
+    inputs:
+      rust-version:
+        description: Rust version used for building
+        required: true
+        type: string
 
 jobs:
   build:
@@ -21,6 +26,8 @@ jobs:
 
       - name: Setup Rust toolchain
         uses: dtolnay/rust-toolchain@stable
+        with:
+          toolchain: ${{ inputs.rust-version }}
 
       - name: Setup Cargo Hack
         run: |

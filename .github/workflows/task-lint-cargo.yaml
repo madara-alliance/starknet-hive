@@ -4,6 +4,11 @@ name: Task - Lint Cargo
 on:
   workflow_dispatch:
   workflow_call:
+    inputs:
+      rust-version:
+        description: Rust version to use for testing
+        required: true
+        type: string
 
 jobs:
   lint-cargo:
@@ -14,6 +19,8 @@ jobs:
 
       - name: Setup Rust toolchain
         uses: dtolnay/rust-toolchain@stable
+        with:
+          toolchain: ${{ inputs.rust-version }}
 
       - name: Cargo fmt
         run: 

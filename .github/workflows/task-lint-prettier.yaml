@@ -4,6 +4,11 @@ name: Task - Lint Prettier
 on:
   workflow_dispatch:
   workflow_call:
+    inputs:
+      node-version:
+        description: Node version to use for testing
+        required: true
+        type: string
 
 jobs:
   lint-prettier:
@@ -15,7 +20,7 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v3
         with:
-          node-version: "22"
+          node-version: ${{ inputs.node-version }}
 
       - name: Install dependencies
         run: npm install

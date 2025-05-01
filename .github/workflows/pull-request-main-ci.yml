@@ -7,18 +7,28 @@ on:
   push:
     branches: [main]
 
+env:
+  RUST_VERSION: 1.85
+  NODE_VERSION: 22
+
 jobs:
   lint-cargo:
     if: github.event.pull_request.draft == false
     uses: ./.github/workflows/task-lint-cargo.yaml
+    with:
+      rust-version: ${{ env.RUST_VERSION }}
     secrets: inherit
 
   lint-prettier:
     needs: lint-cargo
     uses: ./.github/workflows/task-lint-prettier.yaml
+    with:
+      node-version: ${{ env.NODE_VERSION }}
     secrets: inherit
 
   build:
     needs: lint-prettier
     uses: ./.github/workflows/task-build.yaml
+    with:
+      rust-version: ${{ env.RUST_VERSION }}
     secrets: inherit
