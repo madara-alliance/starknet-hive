@@ -25,7 +25,7 @@ jobs:
           key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
 
       - name: Setup Rust toolchain
-        uses: ./.github/workflows/task-setup-rust.yaml
+        uses: ./.github/actions/setup-rust
         with:
           rust-version: ${{ inputs.rust-version }}
 
