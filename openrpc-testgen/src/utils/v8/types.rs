@@ -52,15 +52,8 @@ pub struct TreeNode {
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(untagged)]
 pub enum MerkleNode {
-    Binary {
-        left: Felt,
-        right: Felt,
-    },
-    Edge {
-        child: Felt,
-        path: Felt,
-        length: usize,
-    },
+    Binary { left: Felt, right: Felt },
+    Edge { child: Felt, path: Felt, length: usize },
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
@@ -99,19 +92,10 @@ pub enum ProofError {
     NoParentFound(Felt),
 
     #[error("Computed child hash {computed:?} does not match any of the parent's children. Parent node {node_hash:?} has left {left:?} and right {right:?}.")]
-    ChildMismatch {
-        computed: Felt,
-        left: Felt,
-        right: Felt,
-        node_hash: Felt,
-    },
+    ChildMismatch { computed: Felt, left: Felt, right: Felt, node_hash: Felt },
 
     #[error("Computed edge hash {computed:?} does not match parent's child field. Parent node {node_hash:?} expected child {child:?}.")]
-    EdgeChildMismatch {
-        computed: Felt,
-        child: Felt,
-        node_hash: Felt,
-    },
+    EdgeChildMismatch { computed: Felt, child: Felt, node_hash: Felt },
 
     #[error("Missing contract leaves data for contract {contract_address:?}.")]
     MissingContractLeavesData { contract_address: Felt },
@@ -156,14 +140,7 @@ impl MerkleTree {
 
         for node in proof {
             let parent_hash = child_to_parent.get(&node.node_hash).copied();
-            nodes.insert(
-                node.node_hash,
-                TreeNode {
-                    node: node.node,
-                    node_hash: node.node_hash,
-                    parent_hash,
-                },
-            );
+            nodes.insert(node.node_hash, TreeNode { node: node.node, node_hash: node.node_hash, parent_hash });
         }
 
         // In certain scenarios (contract storage proof), the root hash needs to be found before the computation
@@ -175,10 +152,7 @@ impl MerkleTree {
                 .expect("Failed to determine root hash from proof")
         });
 
-        MerkleTree {
-            nodes,
-            root: root_hash,
-        }
+        MerkleTree { nodes, root: root_hash }
     }
 
     /// Finds and returns a reference to the `TreeNode` containing an edge node
@@ -223,11 +197,7 @@ impl MerkleTree {
     pub fn compute_node_hash(&self, node: &TreeNode, hash_fn: HashFn) -> Result<Felt, ProofError> {
         match &node.node {
             MerkleNode::Binary { left, right } => Ok(hash_fn(left, right)),
-            MerkleNode::Edge {
-                child,
-                path,
-                length,
-            } => Ok(hash_fn(child, path) + Felt::from(*length)),
+            MerkleNode::Edge { child, path, length } => Ok(hash_fn(child, path) + Felt::from(*length)),
         }
     }
 
@@ -252,17 +222,13 @@ impl MerkleTree {
     /// 4. If the final computed root matches the root of the Merkle tree, return
     ///    `true`, otherwise return an error.
     pub fn verify_proof(&self, expected_child: &Felt, hash_fn: HashFn) -> Result<bool, ProofError> {
-        let edge_node = self
-            .find_matching_edge_node(expected_child)
-            .ok_or(ProofError::NoMatchingEdgeNode(*expected_child))?;
+        let edge_node =
+            self.find_matching_edge_node(expected_child).ok_or(ProofError::NoMatchingEdgeNode(*expected_child))?;
         let mut current_node = edge_node;
         let mut current_hash = self.compute_node_hash(current_node, hash_fn)?;
 
         while let Some(parent_hash) = current_node.parent_hash {
-            let parent = self
-                .nodes
-                .get(&parent_hash)
-                .ok_or(ProofError::NoParentFound(parent_hash))?;
+            let parent = self.nodes.get(&parent_hash).ok_or(ProofError::NoParentFound(parent_hash))?;
 
             // Check if the computed hash is equal to any of the parent's children, or if it matches the parent's child field
             match &parent.node {
@@ -317,79 +283,44 @@ mod tests {
     use super::*;
 
     #[test]
+    #[allow(clippy::result_large_err)]
     fn test_valid_proof() -> Result<(), ProofError> {
         let proof = vec![
             NodeHashToNodeMappingItem {
-                node_hash: Felt::from_hex(
-                    "0x2085dc49422286bbf425f254038cc9cd9a1d4759e7dcc1bb8c9cf1226d0930a",
-                )
-                .unwrap(),
+                node_hash: Felt::from_hex("0x2085dc49422286bbf425f254038cc9cd9a1d4759e7dcc1bb8c9cf1226d0930a").unwrap(),
                 node: MerkleNode::Binary {
-                    left: Felt::from_hex(
-                        "0x405224321493720f122542353165c45f64b2c24e322a73e6279c01cd2d5d827",
-                    )
-                    .unwrap(),
-                    right: Felt::from_hex(
-                        "0x66994ccdf80a945964523771da2dafc828439dc4b74544c65112c4bf0cd6061",
-                    )
-                    .unwrap(),
+                    left: Felt::from_hex("0x405224321493720f122542353165c45f64b2c24e322a73e6279c01cd2d5d827").unwrap(),
+                    right: Felt::from_hex("0x66994ccdf80a945964523771da2dafc828439dc4b74544c65112c4bf0cd6061").unwrap(),
                 },
             },
             NodeHashToNodeMappingItem {
-                node_hash: Felt::from_hex(
-                    "0x66994ccdf80a945964523771da2dafc828439dc4b74544c65112c4bf0cd6061",
-                )
-                .unwrap(),
+                node_hash: Felt::from_hex("0x66994ccdf80a945964523771da2dafc828439dc4b74544c65112c4bf0cd6061").unwrap(),
                 node: MerkleNode::Edge {
-                    child: Felt::from_hex(
-                        "0x5fb485c397598b6a672ff3dd38c121d20bbec276b881b0a6e9aba874855f376",
-                    )
-                    .unwrap(),
+                    child: Felt::from_hex("0x5fb485c397598b6a672ff3dd38c121d20bbec276b881b0a6e9aba874855f376").unwrap(),
                     path: Felt::from_hex("0x1").unwrap(),
                     length: 1,
                 },
             },
             NodeHashToNodeMappingItem {
-                node_hash: Felt::from_hex(
-                    "0x5fb485c397598b6a672ff3dd38c121d20bbec276b881b0a6e9aba874855f376",
-                )
-                .unwrap(),
+                node_hash: Felt::from_hex("0x5fb485c397598b6a672ff3dd38c121d20bbec276b881b0a6e9aba874855f376").unwrap(),
                 node: MerkleNode::Binary {
-                    left: Felt::from_hex(
-                        "0x39cc46c8a1ffa39802074dcd2aabd4814b8eb8f65a3f0ca6a6138f2bdd691f8",
-                    )
-                    .unwrap(),
-                    right: Felt::from_hex(
-                        "0x311d6cf5f2d545f0ac4dd421e571aa8c11beb3d5b73417b9e54ec828304e92c",
-                    )
-                    .unwrap(),
+                    left: Felt::from_hex("0x39cc46c8a1ffa39802074dcd2aabd4814b8eb8f65a3f0ca6a6138f2bdd691f8").unwrap(),
+                    right: Felt::from_hex("0x311d6cf5f2d545f0ac4dd421e571aa8c11beb3d5b73417b9e54ec828304e92c").unwrap(),
                 },
             },
             NodeHashToNodeMappingItem {
-                node_hash: Felt::from_hex(
-                    "0x39cc46c8a1ffa39802074dcd2aabd4814b8eb8f65a3f0ca6a6138f2bdd691f8",
-                )
-                .unwrap(),
+                node_hash: Felt::from_hex("0x39cc46c8a1ffa39802074dcd2aabd4814b8eb8f65a3f0ca6a6138f2bdd691f8").unwrap(),
                 node: MerkleNode::Edge {
-                    child: Felt::from_hex(
-                        "0x31f329f9df950bed8c8218bc3b24f0bbe8d7ff8707b060b31f8342bddd6747a",
-                    )
-                    .unwrap(),
-                    path: Felt::from_hex(
-                        "0x93b752a80b9ce2b0f8b0b6dc3125ef31218d87c8c1c9959389ff53f73897a1",
-                    )
-                    .unwrap(),
+                    child: Felt::from_hex("0x31f329f9df950bed8c8218bc3b24f0bbe8d7ff8707b060b31f8342bddd6747a").unwrap(),
+                    path: Felt::from_hex("0x93b752a80b9ce2b0f8b0b6dc3125ef31218d87c8c1c9959389ff53f73897a1").unwrap(),
                     length: 248,
                 },
             },
         ];
-        let root_hash =
-            Felt::from_hex("0x2085dc49422286bbf425f254038cc9cd9a1d4759e7dcc1bb8c9cf1226d0930a")
-                .unwrap();
+        let root_hash = Felt::from_hex("0x2085dc49422286bbf425f254038cc9cd9a1d4759e7dcc1bb8c9cf1226d0930a").unwrap();
         let tree = MerkleTree::from_proof(proof, Some(root_hash));
         let compiled_class_hash =
-            Felt::from_hex("0x462f79bccfd948fc9f47936f18729ed2850113f5f3f487b1a70ee208c7d79e0")
-                .unwrap();
+            Felt::from_hex("0x462f79bccfd948fc9f47936f18729ed2850113f5f3f487b1a70ee208c7d79e0").unwrap();
         let expected_child = tree.compute_expected_child_for_class_proof(&compiled_class_hash);
         let valid = tree.verify_proof(&expected_child, Poseidon::hash)?;
         assert!(valid);
@@ -397,79 +328,46 @@ mod tests {
     }
 
     #[test]
+    #[allow(clippy::result_large_err)]
     fn test_invalid_proof() -> Result<(), ProofError> {
         let proof = vec![
             NodeHashToNodeMappingItem {
-                node_hash: Felt::from_hex(
-                    "0x2085dc49422286bbf425f254038cc9cd9a1d4759e7dcc1bb8c9cf1226d0930a",
-                )
-                .unwrap(),
+                node_hash: Felt::from_hex("0x2085dc49422286bbf425f254038cc9cd9a1d4759e7dcc1bb8c9cf1226d0930a").unwrap(),
                 node: MerkleNode::Binary {
-                    left: Felt::from_hex(
-                        "0x405224321493720f122542353165c45f64b2c24e322a73e6279c01cd2d5d827",
-                    )
-                    .unwrap(),
-                    right: Felt::from_hex(
-                        "0x66994ccdf80a945964523771da2dafc828439dc4b74544c65112c4bf0cd6061",
-                    )
-                    .unwrap(),
+                    left: Felt::from_hex("0x405224321493720f122542353165c45f64b2c24e322a73e6279c01cd2d5d827").unwrap(),
+                    right: Felt::from_hex("0x66994ccdf80a945964523771da2dafc828439dc4b74544c65112c4bf0cd6061").unwrap(),
                 },
             },
             NodeHashToNodeMappingItem {
-                node_hash: Felt::from_hex(
-                    "0x66994ccdf80a945964523771da2dafc828439dc4b74544c65112c4bf0cd6061",
-                )
-                .unwrap(),
+                node_hash: Felt::from_hex("0x66994ccdf80a945964523771da2dafc828439dc4b74544c65112c4bf0cd6061").unwrap(),
                 node: MerkleNode::Edge {
-                    child: Felt::from_hex(
-                        "0x5fb485c397598b6a672ff3dd38c121d20bbec276b881b0a6e9aba874855f376",
-                    )
-                    .unwrap(),
+                    child: Felt::from_hex("0x5fb485c397598b6a672ff3dd38c121d20bbec276b881b0a6e9aba874855f376").unwrap(),
                     path: Felt::from_hex("0x1").unwrap(),
                     length: 1,
                 },
             },
             NodeHashToNodeMappingItem {
-                node_hash: Felt::from_hex(
-                    "0xDEADBEEFDEADBEEFDEADBEEFDEADBEEFDEADBEEFDEADBEEFDEADBEEFDEADBEEF",
-                )
-                .unwrap(),
+                node_hash: Felt::from_hex("0xDEADBEEFDEADBEEFDEADBEEFDEADBEEFDEADBEEFDEADBEEFDEADBEEFDEADBEEF")
+                    .unwrap(),
                 node: MerkleNode::Binary {
-                    left: Felt::from_hex(
-                        "0xDEADBEEFDEADBEEFDEADBEEFDEADBEEFDEADBEEFDEADBEEFDEADBEEFDEADBEEF",
-                    )
-                    .unwrap(),
-                    right: Felt::from_hex(
-                        "0xFEEDBEEFDEADBEEFDEADBEEFDEADBEEFDEADBEEFDEADBEEFDEADBEEFDEADBEEF",
-                    )
-                    .unwrap(),
+                    left: Felt::from_hex("0xDEADBEEFDEADBEEFDEADBEEFDEADBEEFDEADBEEFDEADBEEFDEADBEEFDEADBEEF").unwrap(),
+                    right: Felt::from_hex("0xFEEDBEEFDEADBEEFDEADBEEFDEADBEEFDEADBEEFDEADBEEFDEADBEEFDEADBEEF")
+                        .unwrap(),
                 },
             },
             NodeHashToNodeMappingItem {
-                node_hash: Felt::from_hex(
-                    "0x39cc46c8a1ffa39802074dcd2aabd4814b8eb8f65a3f0ca6a6138f2bdd691f8",
-                )
-                .unwrap(),
+                node_hash: Felt::from_hex("0x39cc46c8a1ffa39802074dcd2aabd4814b8eb8f65a3f0ca6a6138f2bdd691f8").unwrap(),
                 node: MerkleNode::Edge {
-                    child: Felt::from_hex(
-                        "0x31f329f9df950bed8c8218bc3b24f0bbe8d7ff8707b060b31f8342bddd6747a",
-                    )
-                    .unwrap(),
-                    path: Felt::from_hex(
-                        "0x93b752a80b9ce2b0f8b0b6dc3125ef31218d87c8c1c9959389ff53f73897a1",
-                    )
-                    .unwrap(),
+                    child: Felt::from_hex("0x31f329f9df950bed8c8218bc3b24f0bbe8d7ff8707b060b31f8342bddd6747a").unwrap(),
+                    path: Felt::from_hex("0x93b752a80b9ce2b0f8b0b6dc3125ef31218d87c8c1c9959389ff53f73897a1").unwrap(),
                     length: 248,
                 },
             },
         ];
-        let root_hash =
-            Felt::from_hex("0x2085dc49422286bbf425f254038cc9cd9a1d4759e7dcc1bb8c9cf1226d0930a")
-                .unwrap();
+        let root_hash = Felt::from_hex("0x2085dc49422286bbf425f254038cc9cd9a1d4759e7dcc1bb8c9cf1226d0930a").unwrap();
         let tree = MerkleTree::from_proof(proof, Some(root_hash));
         let compiled_class_hash =
-            Felt::from_hex("0x462f79bccfd948fc9f47936f18729ed2850113f5f3f487b1a70ee208c7d79e0")
-                .unwrap();
+            Felt::from_hex("0x462f79bccfd948fc9f47936f18729ed2850113f5f3f487b1a70ee208c7d79e0").unwrap();
         let expected_child = tree.compute_expected_child_for_class_proof(&compiled_class_hash);
         let valid = tree.verify_proof(&expected_child, Poseidon::hash)?;
         assert!(!valid);

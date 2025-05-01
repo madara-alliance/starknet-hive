@@ -9,10 +9,7 @@ pub struct HashChain {
 impl HashChain {
     pub fn update(&mut self, value: Felt) {
         self.hash = Pedersen::hash(&self.hash, &value);
-        self.count = self
-            .count
-            .checked_add(1)
-            .expect("could not have deserialized larger than usize Vecs");
+        self.count = self.count.checked_add(1).expect("could not have deserialized larger than usize Vecs");
     }
 
     pub fn chain_update(mut self, value: Felt) -> Self {
@@ -47,9 +44,8 @@ mod tests {
 
         // produced by the cairo-lang Python implementation:
         // `hex(compute_hash_on_elements([1, 2, 3, 4]))`
-        let expected_hash = Felt::from_hex_unchecked(
-            "0x66bd4335902683054d08a0572747ea78ebd9e531536fb43125424ca9f902084",
-        );
+        let expected_hash =
+            Felt::from_hex_unchecked("0x66bd4335902683054d08a0572747ea78ebd9e531536fb43125424ca9f902084");
 
         assert_eq!(expected_hash, computed_hash);
     }

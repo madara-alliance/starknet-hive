@@ -1,0 +1,33 @@
+# yaml-language-server: $schema=https://raw.githubusercontent.com/SchemaStore/schemastore/refs/heads/master/src/schemas/json/github-workflow.json
+name: Workflow - Pull Request Main (merge)
+
+on:
+  workflow_dispatch:
+  merge_group:
+
+env:
+  RUST_VERSION: 1.85
+  NODE_VERSION: 22
+
+jobs:
+  env-expose:
+    if: github.event.pull_request.draft == false
+    runs-on: ubuntu-latest
+    steps:
+      - run: echo "Exposing env vars..."
+    outputs:
+      rust-version: ${{ env.RUST_VERSION }}
+      node-version: ${{ env.NODE_VERSION }}
+
+  build:
+    needs: env-expose
+    uses: ./.github/workflows/task-features.yaml
+    with:
+      rust-version: ${{ needs.env-expose.outputs.rust-version }}
+    secrets: inherit
+
+  fail:
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+      - run: exit 1

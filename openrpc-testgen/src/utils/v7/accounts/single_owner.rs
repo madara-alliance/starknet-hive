@@ -6,8 +6,7 @@ use starknet_types_rpc::v0_7_1::{BlockId, BlockTag};
 
 use super::{
     account::{
-        Account, ConnectedAccount, ExecutionEncoder, RawDeclarationV2, RawDeclarationV3,
-        RawExecutionV1, RawExecutionV3,
+        Account, ConnectedAccount, ExecutionEncoder, RawDeclarationV2, RawDeclarationV3, RawExecutionV1, RawExecutionV3,
     },
     call::Call,
     errors::ComputeClassHashError,
@@ -58,21 +57,8 @@ where
     /// * `address`: Account contract address.
     /// * `chain_id`: Network chain ID.
     /// * `encoding`: How `__execute__` calldata should be encoded.
-    pub fn new(
-        provider: P,
-        signer: S,
-        address: Felt,
-        chain_id: Felt,
-        encoding: ExecutionEncoding,
-    ) -> Self {
-        Self {
-            provider,
-            signer,
-            address,
-            chain_id,
-            block_id: BlockId::Tag(BlockTag::Pending),
-            encoding,
-        }
+    pub fn new(provider: P, signer: S, address: Felt, chain_id: Felt, encoding: ExecutionEncoding) -> Self {
+        Self { provider, signer, address, chain_id, block_id: BlockId::Tag(BlockTag::Pending), encoding }
     }
 
     pub fn set_block_id(&mut self, block_id: BlockId<Felt>) -> &Self {
@@ -102,11 +88,7 @@ where
         _query_only: bool,
     ) -> Result<Vec<Felt>, Self::SignError> {
         let tx_hash = execution.transaction_hash(self.chain_id, self.address, false, self);
-        let signature = self
-            .signer
-            .sign_hash(&tx_hash)
-            .await
-            .map_err(SignError::Signer)?;
+        let signature = self.signer.sign_hash(&tx_hash).await.map_err(SignError::Signer)?;
 
         Ok(vec![signature.r, signature.s])
     }
@@ -117,11 +99,7 @@ where
         _query_only: bool,
     ) -> Result<Vec<Felt>, Self::SignError> {
         let tx_hash = execution.transaction_hash(self.chain_id, self.address, false, self);
-        let signature = self
-            .signer
-            .sign_hash(&tx_hash)
-            .await
-            .map_err(SignError::Signer)?;
+        let signature = self.signer.sign_hash(&tx_hash).await.map_err(SignError::Signer)?;
 
         Ok(vec![signature.r, signature.s])
     }
@@ -132,11 +110,7 @@ where
         query_only: bool,
     ) -> Result<Vec<Felt>, Self::SignError> {
         let tx_hash = declaration.transaction_hash(self.chain_id, self.address, query_only);
-        let signature = self
-            .signer
-            .sign_hash(&tx_hash)
-            .await
-            .map_err(SignError::Signer)?;
+        let signature = self.signer.sign_hash(&tx_hash).await.map_err(SignError::Signer)?;
 
         Ok(vec![signature.r, signature.s])
     }
@@ -147,11 +121,7 @@ where
         query_only: bool,
     ) -> Result<Vec<Felt>, Self::SignError> {
         let tx_hash = declaration.transaction_hash(self.chain_id, self.address, query_only);
-        let signature = self
-            .signer
-            .sign_hash(&tx_hash)
-            .await
-            .map_err(SignError::Signer)?;
+        let signature = self.signer.sign_hash(&tx_hash).await.map_err(SignError::Signer)?;
 
         Ok(vec![signature.r, signature.s])
     }

@@ -41,11 +41,7 @@ impl RunnableTrait for TestCase {
         let mut nonce = account.get_nonce().await?;
 
         for _ in 0..BLOCK_1_TX_COUNT {
-            let res = account
-                .execute_v1(vec![increase_balance_call.clone()])
-                .nonce(nonce)
-                .send()
-                .await?;
+            let res = account.execute_v1(vec![increase_balance_call.clone()]).nonce(nonce).send().await?;
             nonce += Felt::ONE;
             wait_for_sent_transaction_katana(res.transaction_hash, &account).await?;
         }
@@ -69,10 +65,7 @@ impl RunnableTrait for TestCase {
         // -----------------------------------------------------------------------
         //  case 1 (chunk size = 0)
 
-        let EventsChunk {
-            events,
-            continuation_token,
-        } = provider.get_events(filter).await?;
+        let EventsChunk { events, continuation_token } = provider.get_events(filter).await?;
 
         assert_eq_result!(events.len(), 0);
 
@@ -97,16 +90,9 @@ impl RunnableTrait for TestCase {
             continuation_token: None,
         };
 
-        let EventsChunk {
-            events,
-            continuation_token,
-        } = provider.get_events(filter.clone()).await?;
+        let EventsChunk { events, continuation_token } = provider.get_events(filter.clone()).await?;
 
-        assert_eq_result!(
-            events.len(),
-            3,
-            "Total events should be limited by chunk size ({chunk_size})"
-        );
+        assert_eq_result!(events.len(), 3, "Total events should be limited by chunk size ({chunk_size})");
 
         assert_matches_result!(continuation_token, Some(ref token ) => {
             let token = ContinuationToken::parse(token)?;
@@ -117,10 +103,7 @@ impl RunnableTrait for TestCase {
 
         filter.continuation_token = continuation_token;
 
-        let EventsChunk {
-            events,
-            continuation_token,
-        } = provider.get_events(filter.clone()).await?;
+        let EventsChunk { events, continuation_token } = provider.get_events(filter.clone()).await?;
 
         assert_eq_result!(events.len(), 2, "Remaining should be 2");
         assert_matches_result!(continuation_token, None);
@@ -139,10 +122,7 @@ impl RunnableTrait for TestCase {
             continuation_token: None,
         };
 
-        let EventsChunk {
-            events,
-            continuation_token,
-        } = provider.get_events(filter.clone()).await?;
+        let EventsChunk { events, continuation_token } = provider.get_events(filter.clone()).await?;
 
         assert_eq_result!(events.len(), TOTAL_EVENT_COUNT);
         assert_matches_result!(continuation_token, None);

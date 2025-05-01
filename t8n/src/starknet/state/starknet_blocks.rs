@@ -40,10 +40,8 @@ impl Serialize for StarknetBlocks {
     where
         S: Serializer,
     {
-        if let Some((highest_block_hash, highest_block)) = self
-            .hash_to_block
-            .iter()
-            .max_by_key(|(_, block)| block.header.block_number)
+        if let Some((highest_block_hash, highest_block)) =
+            self.hash_to_block.iter().max_by_key(|(_, block)| block.header.block_number)
         {
             let highest_state_diff = self.hash_to_state_diff.get(highest_block_hash);
 
@@ -140,8 +138,7 @@ impl StarknetBlocks {
 
     /// Returns the block number from a block id, by finding the block by the block id
     fn block_number_from_block_id(&self, block_id: &BlockId) -> Option<BlockNumber> {
-        self.get_by_block_id(block_id)
-            .map(|block| block.block_number())
+        self.get_by_block_id(block_id).map(|block| block.block_number())
     }
 
     /// Filter blocks based on from and to block ids and returns a collection of block's references
@@ -150,20 +147,14 @@ impl StarknetBlocks {
     /// # Arguments
     /// * `from` - The block id from which to start the filtering
     /// * `to` - The block id to which to end the filtering
-    pub fn get_blocks(
-        &self,
-        from: Option<BlockId>,
-        to: Option<BlockId>,
-    ) -> DevnetResult<Vec<&StarknetBlock>> {
+    pub fn get_blocks(&self, from: Option<BlockId>, to: Option<BlockId>) -> DevnetResult<Vec<&StarknetBlock>> {
         // used IndexMap to keep elements in the order of the keys
         let mut filtered_blocks: IndexMap<Felt, &StarknetBlock> = IndexMap::new();
 
         let starting_block = if let Some(block_id) = from {
             // If the value for block number provided is not correct it will return None
             // So we have to return an error
-            let block_number = self
-                .block_number_from_block_id(&block_id)
-                .ok_or(Error::NoBlock)?;
+            let block_number = self.block_number_from_block_id(&block_id).ok_or(Error::NoBlock)?;
             Some(block_number)
         } else {
             None
@@ -172,9 +163,7 @@ impl StarknetBlocks {
         let ending_block = if let Some(block_id) = to {
             // if the value for block number provided is not correct it will return None
             // So we set the block number to the first possible block number which is 0
-            let block_number = self
-                .block_number_from_block_id(&block_id)
-                .ok_or(Error::NoBlock)?;
+            let block_number = self.block_number_from_block_id(&block_id).ok_or(Error::NoBlock)?;
             Some(block_number)
         } else {
             None
@@ -184,16 +173,12 @@ impl StarknetBlocks {
         // then insert the filtered blocks into the index map
         self.num_to_hash
             .iter()
-            .filter(
-                |(current_block_number, _)| match (starting_block, ending_block) {
-                    (None, None) => true,
-                    (Some(start), None) => **current_block_number >= start,
-                    (None, Some(end)) => **current_block_number <= end,
-                    (Some(start), Some(end)) => {
-                        **current_block_number >= start && **current_block_number <= end
-                    }
-                },
-            )
+            .filter(|(current_block_number, _)| match (starting_block, ending_block) {
+                (None, None) => true,
+                (Some(start), None) => **current_block_number >= start,
+                (None, Some(end)) => **current_block_number <= end,
+                (Some(start), Some(end)) => **current_block_number >= start && **current_block_number <= end,
+            })
             .for_each(|(_, block_hash)| {
                 filtered_blocks.insert(*block_hash, &self.hash_to_block[block_hash]);
             });
@@ -275,10 +260,7 @@ impl StarknetBlock {
 
     pub(crate) fn create_pending_block() -> Self {
         Self {
-            header: BlockHeader {
-                l1_da_mode: L1DataAvailabilityMode::Blob,
-                ..BlockHeader::default()
-            },
+            header: BlockHeader { l1_da_mode: L1DataAvailabilityMode::Blob, ..BlockHeader::default() },
             status: BlockStatus::Pending,
             transaction_hashes: Vec::new(),
         }
@@ -297,17 +279,17 @@ impl HashProducer for StarknetBlock {
     type Error = Error;
     fn generate_hash(&self) -> DevnetResult<BlockHash> {
         let hash = pedersen_hash_array(&[
-            stark_felt!(self.header.block_number.0), // block number
-            self.header.state_root.0,                // global_state_root
-            *self.header.sequencer.0.key(),          // sequencer_address
-            stark_felt!(self.header.timestamp.0),    // block_timestamp
+            stark_felt!(self.header.block_number.0),           // block number
+            self.header.state_root.0,                          // global_state_root
+            *self.header.sequencer.0.key(),                    // sequencer_address
+            stark_felt!(self.header.timestamp.0),              // block_timestamp
             stark_felt!(self.transaction_hashes.len() as u64), // transaction_count
-            stark_felt!(0_u8),                       // transaction_commitment
-            stark_felt!(0_u8),                       // event_count
-            stark_felt!(0_u8),                       // event_commitment
-            stark_felt!(0_u8),                       // protocol_version
-            stark_felt!(0_u8),                       // extra_data
-            stark_felt!(self.header.parent_hash.0),  // parent_block_hash
+            stark_felt!(0_u8),                                 // transaction_commitment
+            stark_felt!(0_u8),                                 // event_count
+            stark_felt!(0_u8),                                 // event_commitment
+            stark_felt!(0_u8),                                 // protocol_version
+            stark_felt!(0_u8),                                 // extra_data
+            stark_felt!(self.header.parent_hash.0),            // parent_block_hash
         ]);
 
         Ok(Felt::from(hash))

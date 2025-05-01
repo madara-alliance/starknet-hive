@@ -1,0 +1,26 @@
+name: Task - Build Project
+
+on:
+  workflow_dispatch:
+  workflow_call:
+    inputs:
+      rust-version:
+        description: Rust version used for building
+        required: true
+        type: string
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Setup Rust toolchain
+        uses: ./.github/actions/setup-rust
+        with:
+          rust-version: ${{ inputs.rust-version }}
+
+      - name: Build workspace
+        run: |
+          cargo build --all --all-features

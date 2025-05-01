@@ -32,21 +32,14 @@ impl RunnableTrait for TestCase {
 
     async fn run(test_input: &Self::Input) -> Result<Self, OpenRpcTestGenError> {
         let (flattened_sierra_class, compiled_class_hash) = get_compiled_contract(
-            PathBuf::from_str(
-                "target/dev/contracts_contracts_smpl21_HelloStarknet.contract_class.json",
-            )?,
-            PathBuf::from_str(
-                "target/dev/contracts_contracts_smpl21_HelloStarknet.compiled_contract_class.json",
-            )?,
+            PathBuf::from_str("target/dev/contracts_contracts_smpl21_HelloStarknet.contract_class.json")?,
+            PathBuf::from_str("target/dev/contracts_contracts_smpl21_HelloStarknet.compiled_contract_class.json")?,
         )
         .await?;
 
         let sender = test_input.random_paymaster_account.random_accounts()?;
 
-        let declare_result = sender
-            .declare_v3(flattened_sierra_class, compiled_class_hash)
-            .send()
-            .await?;
+        let declare_result = sender.declare_v3(flattened_sierra_class, compiled_class_hash).send().await?;
 
         wait_for_sent_transaction(
             declare_result.transaction_hash,
@@ -62,10 +55,7 @@ impl RunnableTrait for TestCase {
         let unique = true;
         let constructor_calldata = vec![];
 
-        let deployment_result = factory
-            .deploy_v3(constructor_calldata, salt, unique)
-            .send()
-            .await?;
+        let deployment_result = factory.deploy_v3(constructor_calldata, salt, unique).send().await?;
 
         wait_for_sent_transaction(
             deployment_result.transaction_hash,
@@ -82,23 +72,16 @@ impl RunnableTrait for TestCase {
         let deployed_contract_address = match &deployment_receipt {
             TxnReceipt::Deploy(receipt) => receipt.contract_address,
             TxnReceipt::Invoke(receipt) => {
-                if let Some(contract_address) = receipt
-                    .common_receipt_properties
-                    .events
-                    .first()
-                    .and_then(|event| event.data.first())
+                if let Some(contract_address) =
+                    receipt.common_receipt_properties.events.first().and_then(|event| event.data.first())
                 {
                     *contract_address
                 } else {
-                    return Err(OpenRpcTestGenError::CallError(
-                        CallError::UnexpectedReceiptType,
-                    ));
+                    return Err(OpenRpcTestGenError::CallError(CallError::UnexpectedReceiptType));
                 }
             }
             _ => {
-                return Err(OpenRpcTestGenError::CallError(
-                    CallError::UnexpectedReceiptType,
-                ));
+                return Err(OpenRpcTestGenError::CallError(CallError::UnexpectedReceiptType));
             }
         };
 
@@ -111,19 +94,11 @@ impl RunnableTrait for TestCase {
         let storage_proof = test_input
             .random_paymaster_account
             .provider()
-            .get_storage_proof(
-                BlockId::Tag(BlockTag::Latest),
-                None,
-                Some(vec![deployed_contract_address]),
-                None,
-            )
+            .get_storage_proof(BlockId::Tag(BlockTag::Latest), None, Some(vec![deployed_contract_address]), None)
             .await?;
 
-        let contract_proof_leaves_data_item = storage_proof
-            .contracts_proof
-            .contract_leaves_data
-            .first()
-            .ok_or_else(|| {
+        let contract_proof_leaves_data_item =
+            storage_proof.contracts_proof.contract_leaves_data.first().ok_or_else(|| {
                 OpenRpcTestGenError::Proof(ProofError::MissingContractLeavesData {
                     contract_address: deployed_contract_address,
                 })
@@ -132,25 +107,18 @@ impl RunnableTrait for TestCase {
         let nonce = contract_proof_leaves_data_item.nonce;
         let class_hash = contract_proof_leaves_data_item.class_hash;
 
-        assert_result!(
-            nonce == contract_nonce,
-            format!("Expected nonce {:?} but got {:?}", contract_nonce, nonce)
-        );
+        assert_result!(nonce == contract_nonce, format!("Expected nonce {:?} but got {:?}", contract_nonce, nonce));
 
         assert_result!(
             class_hash == declare_result.class_hash,
-            format!(
-                "Expected class hash {:?} but got {:?}",
-                declare_result.class_hash, class_hash
-            )
+            format!("Expected class hash {:?} but got {:?}", declare_result.class_hash, class_hash)
         );
 
         let merkle_tree = MerkleTree::from_proof(
             storage_proof.contracts_proof.nodes,
             Some(storage_proof.global_roots.contracts_tree_root),
         );
-        let expected_child =
-            merkle_tree.compute_expected_child_for_contract_proof(&class_hash, &Felt::ZERO, &nonce);
+        let expected_child = merkle_tree.compute_expected_child_for_contract_proof(&class_hash, &Felt::ZERO, &nonce);
 
         let valid_proof = merkle_tree.verify_proof(&expected_child, Pedersen::hash)?;
         assert_result!(valid_proof, "Contract proof verification failed");

@@ -16,9 +16,7 @@ use reqwest::Client;
 use starknet_types_core::felt::Felt;
 use starknet_types_core::hash::{Pedersen, StarkHash};
 use starknet_types_rpc::v0_7_1::{ContractClass, TxnHash};
-use starknet_types_rpc::{
-    BlockId, BlockTag, TxnExecutionStatus, TxnFinalityAndExecutionStatus, TxnStatus,
-};
+use starknet_types_rpc::{BlockId, BlockTag, TxnExecutionStatus, TxnFinalityAndExecutionStatus, TxnStatus};
 use tokio::io::AsyncReadExt;
 
 use tracing::{error, info, warn};
@@ -35,31 +33,23 @@ pub async fn get_compiled_contract(
 ) -> Result<(ContractClass<Felt>, TxnHash<Felt>), RunnerError> {
     let mut file = tokio::fs::File::open(sierra_path).await.map_err(|e| {
         if e.kind() == std::io::ErrorKind::NotFound {
-            RunnerError::ReadFileError(
-                "Contract json file not found, please execute scarb build command".to_string(),
-            )
+            RunnerError::ReadFileError("Contract json file not found, please execute scarb build command".to_string())
         } else {
             RunnerError::ReadFileError(e.to_string())
         }
     })?;
     let mut sierra = String::default();
-    file.read_to_string(&mut sierra)
-        .await
-        .map_err(|e| RunnerError::ReadFileError(e.to_string()))?;
+    file.read_to_string(&mut sierra).await.map_err(|e| RunnerError::ReadFileError(e.to_string()))?;
 
     let mut file = tokio::fs::File::open(casm_path).await.map_err(|e| {
         if e.kind() == std::io::ErrorKind::NotFound {
-            RunnerError::ReadFileError(
-                "Contract json file not found, please execute scarb build command".to_string(),
-            )
+            RunnerError::ReadFileError("Contract json file not found, please execute scarb build command".to_string())
         } else {
             RunnerError::ReadFileError(e.to_string())
         }
     })?;
     let mut casm = String::default();
-    file.read_to_string(&mut casm)
-        .await
-        .map_err(|e| RunnerError::ReadFileError(e.to_string()))?;
+    file.read_to_string(&mut casm).await.map_err(|e| RunnerError::ReadFileError(e.to_string()))?;
 
     let contract_artifact: SierraClass = serde_json::from_str(&sierra)?;
 
@@ -81,9 +71,7 @@ pub async fn restart_devnet(url: Url) -> Result<(), OpenRpcTestGenError> {
         Ok(())
     } else {
         error!("Failed to restart Devnet. Status: {}", response.status());
-        Err(OpenRpcTestGenError::RequestError(
-            response.error_for_status().unwrap_err(),
-        ))
+        Err(OpenRpcTestGenError::RequestError(response.error_for_status().unwrap_err()))
     }
 }
 
@@ -121,13 +109,7 @@ pub fn validate_inputs(
     erc20_eth_contract_address: Option<Felt>,
     amount_per_test: Option<Felt>,
 ) -> Result<(Felt, Felt, Felt, Felt, Felt), OpenRpcTestGenError> {
-    match (
-        account_address,
-        private_key,
-        erc20_strk_contract_address,
-        erc20_eth_contract_address,
-        amount_per_test,
-    ) {
+    match (account_address, private_key, erc20_strk_contract_address, erc20_eth_contract_address, amount_per_test) {
         (
             Some(account_address),
             Some(private_key),
@@ -137,47 +119,29 @@ pub fn validate_inputs(
         ) => {
             if amount_per_test <= Felt::ZERO {
                 warn!("Amount per test must be greater than zero");
-                return Err(OpenRpcTestGenError::InvalidInput(
-                    "Amount per test must be greater than zero".to_string(),
-                ));
+                return Err(OpenRpcTestGenError::InvalidInput("Amount per test must be greater than zero".to_string()));
             };
-            Ok((
-                account_address,
-                private_key,
-                erc20_strk_contract_address,
-                erc20_eth_contract_address,
-                amount_per_test,
-            ))
+            Ok((account_address, private_key, erc20_strk_contract_address, erc20_eth_contract_address, amount_per_test))
         }
         (None, _, _, _, _) => {
             warn!("Account address is required");
-            Err(OpenRpcTestGenError::InvalidInput(
-                "Account address is required".to_string(),
-            ))
+            Err(OpenRpcTestGenError::InvalidInput("Account address is required".to_string()))
         }
         (_, None, _, _, _) => {
             warn!("Private key is required to fund generated account");
-            Err(OpenRpcTestGenError::InvalidInput(
-                "Private key is required".to_string(),
-            ))
+            Err(OpenRpcTestGenError::InvalidInput("Private key is required".to_string()))
         }
         (_, _, None, _, _) => {
             warn!("ERC20 STRK contract address is required");
-            Err(OpenRpcTestGenError::InvalidInput(
-                "ERC20 STRK contract address is required".to_string(),
-            ))
+            Err(OpenRpcTestGenError::InvalidInput("ERC20 STRK contract address is required".to_string()))
         }
         (_, _, _, None, _) => {
             warn!("ERC20 ETH contract address is required");
-            Err(OpenRpcTestGenError::InvalidInput(
-                "ERC20 ETH contract address is required".to_string(),
-            ))
+            Err(OpenRpcTestGenError::InvalidInput("ERC20 ETH contract address is required".to_string()))
         }
         (_, _, _, _, None) => {
             warn!("Amount per test is required");
-            Err(OpenRpcTestGenError::InvalidInput(
-                "Amount per test is required".to_string(),
-            ))
+            Err(OpenRpcTestGenError::InvalidInput("Amount per test is required".to_string()))
         }
     }
 }
@@ -190,10 +154,7 @@ pub async fn wait_for_sent_transaction(
     let start_fetching = std::time::Instant::now();
     let wait_for = Duration::from_secs(60);
 
-    info!(
-        "⏳ Waiting for transaction: {:?} to be mined.",
-        transaction_hash
-    );
+    info!("⏳ Waiting for transaction: {:?} to be mined.", transaction_hash);
 
     loop {
         if start_fetching.elapsed() > wait_for {
@@ -204,17 +165,10 @@ pub async fn wait_for_sent_transaction(
         }
 
         // Check transaction status
-        let status = match user_passed_account
-            .provider()
-            .get_transaction_status(transaction_hash)
-            .await
-        {
+        let status = match user_passed_account.provider().get_transaction_status(transaction_hash).await {
             Ok(status) => status,
             Err(_e) => {
-                info!(
-                    "Error while checking status for transaction: {:?}. Retrying...",
-                    transaction_hash
-                );
+                info!("Error while checking status for transaction: {:?}. Retrying...", transaction_hash);
                 tokio::time::sleep(Duration::from_secs(1)).await;
                 continue;
             }
@@ -237,9 +191,7 @@ pub async fn wait_for_sent_transaction(
                     .get_block_with_tx_hashes(BlockId::Tag(BlockTag::Pending))
                     .await
                 {
-                    Ok(MaybePendingBlockWithTxHashes::Pending(block)) => {
-                        block.transactions.contains(&transaction_hash)
-                    }
+                    Ok(MaybePendingBlockWithTxHashes::Pending(block)) => block.transactions.contains(&transaction_hash),
                     _ => false,
                 };
 
@@ -249,9 +201,7 @@ pub async fn wait_for_sent_transaction(
                     .get_block_with_tx_hashes(BlockId::Tag(BlockTag::Latest))
                     .await
                 {
-                    Ok(MaybePendingBlockWithTxHashes::Block(block)) => {
-                        block.transactions.contains(&transaction_hash)
-                    }
+                    Ok(MaybePendingBlockWithTxHashes::Block(block)) => block.transactions.contains(&transaction_hash),
                     _ => false,
                 };
 
@@ -272,10 +222,7 @@ pub async fn wait_for_sent_transaction(
                     return Ok(status);
                 }
 
-                info!(
-                    "Transaction {:?} is neither in Latest nor finalized. Retrying...",
-                    transaction_hash
-                );
+                info!("Transaction {:?} is neither in Latest nor finalized. Retrying...", transaction_hash);
                 tokio::time::sleep(Duration::from_secs(2)).await;
                 continue;
             }
@@ -284,50 +231,25 @@ pub async fn wait_for_sent_transaction(
                 execution_status: Some(TxnExecutionStatus::Reverted),
                 ..
             } => {
-                info!(
-                    "❌ Transaction {:?} reverted on L2. Stopping...",
-                    transaction_hash
-                );
-                return Err(OpenRpcTestGenError::TransactionFailed(
-                    transaction_hash.to_string(),
-                ));
+                info!("❌ Transaction {:?} reverted on L2. Stopping...", transaction_hash);
+                return Err(OpenRpcTestGenError::TransactionFailed(transaction_hash.to_string()));
             }
-            TxnFinalityAndExecutionStatus {
-                finality_status: TxnStatus::Rejected,
-                ..
-            } => {
-                info!(
-                    "❌ Transaction {:?} rejected. Stopping...",
-                    transaction_hash
-                );
-                return Err(OpenRpcTestGenError::TransactionRejected(
-                    transaction_hash.to_string(),
-                ));
+            TxnFinalityAndExecutionStatus { finality_status: TxnStatus::Rejected, .. } => {
+                info!("❌ Transaction {:?} rejected. Stopping...", transaction_hash);
+                return Err(OpenRpcTestGenError::TransactionRejected(transaction_hash.to_string()));
             }
-            TxnFinalityAndExecutionStatus {
-                finality_status: TxnStatus::Received,
-                ..
-            } => {
-                info!(
-                    "🛎️ Transaction {:?} received. Retrying...",
-                    transaction_hash
-                );
+            TxnFinalityAndExecutionStatus { finality_status: TxnStatus::Received, .. } => {
+                info!("🛎️ Transaction {:?} received. Retrying...", transaction_hash);
                 tokio::time::sleep(Duration::from_secs(2)).await;
                 continue;
             }
-            TxnFinalityAndExecutionStatus {
-                finality_status: TxnStatus::AcceptedOnL1,
-                ..
-            } => {
+            TxnFinalityAndExecutionStatus { finality_status: TxnStatus::AcceptedOnL1, .. } => {
                 info!("✅ Transaction acceoted on L1. Finishing...");
                 return Ok(status);
             }
 
             _ => {
-                info!(
-                    "⏳ Transaction {} status not finalized. Retrying...",
-                    transaction_hash
-                );
+                info!("⏳ Transaction {} status not finalized. Retrying...", transaction_hash);
                 tokio::time::sleep(Duration::from_secs(2)).await;
                 continue;
             }

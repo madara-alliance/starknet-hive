@@ -24,12 +24,7 @@ pub fn calculate_invoke_v3_hash(txn: &InvokeTxnV3<Felt>, chain_id: &Felt) -> Res
 
     let call_data_hash = Poseidon::hash_array(&txn.calldata);
 
-    let fields_to_hash = [
-        common_fields.as_slice(),
-        &[account_deployment_data_hash],
-        &[call_data_hash],
-    ]
-    .concat();
+    let fields_to_hash = [common_fields.as_slice(), &[account_deployment_data_hash], &[call_data_hash]].concat();
 
     Ok(Poseidon::hash_array(&fields_to_hash))
 }
@@ -44,45 +39,29 @@ fn get_resource_bounds_array(txn: &InvokeTxnV3<Felt>) -> Result<Vec<Felt>, Error
     ])
 }
 
-fn field_element_from_resource_bounds(
-    resource: Resource,
-    resource_bounds: &ResourceBounds,
-) -> Result<Felt, Error> {
+fn field_element_from_resource_bounds(resource: Resource, resource_bounds: &ResourceBounds) -> Result<Felt, Error> {
     let resource_name_as_json_string = serde_json::to_value(resource)?;
 
-    let resource_name_bytes = resource_name_as_json_string
-        .as_str()
-        .ok_or(Error::ResourceNameError)?
-        .as_bytes();
+    let resource_name_bytes = resource_name_as_json_string.as_str().ok_or(Error::ResourceNameError)?.as_bytes();
 
     let max_amount_hex_str = resource_bounds.max_amount.as_str().trim_start_matches("0x");
     let max_amount_u64 = u64::from_str_radix(max_amount_hex_str, 16)?;
 
-    let max_price_per_unit_hex_str = resource_bounds
-        .max_price_per_unit
-        .as_str()
-        .trim_start_matches("0x");
+    let max_price_per_unit_hex_str = resource_bounds.max_price_per_unit.as_str().trim_start_matches("0x");
     let max_price_per_unit_u64 = u128::from_str_radix(max_price_per_unit_hex_str, 16)?;
 
     // (resource||max_amount||max_price_per_unit) from SNIP-8 https://github.com/starknet-io/SNIPs/blob/main/SNIPS/snip-8.md#protocol-changes
-    let bytes: Vec<u8> = [
-        resource_name_bytes,
-        max_amount_u64.to_be_bytes().as_slice(),
-        max_price_per_unit_u64.to_be_bytes().as_slice(),
-    ]
-    .into_iter()
-    .flatten()
-    .copied()
-    .collect();
+    let bytes: Vec<u8> =
+        [resource_name_bytes, max_amount_u64.to_be_bytes().as_slice(), max_price_per_unit_u64.to_be_bytes().as_slice()]
+            .into_iter()
+            .flatten()
+            .copied()
+            .collect();
 
     Ok(Felt::from_bytes_be_slice(&bytes))
 }
 
-fn common_fields_for_hash(
-    tx_prefix: Felt,
-    chain_id: Felt,
-    txn: &InvokeTxnV3<Felt>,
-) -> Result<Vec<Felt>, Error> {
+fn common_fields_for_hash(tx_prefix: Felt, chain_id: Felt, txn: &InvokeTxnV3<Felt>) -> Result<Vec<Felt>, Error> {
     let array: Vec<Felt> = vec![
         tx_prefix,                                                        // TX_PREFIX
         Felt::THREE,                                                      // version
@@ -108,7 +87,6 @@ fn get_data_availability_mode_value_as_u64(data_availability_mode: DaMode) -> u6
 fn get_data_availability_modes_field_element(txn: &InvokeTxnV3<Felt>) -> Felt {
     let da_mode = get_data_availability_mode_value_as_u64(txn.nonce_data_availability_mode.clone())
         << DATA_AVAILABILITY_MODE_BITS;
-    let da_mode =
-        da_mode + get_data_availability_mode_value_as_u64(txn.fee_data_availability_mode.clone());
+    let da_mode = da_mode + get_data_availability_mode_value_as_u64(txn.fee_data_availability_mode.clone());
     Felt::from(da_mode)
 }

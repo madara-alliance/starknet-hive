@@ -7,8 +7,7 @@ use crate::{
         accounts::account::{Account, AccountError, ConnectedAccount},
         endpoints::{
             declare_contract::{
-                extract_class_hash_from_error, get_compiled_contract, parse_class_hash_from_error,
-                RunnerError,
+                extract_class_hash_from_error, get_compiled_contract, parse_class_hash_from_error, RunnerError,
             },
             errors::OpenRpcTestGenError,
             utils::wait_for_sent_transaction,
@@ -28,16 +27,15 @@ impl RunnableTrait for TestCase {
     async fn run(test_input: &Self::Input) -> Result<Self, OpenRpcTestGenError> {
         let (flattened_sierra_class, compiled_class_hash) = get_compiled_contract(
             PathBuf::from_str("target/dev/contracts_contracts_sample_contract_1_HelloStarknet.contract_class.json")?,
-            PathBuf::from_str("target/dev/contracts_contracts_sample_contract_1_HelloStarknet.compiled_contract_class.json")?,
+            PathBuf::from_str(
+                "target/dev/contracts_contracts_sample_contract_1_HelloStarknet.compiled_contract_class.json",
+            )?,
         )
         .await?;
 
         let declaration_hash = match test_input
             .random_paymaster_account
-            .declare_v2(
-                Arc::new(flattened_sierra_class.clone()),
-                compiled_class_hash,
-            )
+            .declare_v2(Arc::new(flattened_sierra_class.clone()), compiled_class_hash)
             .send()
             .await
         {
@@ -54,12 +52,10 @@ impl RunnableTrait for TestCase {
                 if sign_error.to_string().contains("is already declared") {
                     Ok(parse_class_hash_from_error(&sign_error.to_string())?)
                 } else {
-                    Err(OpenRpcTestGenError::RunnerError(
-                        RunnerError::AccountFailure(format!(
-                            "Transaction execution error: {}",
-                            sign_error
-                        )),
-                    ))
+                    Err(OpenRpcTestGenError::RunnerError(RunnerError::AccountFailure(format!(
+                        "Transaction execution error: {}",
+                        sign_error
+                    ))))
                 }
             }
 
@@ -67,12 +63,10 @@ impl RunnableTrait for TestCase {
                 if starkneterror.to_string().contains("is already declared") {
                     Ok(parse_class_hash_from_error(&starkneterror.to_string())?)
                 } else {
-                    Err(OpenRpcTestGenError::RunnerError(
-                        RunnerError::AccountFailure(format!(
-                            "Transaction execution error: {}",
-                            starkneterror
-                        )),
-                    ))
+                    Err(OpenRpcTestGenError::RunnerError(RunnerError::AccountFailure(format!(
+                        "Transaction execution error: {}",
+                        starkneterror
+                    ))))
                 }
             }
             Err(e) => {
@@ -83,9 +77,7 @@ impl RunnableTrait for TestCase {
                 } else {
                     let full_error_message = format!("{:?}", e);
 
-                    return Err(OpenRpcTestGenError::AccountError(AccountError::Other(
-                        full_error_message,
-                    )));
+                    return Err(OpenRpcTestGenError::AccountError(AccountError::Other(full_error_message)));
                 }
             }
         };
@@ -101,14 +93,8 @@ impl RunnableTrait for TestCase {
             .await?;
 
         assert_result!(
-            declared_class
-                .abi
-                .as_ref()
-                .and_then(|json| serde_json::from_str::<Value>(json).ok())
-                == flattened_sierra_class
-                    .abi
-                    .as_ref()
-                    .and_then(|json| serde_json::from_str::<Value>(json).ok()),
+            declared_class.abi.as_ref().and_then(|json| serde_json::from_str::<Value>(json).ok())
+                == flattened_sierra_class.abi.as_ref().and_then(|json| serde_json::from_str::<Value>(json).ok()),
             format!(
                 "ABI mismatch detected. Expected: {:?}, Actual: {:?}",
                 flattened_sierra_class.abi, declared_class.abi
@@ -119,8 +105,7 @@ impl RunnableTrait for TestCase {
             declared_class.contract_class_version == flattened_sierra_class.contract_class_version,
             format!(
                 "Contract class version mismatch. Expected: {:?}, Actual: {:?}",
-                flattened_sierra_class.contract_class_version,
-                declared_class.contract_class_version
+                flattened_sierra_class.contract_class_version, declared_class.contract_class_version
             )
         );
 

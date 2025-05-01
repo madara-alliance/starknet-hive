@@ -17,8 +17,8 @@ use crate::{
 use rand::{rngs::StdRng, RngCore, SeedableRng};
 use starknet_types_core::felt::Felt;
 use starknet_types_rpc::{
-    BlockId, BlockStatus, BlockTag, BroadcastedInvokeTxn, BroadcastedTxn, DaMode, InvokeTxn,
-    PriceUnit, TransactionAndReceipt, Txn, TxnFinalityStatus, TxnReceipt,
+    BlockId, BlockStatus, BlockTag, BroadcastedInvokeTxn, BroadcastedTxn, DaMode, InvokeTxn, PriceUnit,
+    TransactionAndReceipt, Txn, TxnFinalityStatus, TxnReceipt,
 };
 use t9n::txn_validation::invoke::verify_invoke_v3_signature;
 
@@ -42,22 +42,15 @@ impl RunnableTrait for TestCase {
 
     async fn run(test_input: &Self::Input) -> Result<Self, OpenRpcTestGenError> {
         let (flattened_sierra_class, compiled_class_hash) = get_compiled_contract(
-            PathBuf::from_str(
-                "target/dev/contracts_contracts_smpl15_HelloStarknet.contract_class.json",
-            )?,
-            PathBuf::from_str(
-                "target/dev/contracts_contracts_smpl15_HelloStarknet.compiled_contract_class.json",
-            )?,
+            PathBuf::from_str("target/dev/contracts_contracts_smpl15_HelloStarknet.contract_class.json")?,
+            PathBuf::from_str("target/dev/contracts_contracts_smpl15_HelloStarknet.compiled_contract_class.json")?,
         )
         .await?;
 
         let sender = test_input.random_paymaster_account.random_accounts()?;
         let chain_id = sender.provider().chain_id().await?;
 
-        let declare_result = sender
-            .declare_v3(flattened_sierra_class, compiled_class_hash)
-            .send()
-            .await?;
+        let declare_result = sender.declare_v3(flattened_sierra_class, compiled_class_hash).send().await?;
 
         wait_for_sent_transaction(
             declare_result.transaction_hash,
@@ -74,10 +67,7 @@ impl RunnableTrait for TestCase {
         let constructor_calldata = vec![];
         let sender_nonce = sender.get_nonce().await?;
 
-        let estimate_fee = factory
-            .deploy_v3(constructor_calldata.clone(), salt, unique)
-            .estimate_fee()
-            .await?;
+        let estimate_fee = factory.deploy_v3(constructor_calldata.clone(), salt, unique).estimate_fee().await?;
 
         let deploy_request = factory
             .deploy_v3(constructor_calldata.clone(), salt, unique)
@@ -96,9 +86,7 @@ impl RunnableTrait for TestCase {
         let deploy_result = test_input
             .random_paymaster_account
             .provider()
-            .add_invoke_transaction(BroadcastedTxn::Invoke(BroadcastedInvokeTxn::V3(
-                deploy_request,
-            )))
+            .add_invoke_transaction(BroadcastedTxn::Invoke(BroadcastedInvokeTxn::V3(deploy_request)))
             .await?;
 
         wait_for_sent_transaction(
@@ -109,10 +97,7 @@ impl RunnableTrait for TestCase {
 
         assert_result!(
             deploy_result.transaction_hash == deploy_hash,
-            format!(
-                "Exptected transaction hash to be {:?}, got {:?}",
-                deploy_hash, deploy_result.transaction_hash
-            )
+            format!("Exptected transaction hash to be {:?}, got {:?}", deploy_hash, deploy_result.transaction_hash)
         );
 
         let block_with_receipts = test_input
@@ -130,23 +115,16 @@ impl RunnableTrait for TestCase {
         let deployed_contract_address = match &deployment_receipt {
             TxnReceipt::Deploy(receipt) => receipt.contract_address,
             TxnReceipt::Invoke(receipt) => {
-                if let Some(contract_address) = receipt
-                    .common_receipt_properties
-                    .events
-                    .first()
-                    .and_then(|event| event.data.first())
+                if let Some(contract_address) =
+                    receipt.common_receipt_properties.events.first().and_then(|event| event.data.first())
                 {
                     *contract_address
                 } else {
-                    return Err(OpenRpcTestGenError::CallError(
-                        CallError::UnexpectedReceiptType,
-                    ));
+                    return Err(OpenRpcTestGenError::CallError(CallError::UnexpectedReceiptType));
                 }
             }
             _ => {
-                return Err(OpenRpcTestGenError::CallError(
-                    CallError::UnexpectedReceiptType,
-                ));
+                return Err(OpenRpcTestGenError::CallError(CallError::UnexpectedReceiptType));
             }
         };
 
@@ -157,11 +135,7 @@ impl RunnableTrait for TestCase {
 
         assert_result!(
             block_with_receipts.transactions.len() == 1,
-            format!(
-                "Expected transactions amount to be {}, got {}",
-                1,
-                block_with_receipts.transactions.len()
-            )
+            format!("Expected transactions amount to be {}, got {}", 1, block_with_receipts.transactions.len())
         );
 
         assert_result!(
@@ -173,11 +147,7 @@ impl RunnableTrait for TestCase {
             )
         );
 
-        let block_hash_and_number = test_input
-            .random_paymaster_account
-            .provider()
-            .block_hash_and_number()
-            .await?;
+        let block_hash_and_number = test_input.random_paymaster_account.provider().block_hash_and_number().await?;
 
         let block_header = block_with_receipts.block_header;
         assert_result!(
@@ -228,19 +198,15 @@ impl RunnableTrait for TestCase {
             )
         );
 
-        let TransactionAndReceipt {
-            transaction,
-            receipt,
-        } = block_with_receipts.transactions.first().ok_or_else(|| {
-            OpenRpcTestGenError::Other("Transaction not found in block with receipts".to_string())
-        })?;
+        let TransactionAndReceipt { transaction, receipt } = block_with_receipts
+            .transactions
+            .first()
+            .ok_or_else(|| OpenRpcTestGenError::Other("Transaction not found in block with receipts".to_string()))?;
 
         let deploy_receipt = match receipt {
             TxnReceipt::Invoke(deploy_receipt) => deploy_receipt,
             _ => {
-                return Err(OpenRpcTestGenError::UnexpectedTxnType(
-                    "Expected Deploy Receipt.".to_string(),
-                ));
+                return Err(OpenRpcTestGenError::UnexpectedTxnType("Expected Deploy Receipt.".to_string()));
             }
         };
 
@@ -248,15 +214,11 @@ impl RunnableTrait for TestCase {
             Txn::Invoke(deploy_tx) => match deploy_tx {
                 InvokeTxn::V3(v3_tx) => v3_tx,
                 _ => {
-                    return Err(OpenRpcTestGenError::UnexpectedTxnType(
-                        "Expected Invoke V3 Transaction.".to_string(),
-                    ));
+                    return Err(OpenRpcTestGenError::UnexpectedTxnType("Expected Invoke V3 Transaction.".to_string()));
                 }
             },
             _ => {
-                return Err(OpenRpcTestGenError::UnexpectedTxnType(
-                    "Expected Invoke Transaction.".to_string(),
-                ));
+                return Err(OpenRpcTestGenError::UnexpectedTxnType("Expected Invoke Transaction.".to_string()));
             }
         };
 
@@ -269,41 +231,28 @@ impl RunnableTrait for TestCase {
         let deploy_calldata = deploy_tx.calldata.clone();
         assert_result!(
             deploy_calldata.len() == 8,
-            format!(
-                "Expected calldata length to be 8, but got {}.",
-                deploy_calldata.len()
-            )
+            format!("Expected calldata length to be 8, but got {}.", deploy_calldata.len())
         );
 
-        let deploy_calldata_calls_amount = *deploy_calldata
-            .first()
-            .ok_or_else(|| OpenRpcTestGenError::Other("Missing calldata".to_string()))?;
+        let deploy_calldata_calls_amount =
+            *deploy_calldata.first().ok_or_else(|| OpenRpcTestGenError::Other("Missing calldata".to_string()))?;
 
         assert_result!(
             deploy_calldata_calls_amount == Felt::ONE,
-            format!(
-                "Expected calldata calls amount to be {}, but got {}.",
-                Felt::ONE,
-                deploy_calldata_calls_amount
-            )
+            format!("Expected calldata calls amount to be {}, but got {}.", Felt::ONE, deploy_calldata_calls_amount)
         );
 
-        let deploy_calldata_udc = *deploy_calldata
-            .get(1)
-            .ok_or_else(|| OpenRpcTestGenError::Other("Missing calldata".to_string()))?;
+        let deploy_calldata_udc =
+            *deploy_calldata.get(1).ok_or_else(|| OpenRpcTestGenError::Other("Missing calldata".to_string()))?;
 
         assert_result!(
             deploy_calldata_udc == UDC_ADDRESS,
-            format!(
-                "Expected UDC address in calldata to be {}, but got {}.",
-                UDC_ADDRESS, deploy_calldata_udc
-            )
+            format!("Expected UDC address in calldata to be {}, but got {}.", UDC_ADDRESS, deploy_calldata_udc)
         );
 
         let keccak_deploy_account = starknet_keccak("deployContract".as_bytes());
-        let deploy_calldata_keccak = *deploy_calldata
-            .get(2)
-            .ok_or_else(|| OpenRpcTestGenError::Other("Missing calldata".to_string()))?;
+        let deploy_calldata_keccak =
+            *deploy_calldata.get(2).ok_or_else(|| OpenRpcTestGenError::Other("Missing calldata".to_string()))?;
 
         assert_result!(
             deploy_calldata_keccak == keccak_deploy_account,
@@ -313,9 +262,9 @@ impl RunnableTrait for TestCase {
             )
         );
 
-        let calldata_fourth = *deploy_calldata.get(3).ok_or_else(|| {
-            OpenRpcTestGenError::Other("Missing last calldata element".to_string())
-        })?;
+        let calldata_fourth = *deploy_calldata
+            .get(3)
+            .ok_or_else(|| OpenRpcTestGenError::Other("Missing last calldata element".to_string()))?;
         let expected_calldata_call_length = Felt::from_hex("0x4")?;
         assert_result!(
             calldata_fourth == expected_calldata_call_length,
@@ -325,9 +274,8 @@ impl RunnableTrait for TestCase {
             )
         );
 
-        let deploy_calldata_class_hash = *deploy_calldata
-            .get(4)
-            .ok_or_else(|| OpenRpcTestGenError::Other("Missing calldata".to_string()))?;
+        let deploy_calldata_class_hash =
+            *deploy_calldata.get(4).ok_or_else(|| OpenRpcTestGenError::Other("Missing calldata".to_string()))?;
 
         assert_result!(
             deploy_calldata_class_hash == declare_result.class_hash,
@@ -337,21 +285,16 @@ impl RunnableTrait for TestCase {
             )
         );
 
-        let deploy_calldata_salt = *deploy_calldata
-            .get(5)
-            .ok_or_else(|| OpenRpcTestGenError::Other("Missing calldata".to_string()))?;
+        let deploy_calldata_salt =
+            *deploy_calldata.get(5).ok_or_else(|| OpenRpcTestGenError::Other("Missing calldata".to_string()))?;
 
         assert_result!(
             deploy_calldata_salt == salt,
-            format!(
-                "Expected salt in calldata to be {}, but got {}.",
-                salt, deploy_calldata_salt
-            )
+            format!("Expected salt in calldata to be {}, but got {}.", salt, deploy_calldata_salt)
         );
 
-        let deploy_calldata_unique = *deploy_calldata
-            .get(6)
-            .ok_or_else(|| OpenRpcTestGenError::Other("Missing calldata".to_string()))?;
+        let deploy_calldata_unique =
+            *deploy_calldata.get(6).ok_or_else(|| OpenRpcTestGenError::Other("Missing calldata".to_string()))?;
 
         let unique_hex = match unique {
             true => Felt::ONE,
@@ -360,18 +303,13 @@ impl RunnableTrait for TestCase {
 
         assert_result!(
             deploy_calldata_unique == unique_hex,
-            format!(
-                "Expected unique value in calldata to be {}, but got {}.",
-                unique_hex, deploy_calldata_unique
-            )
+            format!("Expected unique value in calldata to be {}, but got {}.", unique_hex, deploy_calldata_unique)
         );
 
-        let deploy_calldata_constructor_calldata_length = *deploy_calldata
-            .get(7)
-            .ok_or_else(|| OpenRpcTestGenError::Other("Missing calldata".to_string()))?;
+        let deploy_calldata_constructor_calldata_length =
+            *deploy_calldata.get(7).ok_or_else(|| OpenRpcTestGenError::Other("Missing calldata".to_string()))?;
 
-        let constructor_calldata_len_felt =
-            Felt::from_dec_str(&constructor_calldata.len().to_string())?;
+        let constructor_calldata_len_felt = Felt::from_dec_str(&constructor_calldata.len().to_string())?;
 
         assert_result!(
             deploy_calldata_constructor_calldata_length == constructor_calldata_len_felt,
@@ -392,10 +330,7 @@ impl RunnableTrait for TestCase {
 
         assert_result!(
             deploy_tx.nonce == sender_nonce,
-            format!(
-                "Expected nonce to be {:?}, but got {:?}.",
-                sender_nonce, deploy_tx.nonce
-            )
+            format!("Expected nonce to be {:?}, but got {:?}.", sender_nonce, deploy_tx.nonce)
         );
 
         assert_result!(
@@ -409,51 +344,34 @@ impl RunnableTrait for TestCase {
 
         assert_result!(
             deploy_tx.paymaster_data.is_empty(),
-            format!(
-                "Expected paymaster data to be empty, but it was not. Got: {:?}",
-                deploy_tx.paymaster_data
-            )
+            format!("Expected paymaster data to be empty, but it was not. Got: {:?}", deploy_tx.paymaster_data)
         );
 
         let sender_address = sender.address();
         assert_result!(
             deploy_tx.sender_address == sender_address,
-            format!(
-                "Expected sender address to be {:?}, but got {:?}.",
-                sender_address, deploy_tx.sender_address
-            )
+            format!("Expected sender address to be {:?}, but got {:?}.", sender_address, deploy_tx.sender_address)
         );
 
-        assert_result!(
-            valid_signature,
-            format!("Invalid signature, checked by t9n.",)
-        );
+        assert_result!(valid_signature, format!("Invalid signature, checked by t9n.",));
 
         assert_result!(
             deploy_tx.signature == signature,
-            format!(
-                "Expected signature: {:?}, got {:?}",
-                signature, deploy_tx.signature
-            )
+            format!("Expected signature: {:?}, got {:?}", signature, deploy_tx.signature)
         );
 
         assert_result!(
-            deploy_receipt.common_receipt_properties.transaction_hash
-                == deploy_result.transaction_hash,
+            deploy_receipt.common_receipt_properties.transaction_hash == deploy_result.transaction_hash,
             format!(
                 "Expected declare transaction hash: {:?}, but got {:?}",
-                deploy_result.transaction_hash,
-                deploy_receipt.common_receipt_properties.transaction_hash
+                deploy_result.transaction_hash, deploy_receipt.common_receipt_properties.transaction_hash
             )
         );
 
         let expected_tip = Felt::ZERO;
         assert_result!(
             deploy_tx.tip == expected_tip,
-            format!(
-                "Expected tip to be {:?}, but got {:?}",
-                expected_tip, deploy_tx.tip
-            )
+            format!("Expected tip to be {:?}, but got {:?}", expected_tip, deploy_tx.tip)
         );
 
         let deploy_txn_gas_hex = Felt::from_dec_str(&DEPLOY_TXN_GAS.to_string())?.to_hex_string();
@@ -465,8 +383,7 @@ impl RunnableTrait for TestCase {
             )
         );
 
-        let deploy_txn_gas_price_hex =
-            Felt::from_dec_str(&DEPLOY_TXN_GAS_PRICE.to_string())?.to_hex_string();
+        let deploy_txn_gas_price_hex = Felt::from_dec_str(&DEPLOY_TXN_GAS_PRICE.to_string())?.to_hex_string();
         assert_result!(
             deploy_tx.resource_bounds.l1_gas.max_price_per_unit == deploy_txn_gas_price_hex,
             format!(
@@ -487,13 +404,11 @@ impl RunnableTrait for TestCase {
 
         let expected_l2_gas_max_price_per_unit = Felt::ZERO.to_hex_string();
         assert_result!(
-            deploy_tx.resource_bounds.l2_gas.max_price_per_unit
-                == expected_l2_gas_max_price_per_unit,
+            deploy_tx.resource_bounds.l2_gas.max_price_per_unit == expected_l2_gas_max_price_per_unit,
             format!(
                 "Expected l2 gas max price per unit
                  to be {:?}, but got {:?}",
-                expected_l2_gas_max_price_per_unit,
-                deploy_tx.resource_bounds.l2_gas.max_price_per_unit
+                expected_l2_gas_max_price_per_unit, deploy_tx.resource_bounds.l2_gas.max_price_per_unit
             )
         );
 
@@ -502,27 +417,17 @@ impl RunnableTrait for TestCase {
 
         assert_result!(
             actual_fee.amount == estimate_fee.overall_fee,
-            format!(
-                "Expected overall fee to be {:?}, but got {:?}",
-                estimate_fee.overall_fee, actual_fee.unit
-            )
+            format!("Expected overall fee to be {:?}, but got {:?}", estimate_fee.overall_fee, actual_fee.unit)
         );
 
         assert_result!(
             actual_fee.unit == PriceUnit::Fri,
-            format!(
-                "Expected price unit to be {:?}, but got {:?}",
-                PriceUnit::Fri,
-                actual_fee.unit
-            )
+            format!("Expected price unit to be {:?}, but got {:?}", PriceUnit::Fri, actual_fee.unit)
         );
 
         let events = deploy_receipt.common_receipt_properties.events.clone();
 
-        assert_result!(
-            events.len() == 2,
-            format!("Expected 2 events, but got {:#?}", events.len())
-        );
+        assert_result!(events.len() == 2, format!("Expected 2 events, but got {:#?}", events.len()));
 
         let first_event = deploy_receipt
             .common_receipt_properties
@@ -532,10 +437,7 @@ impl RunnableTrait for TestCase {
 
         assert_result!(
             first_event.from_address == UDC_ADDRESS,
-            format!(
-                "Expected event from address to be {:?}, but got {:?}",
-                UDC_ADDRESS, first_event.from_address
-            )
+            format!("Expected event from address to be {:?}, but got {:?}", UDC_ADDRESS, first_event.from_address)
         );
 
         let first_event_data_first = *first_event
@@ -558,10 +460,7 @@ impl RunnableTrait for TestCase {
 
         assert_result!(
             first_event_data_second == sender_address,
-            format!(
-                "Expected second event data to be {:?}, got {:?}",
-                sender_address, first_event_data_second
-            )
+            format!("Expected second event data to be {:?}, got {:?}", sender_address, first_event_data_second)
         );
 
         let first_event_data_third = *first_event
@@ -571,10 +470,7 @@ impl RunnableTrait for TestCase {
 
         assert_result!(
             first_event_data_third == unique_hex,
-            format!(
-                "Expected third event data to be {:?}, got {:?}",
-                unique_hex, first_event_data_third
-            )
+            format!("Expected third event data to be {:?}, got {:?}", unique_hex, first_event_data_third)
         );
 
         let first_event_data_fourth = *first_event
@@ -610,10 +506,7 @@ impl RunnableTrait for TestCase {
 
         assert_result!(
             first_event_data_sixth == salt,
-            format!(
-                "Expected sixth event data to be {:?}, got {:?}",
-                salt, first_event_data_sixth
-            )
+            format!("Expected sixth event data to be {:?}, got {:?}", salt, first_event_data_sixth)
         );
 
         let first_event_keys_first = *first_event
@@ -638,10 +531,7 @@ impl RunnableTrait for TestCase {
 
         assert_result!(
             second_event.from_address == STRK_ADDRESS,
-            format!(
-                "Expected event from address to be {:?}, got {:?}",
-                STRK_ADDRESS, second_event.from_address
-            )
+            format!("Expected event from address to be {:?}, got {:?}", STRK_ADDRESS, second_event.from_address)
         );
 
         let second_event_data_first = *second_event
@@ -664,11 +554,7 @@ impl RunnableTrait for TestCase {
 
         assert_result!(
             second_event_data_second == Felt::ZERO,
-            format!(
-                "Invalid fee amount in event data, expected {}, got {:?}",
-                Felt::ZERO,
-                second_event_data_second
-            )
+            format!("Invalid fee amount in event data, expected {}, got {:?}", Felt::ZERO, second_event_data_second)
         );
 
         let second_event_keys_first = *second_event
@@ -708,44 +594,27 @@ impl RunnableTrait for TestCase {
             )
         );
 
-        let finality_status = deploy_receipt
-            .common_receipt_properties
-            .finality_status
-            .clone();
+        let finality_status = deploy_receipt.common_receipt_properties.finality_status.clone();
 
         assert_result!(
             finality_status == TxnFinalityStatus::L2,
-            format!(
-                "Invalid finality status, expected {:?}, got {:?}",
-                TxnFinalityStatus::L2,
-                finality_status
-            )
+            format!("Invalid finality status, expected {:?}, got {:?}", TxnFinalityStatus::L2, finality_status)
         );
 
-        assert_result!(
-            deploy_receipt
-                .common_receipt_properties
-                .messages_sent
-                .is_empty(),
-            "Expected no messages sent"
-        );
+        assert_result!(deploy_receipt.common_receipt_properties.messages_sent.is_empty(), "Expected no messages sent");
 
         assert_result!(
-            deploy_receipt.common_receipt_properties.transaction_hash
-                == deploy_result.transaction_hash,
+            deploy_receipt.common_receipt_properties.transaction_hash == deploy_result.transaction_hash,
             format!(
                 "Invalid transaction hash, expected {}, got {}",
-                deploy_result.transaction_hash,
-                deploy_receipt.common_receipt_properties.transaction_hash
+                deploy_result.transaction_hash, deploy_receipt.common_receipt_properties.transaction_hash
             )
         );
 
         let execution_status = match deploy_receipt.common_receipt_properties.anon.clone() {
             starknet_types_rpc::Anonymous::Successful(status) => status.execution_status,
             _ => {
-                return Err(OpenRpcTestGenError::Other(
-                    "Unexpected execution status type.".to_string(),
-                ));
+                return Err(OpenRpcTestGenError::Other("Unexpected execution status type.".to_string()));
             }
         };
 
@@ -753,10 +622,7 @@ impl RunnableTrait for TestCase {
 
         assert_result!(
             execution_status == expected_execution_status,
-            format!(
-                "Expected execution status to be {:?}, got {:?}",
-                expected_execution_status, execution_status
-            )
+            format!("Expected execution status to be {:?}, got {:?}", expected_execution_status, execution_status)
         );
 
         Ok(Self {})

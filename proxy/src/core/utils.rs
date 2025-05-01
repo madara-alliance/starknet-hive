@@ -12,10 +12,7 @@ use tokio_rustls::server::TlsStream;
 use tokio_rustls::TlsAcceptor;
 use tracing::info;
 
-include!(concat!(
-    env!("CARGO_MANIFEST_DIR"),
-    "/../target/shared/generated_state_machines.rs"
-));
+include!(concat!(env!("CARGO_MANIFEST_DIR"), "/../target/shared/generated_state_machines.rs"));
 
 pub fn load_tls_config() -> Result<Arc<ServerConfig>, ProxyError> {
     let private_key_bytes = include_bytes!("../../alpha-sepolia-certs/server.pem");
@@ -25,10 +22,8 @@ pub fn load_tls_config() -> Result<Arc<ServerConfig>, ProxyError> {
 
     let certs = load_certs("proxy/alpha-sepolia-certs/server.crt")?;
 
-    let config = ServerConfig::builder()
-        .with_safe_defaults()
-        .with_no_client_auth()
-        .with_single_cert(certs, private_key)?;
+    let config =
+        ServerConfig::builder().with_safe_defaults().with_no_client_auth().with_single_cert(certs, private_key)?;
 
     Ok(Arc::new(config))
 }
@@ -60,11 +55,7 @@ async fn write_response_to_stream(
     info!("Response Body: {}", body);
 
     if status.is_success() {
-        let response_str = format!(
-            "HTTP/1.1 200 OK\r\nContent-Length: {}\r\n\r\n{}",
-            body.len(),
-            body
-        );
+        let response_str = format!("HTTP/1.1 200 OK\r\nContent-Length: {}\r\n\r\n{}", body.len(), body);
         tls_stream.write_all(response_str.as_bytes()).await?;
     } else {
         let error_response = "HTTP/1.1 500 Internal Server Error\r\nContent-Length: 22\r\n\r\nSepolia Request Failed";
@@ -93,10 +84,7 @@ async fn extract_request_body<R: AsyncBufReadExt + Unpin>(
     Ok(body)
 }
 
-pub async fn handle_connection(
-    stream: TcpStream,
-    tls_config: Arc<ServerConfig>,
-) -> Result<(), ProxyError> {
+pub async fn handle_connection(stream: TcpStream, tls_config: Arc<ServerConfig>) -> Result<(), ProxyError> {
     let acceptor = TlsAcceptor::from(tls_config);
     let mut tls_stream = acceptor.accept(stream).await?;
 
@@ -136,17 +124,11 @@ pub async fn handle_connection(
                 "POST" => {
                     info!("Handling POST request");
                     info!("Post body: {}", request_body);
-                    client
-                        .post(url.clone())
-                        .body(request_body.clone())
-                        .send()
-                        .await?
+                    client.post(url.clone()).body(request_body.clone()).send().await?
                 }
                 _ => {
                     info!("Unsupported HTTP method: {method}");
-                    return Err(ProxyError::MethodError {
-                        method: method.to_string(),
-                    });
+                    return Err(ProxyError::MethodError { method: method.to_string() });
                 }
             };
             let response_body = write_response_to_stream(&mut tls_stream, response).await?;

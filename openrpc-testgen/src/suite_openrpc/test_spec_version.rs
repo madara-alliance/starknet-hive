@@ -1,8 +1,7 @@
 use crate::{
     assert_result,
     utils::v7::{
-        accounts::account::ConnectedAccount, endpoints::errors::OpenRpcTestGenError,
-        providers::provider::Provider,
+        accounts::account::ConnectedAccount, endpoints::errors::OpenRpcTestGenError, providers::provider::Provider,
     },
     RunnableTrait,
 };
@@ -17,11 +16,7 @@ impl RunnableTrait for TestCase {
     type Input = super::TestSuiteOpenRpc;
 
     async fn run(test_input: &Self::Input) -> Result<Self, OpenRpcTestGenError> {
-        let spec_version = test_input
-            .random_paymaster_account
-            .provider()
-            .spec_version()
-            .await;
+        let spec_version = test_input.random_paymaster_account.provider().spec_version().await;
 
         let result = spec_version.is_ok();
 
@@ -31,10 +26,7 @@ impl RunnableTrait for TestCase {
 
         assert_result!(
             spec_version == EXPECTED_SPEC_VERSION,
-            format!(
-                "Expected spec version to be {}, but got {}",
-                EXPECTED_SPEC_VERSION, spec_version
-            )
+            format!("Expected spec version to be {}, but got {}", EXPECTED_SPEC_VERSION, spec_version)
         );
 
         Ok(Self {})

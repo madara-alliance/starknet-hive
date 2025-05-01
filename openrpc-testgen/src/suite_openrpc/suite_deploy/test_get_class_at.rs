@@ -23,12 +23,8 @@ impl RunnableTrait for TestCase {
 
     async fn run(test_input: &Self::Input) -> Result<Self, OpenRpcTestGenError> {
         let (flattened_sierra_class, compiled_class_hash) = get_compiled_contract(
-            PathBuf::from_str(
-                "target/dev/contracts_contracts_smpl10_HelloStarknet.contract_class.json",
-            )?,
-            PathBuf::from_str(
-                "target/dev/contracts_contracts_smpl10_HelloStarknet.compiled_contract_class.json",
-            )?,
+            PathBuf::from_str("target/dev/contracts_contracts_smpl10_HelloStarknet.contract_class.json")?,
+            PathBuf::from_str("target/dev/contracts_contracts_smpl10_HelloStarknet.compiled_contract_class.json")?,
         )
         .await?;
 
@@ -44,19 +40,14 @@ impl RunnableTrait for TestCase {
         )
         .await?;
 
-        let factory = ContractFactory::new(
-            declaration_result.class_hash,
-            test_input.random_paymaster_account.random_accounts()?,
-        );
+        let factory =
+            ContractFactory::new(declaration_result.class_hash, test_input.random_paymaster_account.random_accounts()?);
 
         let mut salt_buffer = [0u8; 32];
         let mut rng = StdRng::from_entropy();
         rng.fill_bytes(&mut salt_buffer[1..]);
 
-        let deployment_result = factory
-            .deploy_v3(vec![], Felt::from_bytes_be(&salt_buffer), true)
-            .send()
-            .await?;
+        let deployment_result = factory.deploy_v3(vec![], Felt::from_bytes_be(&salt_buffer), true).send().await?;
 
         wait_for_sent_transaction(
             deployment_result.transaction_hash,
@@ -73,23 +64,16 @@ impl RunnableTrait for TestCase {
         let deployed_contract_address = match &deployment_receipt {
             TxnReceipt::Deploy(receipt) => receipt.contract_address,
             TxnReceipt::Invoke(receipt) => {
-                if let Some(contract_address) = receipt
-                    .common_receipt_properties
-                    .events
-                    .first()
-                    .and_then(|event| event.data.first())
+                if let Some(contract_address) =
+                    receipt.common_receipt_properties.events.first().and_then(|event| event.data.first())
                 {
                     *contract_address
                 } else {
-                    return Err(OpenRpcTestGenError::CallError(
-                        CallError::UnexpectedReceiptType,
-                    ));
+                    return Err(OpenRpcTestGenError::CallError(CallError::UnexpectedReceiptType));
                 }
             }
             _ => {
-                return Err(OpenRpcTestGenError::CallError(
-                    CallError::UnexpectedReceiptType,
-                ));
+                return Err(OpenRpcTestGenError::CallError(CallError::UnexpectedReceiptType));
             }
         };
 
@@ -105,14 +89,8 @@ impl RunnableTrait for TestCase {
         let contract_class = contract_class?;
 
         assert_result!(
-            contract_class
-                .abi
-                .as_ref()
-                .and_then(|json| serde_json::from_str::<Value>(json).ok())
-                == flattened_sierra_class
-                    .abi
-                    .as_ref()
-                    .and_then(|json| serde_json::from_str::<Value>(json).ok()),
+            contract_class.abi.as_ref().and_then(|json| serde_json::from_str::<Value>(json).ok())
+                == flattened_sierra_class.abi.as_ref().and_then(|json| serde_json::from_str::<Value>(json).ok()),
             format!(
                 "ABI mismatch detected. Expected: {:?}, Actual: {:?}",
                 flattened_sierra_class.abi, contract_class.abi
@@ -123,8 +101,7 @@ impl RunnableTrait for TestCase {
             contract_class.contract_class_version == flattened_sierra_class.contract_class_version,
             format!(
                 "Contract class version mismatch. Expected: {:?}, Actual: {:?}",
-                flattened_sierra_class.contract_class_version,
-                contract_class.contract_class_version
+                flattened_sierra_class.contract_class_version, contract_class.contract_class_version
             )
         );
 

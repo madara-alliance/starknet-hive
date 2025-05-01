@@ -26,16 +26,11 @@ impl RunnableTrait for TestCase {
         let mut rng = StdRng::from_entropy();
         rng.fill_bytes(&mut salt_buffer[1..]);
 
-        let invoke_result = factory
-            .deploy_v1(vec![], Felt::from_bytes_be(&salt_buffer), true)
-            .send()
-            .await;
+        let invoke_result = factory.deploy_v1(vec![], Felt::from_bytes_be(&salt_buffer), true).send().await;
 
         assert_matches_result!(
             invoke_result.unwrap_err(),
-            AccountError::Provider(ProviderError::StarknetError(
-                StarknetError::TransactionExecutionError(_)
-            ))
+            AccountError::Provider(ProviderError::StarknetError(StarknetError::TransactionExecutionError(_)))
         );
 
         Ok(Self {})

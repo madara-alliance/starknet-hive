@@ -3,8 +3,7 @@ use crate::{
     utils::v7::{
         accounts::account::{Account, AccountError, ConnectedAccount},
         endpoints::{
-            declare_contract::get_compiled_contract, errors::OpenRpcTestGenError,
-            utils::wait_for_sent_transaction,
+            declare_contract::get_compiled_contract, errors::OpenRpcTestGenError, utils::wait_for_sent_transaction,
         },
         providers::{
             jsonrpc::StarknetError,
@@ -25,7 +24,9 @@ impl RunnableTrait for TestCase {
     async fn run(test_input: &Self::Input) -> Result<Self, OpenRpcTestGenError> {
         let (flattened_sierra_class, compiled_class_hash) = get_compiled_contract(
             PathBuf::from_str("target/dev/contracts_contracts_sample_contract_2_HelloStarknet.contract_class.json")?,
-            PathBuf::from_str("target/dev/contracts_contracts_sample_contract_2_HelloStarknet.compiled_contract_class.json")?,
+            PathBuf::from_str(
+                "target/dev/contracts_contracts_sample_contract_2_HelloStarknet.compiled_contract_class.json",
+            )?,
         )
         .await?;
 
@@ -33,24 +34,15 @@ impl RunnableTrait for TestCase {
         let provider = account.provider().clone();
 
         // Declare the class for the first time.
-        let declare_res = account
-            .declare_v2(
-                Arc::new(flattened_sierra_class.clone()),
-                compiled_class_hash,
-            )
-            .send()
-            .await?;
+        let declare_res =
+            account.declare_v2(Arc::new(flattened_sierra_class.clone()), compiled_class_hash).send().await?;
 
         let (transaction_hash, class_hash) = (declare_res.transaction_hash, declare_res.class_hash);
 
         wait_for_sent_transaction(transaction_hash, &account).await?;
 
         // check that the class is actually declared
-        let get_class = provider
-            .clone()
-            .get_class(BlockId::Tag(BlockTag::Pending), class_hash)
-            .await
-            .is_ok();
+        let get_class = provider.clone().get_class(BlockId::Tag(BlockTag::Pending), class_hash).await.is_ok();
 
         assert_result!(get_class);
 
@@ -74,9 +66,7 @@ impl RunnableTrait for TestCase {
 
         assert_matches_result!(
             declare_result.unwrap_err(),
-            AccountError::Provider(ProviderError::StarknetError(
-                StarknetError::ClassAlreadyDeclared
-            ))
+            AccountError::Provider(ProviderError::StarknetError(StarknetError::ClassAlreadyDeclared))
         );
 
         Ok(Self {})

@@ -44,10 +44,8 @@ impl std::str::FromStr for MyStorageEntry {
         let contract_address: StarkHash = StarkHash::try_from(contract_address_value).unwrap();
         let storage_key: StarkHash = StarkHash::try_from(storage_key_value).unwrap();
 
-        let storage_entry: StorageEntry = (
-            ContractAddress::try_from(contract_address).unwrap(),
-            StorageKey::try_from(storage_key).unwrap(),
-        );
+        let storage_entry: StorageEntry =
+            (ContractAddress::try_from(contract_address).unwrap(), StorageKey::try_from(storage_key).unwrap());
         Ok(MyStorageEntry(storage_entry))
     }
 }
@@ -58,9 +56,7 @@ impl From<MyStorageEntry> for StorageEntry {
     }
 }
 
-fn convert_hash_map_helper(
-    input: HashMap<ClassHash, ContractClassHelper>,
-) -> HashMap<ClassHash, ContractClass> {
+fn convert_hash_map_helper(input: HashMap<ClassHash, ContractClassHelper>) -> HashMap<ClassHash, ContractClass> {
     input.into_iter().map(|(k, v)| (k, v.into())).collect()
 }
 
@@ -92,8 +88,7 @@ impl<'de> Deserialize<'de> for DictState {
                 let storage_key_str = parts[1].replace("storage_key: ", "");
 
                 let contract_address: StarkHash =
-                    StarkHash::try_from(contract_address_str.as_str())
-                        .map_err(de::Error::custom)?;
+                    StarkHash::try_from(contract_address_str.as_str()).map_err(de::Error::custom)?;
                 let storage_key: StarkHash =
                     StarkHash::try_from(storage_key_str.as_str()).map_err(de::Error::custom)?;
 
@@ -145,10 +140,7 @@ impl Serialize for DictState {
 
         state.serialize_entry("class_hash_to_class", &self.class_hash_to_class)?;
 
-        state.serialize_entry(
-            "class_hash_to_compiled_class_hash",
-            &self.class_hash_to_compiled_class_hash,
-        )?;
+        state.serialize_entry("class_hash_to_compiled_class_hash", &self.class_hash_to_compiled_class_hash)?;
 
         state.end()
     }
@@ -156,19 +148,12 @@ impl Serialize for DictState {
 
 impl DictState {
     pub fn new(defaulter: StarknetDefaulter) -> Self {
-        Self {
-            defaulter,
-            ..Self::default()
-        }
+        Self { defaulter, ..Self::default() }
     }
 }
 
 impl StateReader for DictState {
-    fn get_storage_at(
-        &mut self,
-        contract_address: ContractAddress,
-        key: StorageKey,
-    ) -> StateResult<StarkFelt> {
+    fn get_storage_at(&mut self, contract_address: ContractAddress, key: StorageKey) -> StateResult<StarkFelt> {
         let contract_storage_key = (contract_address, key);
         match self.storage_view.get(&contract_storage_key) {
             Some(value) => Ok(*value),
@@ -197,16 +182,9 @@ impl StateReader for DictState {
         }
     }
 
-    fn get_compiled_class_hash(
-        &mut self,
-        class_hash: ClassHash,
-    ) -> StateResult<starknet_api::core::CompiledClassHash> {
+    fn get_compiled_class_hash(&mut self, class_hash: ClassHash) -> StateResult<starknet_api::core::CompiledClassHash> {
         // can't ask origin for this - insufficient API - probably not important
-        let compiled_class_hash = self
-            .class_hash_to_compiled_class_hash
-            .get(&class_hash)
-            .copied()
-            .unwrap_or_default();
+        let compiled_class_hash = self.class_hash_to_compiled_class_hash.get(&class_hash).copied().unwrap_or_default();
         Ok(compiled_class_hash)
     }
 }
@@ -234,34 +212,21 @@ impl DictState {
         Ok(())
     }
 
-    pub fn set_nonce(
-        &mut self,
-        contract_address: ContractAddress,
-        nonce: Nonce,
-    ) -> StateResult<()> {
+    pub fn set_nonce(&mut self, contract_address: ContractAddress, nonce: Nonce) -> StateResult<()> {
         self.address_to_nonce.insert(contract_address, nonce);
         Ok(())
     }
 
-    pub fn set_class_hash_at(
-        &mut self,
-        contract_address: ContractAddress,
-        class_hash: ClassHash,
-    ) -> StateResult<()> {
+    pub fn set_class_hash_at(&mut self, contract_address: ContractAddress, class_hash: ClassHash) -> StateResult<()> {
         if contract_address == ContractAddress::default() {
             return Err(StateError::OutOfRangeContractAddress);
         }
 
-        self.address_to_class_hash
-            .insert(contract_address, class_hash);
+        self.address_to_class_hash.insert(contract_address, class_hash);
         Ok(())
     }
 
-    pub fn set_contract_class(
-        &mut self,
-        class_hash: ClassHash,
-        contract_class: ContractClass,
-    ) -> StateResult<()> {
+    pub fn set_contract_class(&mut self, class_hash: ClassHash, contract_class: ContractClass) -> StateResult<()> {
         self.class_hash_to_class.insert(class_hash, contract_class);
         Ok(())
     }
@@ -271,8 +236,7 @@ impl DictState {
         class_hash: ClassHash,
         compiled_class_hash: CompiledClassHash,
     ) -> StateResult<()> {
-        self.class_hash_to_compiled_class_hash
-            .insert(class_hash, compiled_class_hash);
+        self.class_hash_to_compiled_class_hash.insert(class_hash, compiled_class_hash);
         Ok(())
     }
 }

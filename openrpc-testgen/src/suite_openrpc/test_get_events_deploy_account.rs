@@ -41,9 +41,7 @@ impl RunnableTrait for TestCase {
         let transfer_execution = test_input
             .random_paymaster_account
             .execute_v3(vec![Call {
-                to: Felt::from_hex(
-                    "0x4718F5A0FC34CC1AF16A1CDEE98FFB20C31F5CD61D6AB07201858F4287C938D",
-                )?,
+                to: Felt::from_hex("0x4718F5A0FC34CC1AF16A1CDEE98FFB20C31F5CD61D6AB07201858F4287C938D")?,
                 selector: get_selector_from_name("transfer")?,
                 calldata: vec![account_data.address, transfer_amount, Felt::ZERO],
             }])
@@ -56,10 +54,7 @@ impl RunnableTrait for TestCase {
         )
         .await?;
 
-        let wait_config = WaitForTx {
-            wait: true,
-            wait_params: ValidatedWaitParams::default(),
-        };
+        let wait_config = WaitForTx { wait: true, wait_params: ValidatedWaitParams::default() };
 
         let deploy_account_hash = deploy_account(
             test_input.random_paymaster_account.provider(),
@@ -70,17 +65,9 @@ impl RunnableTrait for TestCase {
         )
         .await?;
 
-        wait_for_sent_transaction(
-            deploy_account_hash,
-            &test_input.random_paymaster_account.random_accounts()?,
-        )
-        .await?;
+        wait_for_sent_transaction(deploy_account_hash, &test_input.random_paymaster_account.random_accounts()?).await?;
 
-        let block_hash_and_number = test_input
-            .random_paymaster_account
-            .provider()
-            .block_hash_and_number()
-            .await?;
+        let block_hash_and_number = test_input.random_paymaster_account.provider().block_hash_and_number().await?;
 
         let filter = EventFilterWithPageRequest {
             address: None,
@@ -91,11 +78,7 @@ impl RunnableTrait for TestCase {
             continuation_token: None,
         };
 
-        let events = test_input
-            .random_paymaster_account
-            .provider()
-            .get_events(filter)
-            .await;
+        let events = test_input.random_paymaster_account.provider().get_events(filter).await;
 
         let result = events.is_ok();
 
@@ -103,26 +86,17 @@ impl RunnableTrait for TestCase {
 
         let events = events?;
 
-        let first_event = events
-            .events
-            .first()
-            .ok_or_else(|| OpenRpcTestGenError::Other("First event not found".to_string()))?;
+        let first_event =
+            events.events.first().ok_or_else(|| OpenRpcTestGenError::Other("First event not found".to_string()))?;
 
         assert_result!(
             events.continuation_token.is_none(),
-            format!(
-                "No continuation token expected. Expected None, got {:?}",
-                events.continuation_token
-            )
+            format!("No continuation token expected. Expected None, got {:?}", events.continuation_token)
         );
 
         assert_result!(
             events.events.len() == 2,
-            format!(
-                "Invalid events count, expected {}, got {}",
-                2,
-                events.events.len()
-            )
+            format!("Invalid events count, expected {}, got {}", 2, events.events.len())
         );
 
         assert_result!(
@@ -135,21 +109,13 @@ impl RunnableTrait for TestCase {
 
         assert_result!(
             first_event.event.data.is_empty(),
-            format!(
-                "Expected event data to be empty, expected {}, got {}",
-                0,
-                first_event.event.data.len()
-            )
+            format!("Expected event data to be empty, expected {}, got {}", 0, first_event.event.data.len())
         );
 
         let keccak_owner_added = starknet_keccak("OwnerAdded".as_bytes());
         assert_result!(
             first_event.event.keys.first() == Some(&keccak_owner_added),
-            format!(
-                "Invalid event key, expected {:?}, got {:?}",
-                keccak_owner_added,
-                first_event.event.keys.first()
-            )
+            format!("Invalid event key, expected {:?}, got {:?}", keccak_owner_added, first_event.event.keys.first())
         );
 
         let public_key = account_data.signing_key.verifying_key().scalar();
@@ -189,13 +155,10 @@ impl RunnableTrait for TestCase {
         );
 
         // Second Event
-        let second_event = events
-            .events
-            .get(1)
-            .ok_or_else(|| OpenRpcTestGenError::Other("Second event not found".to_string()))?;
+        let second_event =
+            events.events.get(1).ok_or_else(|| OpenRpcTestGenError::Other("Second event not found".to_string()))?;
 
-        let strk_address =
-            Felt::from_hex("0x4718F5A0FC34CC1AF16A1CDEE98FFB20C31F5CD61D6AB07201858F4287C938D")?;
+        let strk_address = Felt::from_hex("0x4718F5A0FC34CC1AF16A1CDEE98FFB20C31F5CD61D6AB07201858F4287C938D")?;
 
         assert_result!(
             second_event.event.from_address == strk_address,
@@ -242,20 +205,11 @@ impl RunnableTrait for TestCase {
             )
         );
 
-        let maybe_pending_block_with_txs = test_input
-            .random_paymaster_account
-            .provider()
-            .get_block_with_txs(BlockId::Tag(BlockTag::Latest))
-            .await?;
+        let maybe_pending_block_with_txs =
+            test_input.random_paymaster_account.provider().get_block_with_txs(BlockId::Tag(BlockTag::Latest)).await?;
         let sequencer_address = match maybe_pending_block_with_txs {
-            MaybePendingBlockWithTxs::Block(block_with_txs) => {
-                block_with_txs.block_header.sequencer_address
-            }
-            _ => {
-                return Err(OpenRpcTestGenError::ProviderError(
-                    ProviderError::UnexpectedPendingBlock,
-                ))
-            }
+            MaybePendingBlockWithTxs::Block(block_with_txs) => block_with_txs.block_header.sequencer_address,
+            _ => return Err(OpenRpcTestGenError::ProviderError(ProviderError::UnexpectedPendingBlock)),
         };
 
         assert_result!(

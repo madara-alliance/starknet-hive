@@ -42,9 +42,7 @@ impl RunnableTrait for TestCase {
         let transfer_execution = test_input
             .random_paymaster_account
             .execute_v3(vec![Call {
-                to: Felt::from_hex(
-                    "0x4718F5A0FC34CC1AF16A1CDEE98FFB20C31F5CD61D6AB07201858F4287C938D",
-                )?,
+                to: Felt::from_hex("0x4718F5A0FC34CC1AF16A1CDEE98FFB20C31F5CD61D6AB07201858F4287C938D")?,
                 selector: get_selector_from_name("transfer")?,
                 calldata: vec![account.address, transfer_amount, Felt::ZERO],
             }])
@@ -57,10 +55,7 @@ impl RunnableTrait for TestCase {
         )
         .await?;
 
-        let wait_config = WaitForTx {
-            wait: true,
-            wait_params: ValidatedWaitParams::default(),
-        };
+        let wait_config = WaitForTx { wait: true, wait_params: ValidatedWaitParams::default() };
 
         let deploy_account_hash = deploy_account(
             test_input.random_paymaster_account.provider(),
@@ -71,11 +66,7 @@ impl RunnableTrait for TestCase {
         )
         .await?;
 
-        wait_for_sent_transaction(
-            deploy_account_hash,
-            &test_input.random_paymaster_account.random_accounts()?,
-        )
-        .await?;
+        wait_for_sent_transaction(deploy_account_hash, &test_input.random_paymaster_account.random_accounts()?).await?;
 
         let initial_account_nonce = test_input
             .random_paymaster_account
@@ -88,10 +79,7 @@ impl RunnableTrait for TestCase {
         assert_result!(result);
 
         let initial_account_nonce = initial_account_nonce?;
-        assert_result!(
-            initial_account_nonce == Felt::ONE,
-            "New account - expected nonce to be 1"
-        );
+        assert_result!(initial_account_nonce == Felt::ONE, "New account - expected nonce to be 1");
 
         let provider = test_input.random_paymaster_account.provider();
         let chain_id = get_chain_id(provider).await?;
@@ -105,19 +93,12 @@ impl RunnableTrait for TestCase {
         account.set_block_id(BlockId::Tag(BlockTag::Pending));
 
         let (flattened_sierra_class, compiled_class_hash) = get_compiled_contract(
-            PathBuf::from_str(
-                "target/dev/contracts_contracts_smpl12_HelloStarknet.contract_class.json",
-            )?,
-            PathBuf::from_str(
-                "target/dev/contracts_contracts_smpl12_HelloStarknet.compiled_contract_class.json",
-            )?,
+            PathBuf::from_str("target/dev/contracts_contracts_smpl12_HelloStarknet.contract_class.json")?,
+            PathBuf::from_str("target/dev/contracts_contracts_smpl12_HelloStarknet.compiled_contract_class.json")?,
         )
         .await?;
 
-        let declaration_result = account
-            .declare_v3(flattened_sierra_class.clone(), compiled_class_hash)
-            .send()
-            .await?;
+        let declaration_result = account.declare_v3(flattened_sierra_class.clone(), compiled_class_hash).send().await?;
 
         wait_for_sent_transaction(
             declaration_result.transaction_hash,
@@ -137,10 +118,7 @@ impl RunnableTrait for TestCase {
 
         let updated_account_nonce = updated_account_nonce?;
 
-        assert_result!(
-            updated_account_nonce == Felt::TWO,
-            "New account - expected nonce to be 2"
-        );
+        assert_result!(updated_account_nonce == Felt::TWO, "New account - expected nonce to be 2");
 
         Ok(Self {})
     }

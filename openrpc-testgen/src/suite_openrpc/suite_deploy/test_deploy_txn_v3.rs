@@ -27,10 +27,7 @@ impl RunnableTrait for TestCase {
         let mut rng = StdRng::from_entropy();
         rng.fill_bytes(&mut salt_buffer[1..]);
 
-        let invoke_result = factory
-            .deploy_v3(vec![], Felt::from_bytes_be(&salt_buffer), true)
-            .send()
-            .await;
+        let invoke_result = factory.deploy_v3(vec![], Felt::from_bytes_be(&salt_buffer), true).send().await;
 
         wait_for_sent_transaction(
             invoke_result.as_ref().unwrap().transaction_hash,
@@ -42,19 +39,14 @@ impl RunnableTrait for TestCase {
 
         assert_result!(result);
 
-        let state_update: starknet_types_rpc::MaybePendingStateUpdate<Felt> = test_input
-            .random_paymaster_account
-            .provider()
-            .get_state_update(BlockId::Tag(BlockTag::Latest))
-            .await?;
+        let state_update: starknet_types_rpc::MaybePendingStateUpdate<Felt> =
+            test_input.random_paymaster_account.provider().get_state_update(BlockId::Tag(BlockTag::Latest)).await?;
 
         let state_update = match state_update {
             starknet_types_rpc::MaybePendingStateUpdate::Block(block) => Ok(block),
-            starknet_types_rpc::MaybePendingStateUpdate::Pending(_) => {
-                Err(OpenRpcTestGenError::ProviderError(
-                    crate::utils::v7::providers::provider::ProviderError::UnexpectedPendingBlock,
-                ))
-            }
+            starknet_types_rpc::MaybePendingStateUpdate::Pending(_) => Err(OpenRpcTestGenError::ProviderError(
+                crate::utils::v7::providers::provider::ProviderError::UnexpectedPendingBlock,
+            )),
         }?;
 
         let state_update_deployed_contract_class_hash = state_update

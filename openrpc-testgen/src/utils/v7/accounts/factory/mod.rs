@@ -7,12 +7,11 @@ use starknet_types_core::felt::Felt;
 use starknet_types_core::felt::NonZeroFelt;
 use starknet_types_core::hash::{Poseidon, StarkHash};
 use starknet_types_rpc::v0_7_1::{
-    BlockId, BlockTag, BroadcastedDeployAccountTxn, BroadcastedTxn, ContractAndTxnHash,
-    DeployAccountTxnV1, FeeEstimate, SimulateTransactionsResult, SimulationFlag,
+    BlockId, BlockTag, BroadcastedDeployAccountTxn, BroadcastedTxn, ContractAndTxnHash, DeployAccountTxnV1,
+    FeeEstimate, SimulateTransactionsResult, SimulationFlag,
 };
 use starknet_types_rpc::{
-    DaMode, DeployAccountTxnV3, MaybePendingBlockWithTxHashes, ResourceBounds,
-    ResourceBoundsMapping,
+    DaMode, DeployAccountTxnV3, MaybePendingBlockWithTxHashes, ResourceBounds, ResourceBoundsMapping,
 };
 
 use crate::utils::v7::providers::{
@@ -32,28 +31,16 @@ pub enum DataAvailabilityMode {
 }
 
 /// Cairo string for "deploy_account"
-const PREFIX_DEPLOY_ACCOUNT: Felt = Felt::from_raw([
-    461298303000467581,
-    18446744073709551615,
-    18443211694809419988,
-    3350261884043292318,
-]);
+const PREFIX_DEPLOY_ACCOUNT: Felt =
+    Felt::from_raw([461298303000467581, 18446744073709551615, 18443211694809419988, 3350261884043292318]);
 
 /// Cairo string for "STARKNET_CONTRACT_ADDRESS"
-const PREFIX_CONTRACT_ADDRESS: Felt = Felt::from_raw([
-    533439743893157637,
-    8635008616843941496,
-    17289941567720117366,
-    3829237882463328880,
-]);
+const PREFIX_CONTRACT_ADDRESS: Felt =
+    Felt::from_raw([533439743893157637, 8635008616843941496, 17289941567720117366, 3829237882463328880]);
 
 // 2 ** 251 - 256
-const ADDR_BOUND: NonZeroFelt = NonZeroFelt::from_raw([
-    576459263475590224,
-    18446744073709255680,
-    160989183,
-    18446743986131443745,
-]);
+const ADDR_BOUND: NonZeroFelt =
+    NonZeroFelt::from_raw([576459263475590224, 18446744073709255680, 160989183, 18446743986131443745]);
 
 /// This trait enables deploying account contracts using the `DeployAccount` transaction type.
 pub trait AccountFactory: Sized {
@@ -186,34 +173,19 @@ pub enum AccountFactoryError<S> {
 }
 impl<'f, F> AccountDeploymentV1<'f, F> {
     pub fn new(salt: Felt, factory: &'f F) -> Self {
-        Self {
-            factory,
-            salt,
-            nonce: None,
-            max_fee: None,
-            fee_estimate_multiplier: 1.1,
-        }
+        Self { factory, salt, nonce: None, max_fee: None, fee_estimate_multiplier: 1.1 }
     }
 
     pub fn nonce(self, nonce: Felt) -> Self {
-        Self {
-            nonce: Some(nonce),
-            ..self
-        }
+        Self { nonce: Some(nonce), ..self }
     }
 
     pub fn max_fee(self, max_fee: Felt) -> Self {
-        Self {
-            max_fee: Some(max_fee),
-            ..self
-        }
+        Self { max_fee: Some(max_fee), ..self }
     }
 
     pub fn fee_estimate_multiplier(self, fee_estimate_multiplier: f64) -> Self {
-        Self {
-            fee_estimate_multiplier,
-            ..self
-        }
+        Self { fee_estimate_multiplier, ..self }
     }
 
     /// Calling this function after manually specifying `nonce` and `max_fee` turns
@@ -225,11 +197,7 @@ impl<'f, F> AccountDeploymentV1<'f, F> {
 
         Ok(PreparedAccountDeploymentV1 {
             factory: self.factory,
-            inner: RawAccountDeploymentV1 {
-                salt: self.salt,
-                nonce,
-                max_fee,
-            },
+            inner: RawAccountDeploymentV1 { salt: self.salt, nonce, max_fee },
         })
     }
 }
@@ -247,38 +215,23 @@ impl<'f, F> AccountDeploymentV3<'f, F> {
     }
 
     pub fn nonce(self, nonce: Felt) -> Self {
-        Self {
-            nonce: Some(nonce),
-            ..self
-        }
+        Self { nonce: Some(nonce), ..self }
     }
 
     pub fn gas(self, gas: u64) -> Self {
-        Self {
-            gas: Some(gas),
-            ..self
-        }
+        Self { gas: Some(gas), ..self }
     }
 
     pub fn gas_price(self, gas_price: u128) -> Self {
-        Self {
-            gas_price: Some(gas_price),
-            ..self
-        }
+        Self { gas_price: Some(gas_price), ..self }
     }
 
     pub fn gas_estimate_multiplier(self, gas_estimate_multiplier: f64) -> Self {
-        Self {
-            gas_estimate_multiplier,
-            ..self
-        }
+        Self { gas_estimate_multiplier, ..self }
     }
 
     pub fn gas_price_estimate_multiplier(self, gas_price_estimate_multiplier: f64) -> Self {
-        Self {
-            gas_price_estimate_multiplier,
-            ..self
-        }
+        Self { gas_price_estimate_multiplier, ..self }
     }
 
     /// Calling this function after manually specifying `nonce` and `max_fee` turns
@@ -291,12 +244,7 @@ impl<'f, F> AccountDeploymentV3<'f, F> {
 
         Ok(PreparedAccountDeploymentV3 {
             factory: self.factory,
-            inner: RawAccountDeploymentV3 {
-                salt: self.salt,
-                nonce,
-                gas,
-                gas_price,
-            },
+            inner: RawAccountDeploymentV3 { salt: self.salt, nonce, gas, gas_price },
         })
     }
 }
@@ -307,36 +255,22 @@ where
 {
     /// Locally calculates the target deployment address.
     pub fn address(&self) -> Felt {
-        calculate_contract_address(
-            self.salt,
-            self.factory.class_hash(),
-            &self.factory.calldata(),
-        )
+        calculate_contract_address(self.salt, self.factory.class_hash(), &self.factory.calldata())
     }
 
     pub async fn fetch_nonce(&self) -> Result<Felt, ProviderError> {
-        match self
-            .factory
-            .provider()
-            .get_nonce(self.factory.block_id(), self.address())
-            .await
-        {
+        match self.factory.provider().get_nonce(self.factory.block_id(), self.address()).await {
             Ok(nonce) => Ok(nonce),
             Err(ProviderError::StarknetError(StarknetError::ContractNotFound)) => Ok(Felt::ZERO),
             Err(err) => Err(err),
         }
     }
 
-    pub async fn estimate_fee(
-        &self,
-    ) -> Result<FeeEstimate<Felt>, AccountFactoryError<F::SignError>> {
+    pub async fn estimate_fee(&self) -> Result<FeeEstimate<Felt>, AccountFactoryError<F::SignError>> {
         // Resolves nonce
         let nonce = match self.nonce {
             Some(value) => value,
-            None => self
-                .fetch_nonce()
-                .await
-                .map_err(AccountFactoryError::Provider)?,
+            None => self.fetch_nonce().await.map_err(AccountFactoryError::Provider)?,
         };
 
         self.estimate_fee_with_nonce(nonce).await
@@ -350,32 +284,21 @@ where
         // Resolves nonce
         let nonce = match self.nonce {
             Some(value) => value,
-            None => self
-                .fetch_nonce()
-                .await
-                .map_err(AccountFactoryError::Provider)?,
+            None => self.fetch_nonce().await.map_err(AccountFactoryError::Provider)?,
         };
 
-        self.simulate_with_nonce(nonce, skip_validate, skip_fee_charge)
-            .await
+        self.simulate_with_nonce(nonce, skip_validate, skip_fee_charge).await
     }
 
-    pub async fn send(
-        &self,
-    ) -> Result<ContractAndTxnHash<Felt>, AccountFactoryError<F::SignError>> {
+    pub async fn send(&self) -> Result<ContractAndTxnHash<Felt>, AccountFactoryError<F::SignError>> {
         self.prepare().await?.send().await
     }
 
-    pub async fn prepare(
-        &self,
-    ) -> Result<PreparedAccountDeploymentV1<'f, F>, AccountFactoryError<F::SignError>> {
+    pub async fn prepare(&self) -> Result<PreparedAccountDeploymentV1<'f, F>, AccountFactoryError<F::SignError>> {
         // Resolves nonce
         let nonce = match self.nonce {
             Some(value) => value,
-            None => self
-                .fetch_nonce()
-                .await
-                .map_err(AccountFactoryError::Provider)?,
+            None => self.fetch_nonce().await.map_err(AccountFactoryError::Provider)?,
         };
 
         // Resolves max_fee
@@ -394,8 +317,7 @@ where
                 }
 
                 // Convert the first 8 bytes to u64
-                let overall_fee_u64 =
-                    u64::from_le_bytes(overall_fee_bytes[..8].try_into().unwrap());
+                let overall_fee_u64 = u64::from_le_bytes(overall_fee_bytes[..8].try_into().unwrap());
 
                 // Perform necessary operations on overall_fee_u64 and convert to f64 then to u64
                 (((overall_fee_u64 as f64) * self.fee_estimate_multiplier) as u64).into()
@@ -403,11 +325,7 @@ where
         };
         let res: PreparedAccountDeploymentV1<F> = PreparedAccountDeploymentV1 {
             factory: self.factory,
-            inner: RawAccountDeploymentV1 {
-                salt: self.salt,
-                nonce,
-                max_fee,
-            },
+            inner: RawAccountDeploymentV1 { salt: self.salt, nonce, max_fee },
         };
 
         Ok(res)
@@ -421,17 +339,10 @@ where
 
         let prepared = PreparedAccountDeploymentV1 {
             factory: self.factory,
-            inner: RawAccountDeploymentV1 {
-                salt: self.salt,
-                nonce,
-                max_fee: Felt::ZERO,
-            },
+            inner: RawAccountDeploymentV1 { salt: self.salt, nonce, max_fee: Felt::ZERO },
         };
 
-        let deploy = prepared
-            .get_deploy_request(false, skip_signature)
-            .await
-            .map_err(AccountFactoryError::Signing)?;
+        let deploy = prepared.get_deploy_request(false, skip_signature).await.map_err(AccountFactoryError::Signing)?;
 
         self.factory
             .provider()
@@ -462,16 +373,9 @@ where
 
         let prepared = PreparedAccountDeploymentV1 {
             factory: self.factory,
-            inner: RawAccountDeploymentV1 {
-                salt: self.salt,
-                nonce,
-                max_fee: self.max_fee.unwrap_or_default(),
-            },
+            inner: RawAccountDeploymentV1 { salt: self.salt, nonce, max_fee: self.max_fee.unwrap_or_default() },
         };
-        let deploy = prepared
-            .get_deploy_request(true, skip_signature)
-            .await
-            .map_err(AccountFactoryError::Signing)?;
+        let deploy = prepared.get_deploy_request(true, skip_signature).await.map_err(AccountFactoryError::Signing)?;
 
         let mut flags = vec![];
 
@@ -500,51 +404,32 @@ where
 {
     /// Locally calculates the target deployment address.
     pub fn address(&self) -> Felt {
-        calculate_contract_address(
-            self.salt,
-            self.factory.class_hash(),
-            &self.factory.calldata(),
-        )
+        calculate_contract_address(self.salt, self.factory.class_hash(), &self.factory.calldata())
     }
 
     pub async fn fetch_nonce(&self) -> Result<Felt, ProviderError> {
-        match self
-            .factory
-            .provider()
-            .get_nonce(self.factory.block_id(), self.address())
-            .await
-        {
+        match self.factory.provider().get_nonce(self.factory.block_id(), self.address()).await {
             Ok(nonce) => Ok(nonce),
             Err(ProviderError::StarknetError(StarknetError::ContractNotFound)) => Ok(Felt::ZERO),
             Err(err) => Err(err),
         }
     }
 
-    pub async fn estimate_fee(
-        &self,
-    ) -> Result<FeeEstimate<Felt>, AccountFactoryError<F::SignError>> {
+    pub async fn estimate_fee(&self) -> Result<FeeEstimate<Felt>, AccountFactoryError<F::SignError>> {
         // Resolves nonce
         let nonce = match self.nonce {
             Some(value) => value,
-            None => self
-                .fetch_nonce()
-                .await
-                .map_err(AccountFactoryError::Provider)?,
+            None => self.fetch_nonce().await.map_err(AccountFactoryError::Provider)?,
         };
 
         self.estimate_fee_with_nonce(nonce).await
     }
 
-    pub async fn estimate_fee_skip_signature(
-        &self,
-    ) -> Result<FeeEstimate<Felt>, AccountFactoryError<F::SignError>> {
+    pub async fn estimate_fee_skip_signature(&self) -> Result<FeeEstimate<Felt>, AccountFactoryError<F::SignError>> {
         // Resolves nonce
         let nonce = match self.nonce {
             Some(value) => value,
-            None => self
-                .fetch_nonce()
-                .await
-                .map_err(AccountFactoryError::Provider)?,
+            None => self.fetch_nonce().await.map_err(AccountFactoryError::Provider)?,
         };
 
         self.estimate_fee_with_nonce_skip_signature(nonce).await
@@ -558,32 +443,21 @@ where
         // Resolves nonce
         let nonce = match self.nonce {
             Some(value) => value,
-            None => self
-                .fetch_nonce()
-                .await
-                .map_err(AccountFactoryError::Provider)?,
+            None => self.fetch_nonce().await.map_err(AccountFactoryError::Provider)?,
         };
 
-        self.simulate_with_nonce(nonce, skip_validate, skip_fee_charge)
-            .await
+        self.simulate_with_nonce(nonce, skip_validate, skip_fee_charge).await
     }
 
-    pub async fn send(
-        &self,
-    ) -> Result<ContractAndTxnHash<Felt>, AccountFactoryError<F::SignError>> {
+    pub async fn send(&self) -> Result<ContractAndTxnHash<Felt>, AccountFactoryError<F::SignError>> {
         self.prepare().await?.send().await
     }
 
-    pub async fn prepare(
-        &self,
-    ) -> Result<PreparedAccountDeploymentV3<'f, F>, AccountFactoryError<F::SignError>> {
+    pub async fn prepare(&self) -> Result<PreparedAccountDeploymentV3<'f, F>, AccountFactoryError<F::SignError>> {
         // Resolves nonce
         let nonce = match self.nonce {
             Some(value) => value,
-            None => self
-                .fetch_nonce()
-                .await
-                .map_err(AccountFactoryError::Provider)?,
+            None => self.fetch_nonce().await.map_err(AccountFactoryError::Provider)?,
         };
 
         // Resolves fee settings
@@ -617,11 +491,9 @@ where
                 if block_l1_gas_price_bytes.iter().skip(8).any(|&x| x != 0) {
                     return Err(AccountFactoryError::FeeOutOfRange);
                 }
-                let block_l1_gas_price =
-                    u64::from_le_bytes(block_l1_gas_price_bytes[..8].try_into().unwrap());
+                let block_l1_gas_price = u64::from_le_bytes(block_l1_gas_price_bytes[..8].try_into().unwrap());
 
-                let gas_price =
-                    ((block_l1_gas_price as f64) * self.gas_price_estimate_multiplier) as u128;
+                let gas_price = ((block_l1_gas_price as f64) * self.gas_price_estimate_multiplier) as u128;
 
                 (gas, gas_price)
             }
@@ -636,18 +508,15 @@ where
                         if overall_fee_bytes.iter().skip(8).any(|&x| x != 0) {
                             return Err(AccountFactoryError::FeeOutOfRange);
                         }
-                        let overall_fee =
-                            u64::from_le_bytes(overall_fee_bytes[..8].try_into().unwrap());
+                        let overall_fee = u64::from_le_bytes(overall_fee_bytes[..8].try_into().unwrap());
 
                         let gas_price_bytes = fee_estimate.gas_price.to_bytes_le();
                         if gas_price_bytes.iter().skip(8).any(|&x| x != 0) {
                             return Err(AccountFactoryError::FeeOutOfRange);
                         }
-                        let gas_price =
-                            u64::from_le_bytes(gas_price_bytes[..8].try_into().unwrap());
+                        let gas_price = u64::from_le_bytes(gas_price_bytes[..8].try_into().unwrap());
 
-                        ((((overall_fee + gas_price - 1) / gas_price) as f64)
-                            * self.gas_estimate_multiplier) as u64
+                        ((overall_fee.div_ceil(gas_price) as f64) * self.gas_estimate_multiplier) as u64
                     }
                 };
 
@@ -658,8 +527,7 @@ where
                         if gas_price_bytes.iter().skip(8).any(|&x| x != 0) {
                             return Err(AccountFactoryError::FeeOutOfRange);
                         }
-                        let gas_price =
-                            u64::from_le_bytes(gas_price_bytes[..8].try_into().unwrap());
+                        let gas_price = u64::from_le_bytes(gas_price_bytes[..8].try_into().unwrap());
 
                         ((gas_price as f64) * self.gas_price_estimate_multiplier) as u128
                     }
@@ -671,12 +539,7 @@ where
 
         Ok(PreparedAccountDeploymentV3 {
             factory: self.factory,
-            inner: RawAccountDeploymentV3 {
-                salt: self.salt,
-                nonce,
-                gas,
-                gas_price,
-            },
+            inner: RawAccountDeploymentV3 { salt: self.salt, nonce, gas, gas_price },
         })
     }
 
@@ -688,17 +551,9 @@ where
 
         let prepared = PreparedAccountDeploymentV3 {
             factory: self.factory,
-            inner: RawAccountDeploymentV3 {
-                salt: self.salt,
-                nonce,
-                gas: 0,
-                gas_price: 0,
-            },
+            inner: RawAccountDeploymentV3 { salt: self.salt, nonce, gas: 0, gas_price: 0 },
         };
-        let deploy = prepared
-            .get_deploy_request(false, skip_signature)
-            .await
-            .map_err(AccountFactoryError::Signing)?;
+        let deploy = prepared.get_deploy_request(false, skip_signature).await.map_err(AccountFactoryError::Signing)?;
 
         self.factory
             .provider()
@@ -725,17 +580,9 @@ where
 
         let prepared = PreparedAccountDeploymentV3 {
             factory: self.factory,
-            inner: RawAccountDeploymentV3 {
-                salt: self.salt,
-                nonce,
-                gas: 0,
-                gas_price: 0,
-            },
+            inner: RawAccountDeploymentV3 { salt: self.salt, nonce, gas: 0, gas_price: 0 },
         };
-        let deploy = prepared
-            .get_deploy_request(false, skip_signature)
-            .await
-            .map_err(AccountFactoryError::Signing)?;
+        let deploy = prepared.get_deploy_request(false, skip_signature).await.map_err(AccountFactoryError::Signing)?;
 
         self.factory
             .provider()
@@ -778,10 +625,7 @@ where
                 gas_price: self.gas_price.unwrap_or_default(),
             },
         };
-        let deploy = prepared
-            .get_deploy_request(false, skip_signature)
-            .await
-            .map_err(AccountFactoryError::Signing)?;
+        let deploy = prepared.get_deploy_request(false, skip_signature).await.map_err(AccountFactoryError::Signing)?;
 
         let mut flags = vec![];
 
@@ -838,33 +682,23 @@ impl RawAccountDeploymentV3 {
 
 impl<'f, F> PreparedAccountDeploymentV1<'f, F> {
     pub fn from_raw(raw_deployment: RawAccountDeploymentV1, factory: &'f F) -> Self {
-        Self {
-            factory,
-            inner: raw_deployment,
-        }
+        Self { factory, inner: raw_deployment }
     }
 }
 
 impl<'f, F> PreparedAccountDeploymentV3<'f, F> {
     pub fn from_raw(raw_deployment: RawAccountDeploymentV3, factory: &'f F) -> Self {
-        Self {
-            factory,
-            inner: raw_deployment,
-        }
+        Self { factory, inner: raw_deployment }
     }
 }
 
-impl<'f, F> PreparedAccountDeploymentV1<'f, F>
+impl<F> PreparedAccountDeploymentV1<'_, F>
 where
     F: AccountFactory,
 {
     /// Locally calculates the target deployment address.
     pub fn address(&self) -> Felt {
-        calculate_contract_address(
-            self.inner.salt,
-            self.factory.class_hash(),
-            &self.factory.calldata(),
-        )
+        calculate_contract_address(self.inner.salt, self.factory.class_hash(), &self.factory.calldata())
     }
 
     pub fn transaction_hash(&self, _query_only: bool) -> Felt {
@@ -883,19 +717,12 @@ where
         ])
     }
 
-    pub async fn send(
-        &self,
-    ) -> Result<ContractAndTxnHash<Felt>, AccountFactoryError<F::SignError>> {
-        let tx_request = self
-            .get_deploy_request(false, false)
-            .await
-            .map_err(AccountFactoryError::Signing)?;
+    pub async fn send(&self) -> Result<ContractAndTxnHash<Felt>, AccountFactoryError<F::SignError>> {
+        let tx_request = self.get_deploy_request(false, false).await.map_err(AccountFactoryError::Signing)?;
 
         self.factory
             .provider()
-            .add_deploy_account_transaction(BroadcastedTxn::DeployAccount(
-                BroadcastedDeployAccountTxn::V1(tx_request),
-            ))
+            .add_deploy_account_transaction(BroadcastedTxn::DeployAccount(BroadcastedDeployAccountTxn::V1(tx_request)))
             .await
             .map_err(AccountFactoryError::Provider)
     }
@@ -905,13 +732,8 @@ where
         query_only: bool,
         skip_signature: bool,
     ) -> Result<DeployAccountTxnV1<Felt>, F::SignError> {
-        let signature = if skip_signature {
-            vec![]
-        } else {
-            self.factory
-                .sign_deployment_v1(&self.inner, query_only)
-                .await?
-        };
+        let signature =
+            if skip_signature { vec![] } else { self.factory.sign_deployment_v1(&self.inner, query_only).await? };
 
         let txn = DeployAccountTxnV1 {
             max_fee: self.inner.max_fee,
@@ -926,17 +748,13 @@ where
     }
 }
 
-impl<'f, F> PreparedAccountDeploymentV3<'f, F>
+impl<F> PreparedAccountDeploymentV3<'_, F>
 where
     F: AccountFactory,
 {
     /// Locally calculates the target deployment address.
     pub fn address(&self) -> Felt {
-        calculate_contract_address(
-            self.inner.salt,
-            self.factory.class_hash(),
-            &self.factory.calldata(),
-        )
+        calculate_contract_address(self.inner.salt, self.factory.class_hash(), &self.factory.calldata())
     }
 
     pub fn transaction_hash(&self, _query_only: bool) -> Felt {
@@ -948,8 +766,8 @@ where
 
         // First L1 gas resource buffer
         let mut resource_buffer = [
-            0, 0, b'L', b'1', b'_', b'G', b'A', b'S', 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-            0, 0, 0, 0, 0, 0, 0, 0, 0,
+            0, 0, b'L', b'1', b'_', b'G', b'A', b'S', 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+            0, 0,
         ];
         resource_buffer[8..(8 + 8)].copy_from_slice(&self.inner.gas.to_be_bytes());
         resource_buffer[(8 + 8)..].copy_from_slice(&self.inner.gas_price.to_be_bytes());
@@ -957,8 +775,8 @@ where
 
         // Second L2 gas resource buffer
         let resource_buffer = [
-            0, 0, b'L', b'2', b'_', b'G', b'A', b'S', 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-            0, 0, 0, 0, 0, 0, 0, 0, 0,
+            0, 0, b'L', b'2', b'_', b'G', b'A', b'S', 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+            0, 0,
         ];
         fee_data.push(Felt::from_bytes_be(&resource_buffer));
 
@@ -985,18 +803,11 @@ where
         Poseidon::hash_array(&data)
     }
 
-    pub async fn send(
-        &self,
-    ) -> Result<ContractAndTxnHash<Felt>, AccountFactoryError<F::SignError>> {
-        let tx_request = self
-            .get_deploy_request(false, false)
-            .await
-            .map_err(AccountFactoryError::Signing)?;
+    pub async fn send(&self) -> Result<ContractAndTxnHash<Felt>, AccountFactoryError<F::SignError>> {
+        let tx_request = self.get_deploy_request(false, false).await.map_err(AccountFactoryError::Signing)?;
         self.factory
             .provider()
-            .add_deploy_account_transaction(BroadcastedTxn::DeployAccount(
-                BroadcastedDeployAccountTxn::V3(tx_request),
-            ))
+            .add_deploy_account_transaction(BroadcastedTxn::DeployAccount(BroadcastedDeployAccountTxn::V3(tx_request)))
             .await
             .map_err(AccountFactoryError::Provider)
     }
@@ -1018,18 +829,11 @@ where
             class_hash: self.factory.class_hash(),
             resource_bounds: ResourceBoundsMapping {
                 l1_gas: ResourceBounds {
-                    max_amount: Felt::from_dec_str(&self.inner.gas.to_string())
-                        .unwrap()
-                        .to_hex_string(),
-                    max_price_per_unit: Felt::from_dec_str(&self.inner.gas_price.to_string())
-                        .unwrap()
-                        .to_hex_string(),
+                    max_amount: Felt::from_dec_str(&self.inner.gas.to_string()).unwrap().to_hex_string(),
+                    max_price_per_unit: Felt::from_dec_str(&self.inner.gas_price.to_string()).unwrap().to_hex_string(),
                 },
                 // L2 resources are hard-coded to 0
-                l2_gas: ResourceBounds {
-                    max_amount: "0x0".to_string(),
-                    max_price_per_unit: "0x0".to_string(),
-                },
+                l2_gas: ResourceBounds { max_amount: "0x0".to_string(), max_price_per_unit: "0x0".to_string() },
             },
             // Fee market has not been been activated yet so it's hard-coded to be 0
             tip: Felt::ZERO,

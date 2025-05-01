@@ -23,27 +23,18 @@ impl RunnableTrait for TestCase {
 
     async fn run(test_input: &Self::Input) -> Result<Self, OpenRpcTestGenError> {
         let (flattened_sierra_class, compiled_class_hash) = get_compiled_contract(
-            PathBuf::from_str(
-                "target/dev/contracts_contracts_smpl19_HelloStarknet.contract_class.json",
-            )?,
-            PathBuf::from_str(
-                "target/dev/contracts_contracts_smpl19_HelloStarknet.compiled_contract_class.json",
-            )?,
+            PathBuf::from_str("target/dev/contracts_contracts_smpl19_HelloStarknet.contract_class.json")?,
+            PathBuf::from_str("target/dev/contracts_contracts_smpl19_HelloStarknet.compiled_contract_class.json")?,
         )
         .await?;
 
         let sender = test_input.random_paymaster_account.random_accounts()?;
         let sender_address = sender.address();
 
-        let estimate_fee = sender
-            .declare_v3(flattened_sierra_class.clone(), compiled_class_hash)
-            .estimate_fee()
-            .await?;
+        let estimate_fee =
+            sender.declare_v3(flattened_sierra_class.clone(), compiled_class_hash).estimate_fee().await?;
 
-        let declaration_result = sender
-            .declare_v3(flattened_sierra_class, compiled_class_hash)
-            .send()
-            .await?;
+        let declaration_result = sender.declare_v3(flattened_sierra_class, compiled_class_hash).send().await?;
 
         wait_for_sent_transaction(
             declaration_result.transaction_hash,
@@ -63,30 +54,20 @@ impl RunnableTrait for TestCase {
 
         let receipt = match receipt? {
             TxnReceipt::Declare(receipt) => receipt,
-            _ => {
-                return Err(OpenRpcTestGenError::CallError(
-                    CallError::UnexpectedReceiptType,
-                ))
-            }
+            _ => return Err(OpenRpcTestGenError::CallError(CallError::UnexpectedReceiptType)),
         };
 
         let common_receipt_properties = receipt.common_receipt_properties;
         let actual_fee = common_receipt_properties.actual_fee;
         assert_result!(
             actual_fee.amount == estimate_fee.overall_fee,
-            format!(
-                "Actual fee expected: {:?}, actual: {:?}",
-                estimate_fee.overall_fee, actual_fee.amount
-            )
+            format!("Actual fee expected: {:?}, actual: {:?}", estimate_fee.overall_fee, actual_fee.amount)
         );
 
         let expected_unit = PriceUnit::Fri;
         assert_result!(
             actual_fee.unit == expected_unit,
-            format!(
-                "Actual fee unit expected: {:?}, actual: {:?}",
-                expected_unit, actual_fee.unit
-            )
+            format!("Actual fee unit expected: {:?}, actual: {:?}", expected_unit, actual_fee.unit)
         );
 
         let expected_finality_status = TxnFinalityStatus::L2;
@@ -100,10 +81,7 @@ impl RunnableTrait for TestCase {
 
         assert_result!(
             common_receipt_properties.messages_sent.is_empty(),
-            format!(
-                "Expected no messages sent, actual: {:?}",
-                common_receipt_properties.messages_sent
-            )
+            format!("Expected no messages sent, actual: {:?}", common_receipt_properties.messages_sent)
         );
 
         assert_result!(
@@ -117,9 +95,7 @@ impl RunnableTrait for TestCase {
         let execution_status = match common_receipt_properties.anon {
             starknet_types_rpc::Anonymous::Successful(status) => status.execution_status,
             _ => {
-                return Err(OpenRpcTestGenError::Other(
-                    "Unexpected execution status type.".to_string(),
-                ));
+                return Err(OpenRpcTestGenError::Other("Unexpected execution status type.".to_string()));
             }
         };
 
@@ -127,97 +103,57 @@ impl RunnableTrait for TestCase {
 
         assert_result!(
             execution_status == expected_execution_status,
-            format!(
-                "Expected execution status to be {:?}, got {:?}",
-                expected_execution_status, execution_status
-            )
+            format!("Expected execution status to be {:?}, got {:?}", expected_execution_status, execution_status)
         );
 
         let events = common_receipt_properties.events;
-        assert_result!(
-            events.len() == 1,
-            format!("Expected 1 event, got {}", events.len())
-        );
+        assert_result!(events.len() == 1, format!("Expected 1 event, got {}", events.len()));
 
-        let event = events
-            .first()
-            .ok_or_else(|| OpenRpcTestGenError::Other("Event not found".to_string()))?;
+        let event = events.first().ok_or_else(|| OpenRpcTestGenError::Other("Event not found".to_string()))?;
         assert_result!(event.from_address == STRK_ADDRESS);
 
-        assert_result!(
-            event.data.len() == 2,
-            format!("Expected 2 data items, got {}", event.data.len())
-        );
+        assert_result!(event.data.len() == 2, format!("Expected 2 data items, got {}", event.data.len()));
 
-        let event_data_first = *event
-            .data
-            .first()
-            .ok_or_else(|| OpenRpcTestGenError::Other("Event data not found".to_string()))?;
+        let event_data_first =
+            *event.data.first().ok_or_else(|| OpenRpcTestGenError::Other("Event data not found".to_string()))?;
         assert_result!(
             event_data_first == estimate_fee.overall_fee,
-            format!(
-                "Expected event data to be {:?}, got {:?}",
-                estimate_fee.overall_fee, event_data_first
-            )
+            format!("Expected event data to be {:?}, got {:?}", estimate_fee.overall_fee, event_data_first)
         );
 
-        let event_data_second = *event
-            .data
-            .last()
-            .ok_or_else(|| OpenRpcTestGenError::Other("Event data not found".to_string()))?;
+        let event_data_second =
+            *event.data.last().ok_or_else(|| OpenRpcTestGenError::Other("Event data not found".to_string()))?;
 
         assert_result!(
             event_data_second == Felt::ZERO,
-            format!(
-                "Expected event data to be {:?}, got {:?}",
-                Felt::ZERO,
-                event_data_second
-            )
+            format!("Expected event data to be {:?}, got {:?}", Felt::ZERO, event_data_second)
         );
 
-        assert_result!(
-            event.keys.len() == 3,
-            format!("Expected 3 keys, got {}", event.keys.len())
-        );
+        assert_result!(event.keys.len() == 3, format!("Expected 3 keys, got {}", event.keys.len()));
 
-        let event_key_first = *event
-            .keys
-            .first()
-            .ok_or_else(|| OpenRpcTestGenError::Other("Event key not found".to_string()))?;
+        let event_key_first =
+            *event.keys.first().ok_or_else(|| OpenRpcTestGenError::Other("Event key not found".to_string()))?;
         let keccak_transfer = starknet_keccak("Transfer".as_bytes());
 
         assert_result!(
             event_key_first == keccak_transfer,
-            format!(
-                "Expected event key to be {:?}, got {:?}",
-                keccak_transfer, event_key_first
-            )
+            format!("Expected event key to be {:?}, got {:?}", keccak_transfer, event_key_first)
         );
 
-        let event_key_second = *event
-            .keys
-            .get(1)
-            .ok_or_else(|| OpenRpcTestGenError::Other("Event key not found".to_string()))?;
+        let event_key_second =
+            *event.keys.get(1).ok_or_else(|| OpenRpcTestGenError::Other("Event key not found".to_string()))?;
 
         assert_result!(
             event_key_second == sender_address,
-            format!(
-                "Expected event key to be {:?}, got {:?}",
-                sender_address, event_key_second
-            )
+            format!("Expected event key to be {:?}, got {:?}", sender_address, event_key_second)
         );
 
-        let event_key_third = *event
-            .keys
-            .last()
-            .ok_or_else(|| OpenRpcTestGenError::Other("Event key not found".to_string()))?;
+        let event_key_third =
+            *event.keys.last().ok_or_else(|| OpenRpcTestGenError::Other("Event key not found".to_string()))?;
 
         assert_result!(
             event_key_third == SEQUENCER_ADDRESS,
-            format!(
-                "Expected event key to be {:?}, got {:?}",
-                SEQUENCER_ADDRESS, event_key_third
-            )
+            format!("Expected event key to be {:?}, got {:?}", SEQUENCER_ADDRESS, event_key_third)
         );
 
         Ok(Self {})

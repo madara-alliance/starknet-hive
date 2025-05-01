@@ -26,11 +26,9 @@ pub struct TestCase {}
 impl RunnableTrait for TestCase {
     type Input = super::TestSuiteKatana;
     async fn run(test_input: &Self::Input) -> Result<Self, OpenRpcTestGenError> {
-        let path: PathBuf =
-            PathBuf::from("openrpc-testgen/src/suite_katana/test_data/cairo1_contract.json");
+        let path: PathBuf = PathBuf::from("openrpc-testgen/src/suite_katana/test_data/cairo1_contract.json");
 
-        let (flattened_sierra_class, compiled_class_hash) =
-            prepare_contract_declaration_params(&path)?;
+        let (flattened_sierra_class, compiled_class_hash) = prepare_contract_declaration_params(&path)?;
 
         let account = test_input.random_paymaster_account.random_accounts()?;
 
@@ -38,10 +36,7 @@ impl RunnableTrait for TestCase {
 
         let declare_res = test_input
             .random_paymaster_account
-            .declare_v2(
-                Arc::new(flattened_sierra_class.clone()),
-                compiled_class_hash,
-            )
+            .declare_v2(Arc::new(flattened_sierra_class.clone()), compiled_class_hash)
             .send()
             .await?;
 
@@ -53,11 +48,7 @@ impl RunnableTrait for TestCase {
         assert_matches_result!(receipt, TxnReceipt::Declare(DeclareTxnReceipt { .. }));
 
         // check that the class is actually declared
-        let get_class_ok = provider
-            .clone()
-            .get_class(BlockId::Tag(BlockTag::Pending), class_hash)
-            .await
-            .is_ok();
+        let get_class_ok = provider.clone().get_class(BlockId::Tag(BlockTag::Pending), class_hash).await.is_ok();
 
         assert_result!(get_class_ok);
 
@@ -74,8 +65,7 @@ impl RunnableTrait for TestCase {
         .concat();
 
         // pre-compute the contract address of the would-be deployed contract
-        let address =
-            get_contract_address(Felt::ZERO, declare_res.class_hash, &ctor_args, Felt::ZERO);
+        let address = get_contract_address(Felt::ZERO, declare_res.class_hash, &ctor_args, Felt::ZERO);
 
         let res = test_input
             .random_paymaster_account
@@ -89,16 +79,11 @@ impl RunnableTrait for TestCase {
             .send()
             .await?;
 
-        wait_for_sent_transaction(
-            res.transaction_hash,
-            &test_input.random_paymaster_account.random_accounts()?,
-        )
-        .await?;
+        wait_for_sent_transaction(res.transaction_hash, &test_input.random_paymaster_account.random_accounts()?)
+            .await?;
 
         // make sure the contract is deployed
-        let res = provider
-            .get_class_hash_at(BlockId::Tag(BlockTag::Pending), address)
-            .await?;
+        let res = provider.get_class_hash_at(BlockId::Tag(BlockTag::Pending), address).await?;
 
         assert_eq_result!(res, class_hash);
 

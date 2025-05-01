@@ -29,12 +29,7 @@ fn main() {
     for entry in fs::read_dir(&out_dir).expect("Could not read OUT_DIR") {
         let entry = entry.expect("Could not read directory entry");
         let path = entry.path();
-        if path
-            .file_name()
-            .and_then(|s| s.to_str())
-            .map(|s| s.starts_with("generated_tests_"))
-            == Some(true)
-        {
+        if path.file_name().and_then(|s| s.to_str()).map(|s| s.starts_with("generated_tests_")) == Some(true) {
             fs::remove_file(path).expect("Could not remove old generated test file");
         }
     }
@@ -43,13 +38,7 @@ fn main() {
     for entry in fs::read_dir(src_dir).expect("Could not read src directory") {
         let entry = entry.expect("Could not read directory entry");
         let path = entry.path();
-        if path.is_dir()
-            && path
-                .file_name()
-                .and_then(|s| s.to_str())
-                .map(|s| s.starts_with("suite_"))
-                == Some(true)
-        {
+        if path.is_dir() && path.file_name().and_then(|s| s.to_str()).map(|s| s.starts_with("suite_")) == Some(true) {
             let root_output_type = process_module_directory(&path, &out_dir, None);
             process_directory_recursively(&path, &out_dir, Some(&root_output_type));
         }
@@ -68,13 +57,7 @@ fn process_directory_recursively(dir: &Path, out_dir: &str, parent_output_type: 
     for entry in fs::read_dir(dir).expect("Could not read directory") {
         let entry = entry.expect("Could not read directory entry");
         let path = entry.path();
-        if path.is_dir()
-            && path
-                .file_name()
-                .and_then(|s| s.to_str())
-                .map(|s| s.starts_with("suite_"))
-                == Some(true)
-        {
+        if path.is_dir() && path.file_name().and_then(|s| s.to_str()).map(|s| s.starts_with("suite_")) == Some(true) {
             let current_output_type = process_module_directory(&path, out_dir, parent_output_type);
             process_directory_recursively(&path, out_dir, Some(&current_output_type));
         }
@@ -90,18 +73,12 @@ fn process_directory_recursively(dir: &Path, out_dir: &str, parent_output_type: 
 ///
 /// # Returns
 /// The `Output` type of the current suite.
-fn process_module_directory(
-    module_path: &Path,
-    out_dir: &str,
-    parent_output_type: Option<&str>,
-) -> String {
+fn process_module_directory(module_path: &Path, out_dir: &str, parent_output_type: Option<&str>) -> String {
     let module_name = module_path.strip_prefix("src").unwrap().to_str().unwrap();
     let module_name_safe = module_name.replace("/", "_");
 
-    let generated_file_path =
-        Path::new(out_dir).join(format!("generated_tests_{}.rs", module_name_safe));
-    let mut file =
-        File::create(&generated_file_path).expect("Could not create generated test file");
+    let generated_file_path = Path::new(out_dir).join(format!("generated_tests_{}.rs", module_name_safe));
+    let mut file = File::create(&generated_file_path).expect("Could not create generated test file");
 
     writeln!(
         file,
@@ -117,12 +94,7 @@ fn process_module_directory(
 
     let (test_cases, nested_suites) = partition_modules(&main_file_path);
 
-    writeln!(
-        file,
-        "impl crate::RunnableTrait for {}::{} {{",
-        module_prefix, struct_name
-    )
-    .unwrap();
+    writeln!(file, "impl crate::RunnableTrait for {}::{} {{", module_prefix, struct_name).unwrap();
 
     if let Some(output_type) = parent_output_type {
         writeln!(file, "    type Input = {};", output_type).unwrap();
@@ -138,16 +110,12 @@ fn process_module_directory(
 
     writeln!(
         file,
-        "        tracing::info!(\"\\x1b[33m\n\n🚀 Starting Test Suite: {}::{} 🚀\\x1b[0m\");",
+        "        tracing::info!(\"\\x1b[33m🚀 Starting Test Suite: {}::{} 🚀\\x1b[0m\");",
         module_prefix, struct_name
     )
     .unwrap();
 
-    writeln!(
-        file,
-        "        let mut failed_tests: HashMap<String, String> = HashMap::new();"
-    )
-    .unwrap();
+    writeln!(file, "        let mut failed_tests: HashMap<String, String> = HashMap::new();").unwrap();
 
     writeln!(
         file,
