@@ -26,4 +26,4 @@ jobs:
         run: npm install prettier
 
       - name: Run Prettier
-        run: npx prettier --plugin prettier-plugin-toml --check '**/*.{js,jsx,ts,tsx,json,css,scss,yaml,toml,md}'
+        run: prettier --plugin prettier-plugin-toml --check '**/*.{js,jsx,ts,tsx,json,css,scss,yaml,toml,md}'
