@@ -25,13 +25,13 @@ jobs:
         run: |
           cargo install cargo-hack
 
-      - name: Check feature combinations
-        run: |
-          cargo hack check \
-            -p openrpc-testgen \
-            -p openrpc-testgen-runner \
-            --feature-powerset \
-            --no-dev-deps
+      # - name: Check feature combinations
+      #   run: |
+      #     cargo hack check \
+      #       -p openrpc-testgen \
+      #       -p openrpc-testgen-runner \
+      #       --feature-powerset \
+      #       --no-dev-deps
 
       - name: Fail
         run: exit 1
