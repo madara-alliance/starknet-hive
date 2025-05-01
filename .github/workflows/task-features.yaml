@@ -31,5 +31,7 @@ jobs:
             -p openrpc-testgen \
             -p openrpc-testgen-runner \
             --feature-powerset \
-            --no-dev-deps \
-            --depth 1
+            --no-dev-deps
+
+      - name: Fail
+        run: exit 1

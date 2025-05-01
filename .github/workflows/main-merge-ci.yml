@@ -25,9 +25,3 @@ jobs:
     with:
       rust-version: ${{ needs.env-expose.outputs.rust-version }}
     secrets: inherit
-
-  fail:
-    needs: build
-    runs-on: ubuntu-latest
-    steps:
-      - run: exit 1
