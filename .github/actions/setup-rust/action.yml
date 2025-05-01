@@ -14,7 +14,7 @@ runs:
       uses: actions/checkout@v4
 
     - name: Setup Rust toolchain
-      uses: dtolnay/rust-toolchain@stable
+      uses: actions-rust-lang/setup-rust-toolchain@v1
       with:
         toolchain: ${{ inputs.rust-version }}
         components: cargo, clippy, rustfmt, rustc

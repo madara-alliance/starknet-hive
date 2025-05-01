@@ -22,14 +22,6 @@ jobs:
         with:
           rust-version: ${{ inputs.rust-version }}
 
-      - name: Cache Rust dependencies
-        uses: actions/cache@v4
-        with:
-          path: |
-            ~/.cargo
-            target
-          key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
-
       - name: Cargo fmt
         run: cargo fmt -- --check
 

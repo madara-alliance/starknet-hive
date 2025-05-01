@@ -21,14 +21,6 @@ jobs:
         with:
           rust-version: ${{ inputs.rust-version }}
 
-      - name: Cache Rust dependencies
-        uses: actions/cache@v4
-        with:
-          path: |
-            ~/.cargo
-            target
-          key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
-
       - name: Build workspace
         run: |
           cargo build --all --all-features
