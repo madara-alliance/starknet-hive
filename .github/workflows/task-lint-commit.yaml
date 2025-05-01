@@ -1,5 +1,5 @@
 # yaml-language-server: $schema=https://raw.githubusercontent.com/SchemaStore/schemastore/refs/heads/master/src/schemas/json/github-workflow.json
-name: Task - Lint Prettier
+name: Task - Lint Commit Message
 
 on:
   workflow_dispatch:
@@ -11,7 +11,7 @@ on:
         type: string
 
 jobs:
-  lint-prettier:
+  lint-commit:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout Repository
@@ -22,8 +22,14 @@ jobs:
         with:
           node-version: ${{ inputs.node-version }}
 
-      - name: Install prettier
-        run: npm install prettier
+      - name: Install commitlint
+        run: |
+          npm install conventional-changelog-conventionalcommits
+          npm install commitlint@latest
 
-      - name: Run Prettier
-        run: npx prettier --plugin prettier-plugin-toml --check '**/*.{js,jsx,ts,tsx,json,css,scss,yaml,toml,md}'
+      - name: Run commitlint
+        run: |
+          npx commitlint \
+            --from ${{ github.event.pull_request.base.sha }} \
+            --to ${{ github.event.pull_request.head.sha }} \
+            --verbose
