@@ -10,7 +10,7 @@ on:
         type: string
 
 jobs:
-  features:
+  build:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout Repository

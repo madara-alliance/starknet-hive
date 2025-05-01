@@ -19,7 +19,7 @@ jobs:
       rust-version: ${{ env.RUST_VERSION }}
       node-version: ${{ env.NODE_VERSION }}
 
-  features:
+  build:
     needs: env-expose
     uses: ./.github/workflows/task-features.yaml
     with:
