@@ -2,7 +2,6 @@
 name: Task - Feature check
 
 on:
-  workflow_dispatch:
   workflow_call:
     inputs:
       rust-version:
