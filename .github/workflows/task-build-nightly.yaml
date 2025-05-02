@@ -35,32 +35,32 @@ jobs:
       - name: Get latest tag
         id: get-latest-tag
         run: |
-          TOKEN="${{ secrets.GITHUB_TOKEN }}"
-          REPO="${{ github.repository }}"
-          # Convert repo name to lowercase (GHCR requirement)
-          PACKAGE_NAME=$(echo "$REPO" | tr '[:upper:]' '[:lower:]')
+          PACKAGE_NAME=$(echo ${{ inputs.image-name }} | tr '[:upper:]' '[:lower:]')
+          PACKAGE_INFO=$(
+            curl -L \
+              -H "Accept: application/vnd.github+json" \
+              -H "Authorization: Bearer ${{ secrets.GITHUB_TOKEN }}" \
+              -H "X-GitHub-Api-Version: 2022-11-28" \
+              "https://api.github.com/orgs/madara-alliance/packages/container/$PACKAGE_NAME/versions" | \
+          )
 
-          # Query existing tags with nightly-NUMBER format
-          TAGS=$(curl -s -H "Authorization: Bearer $TOKEN" \
-            "https://api.github.com/packages/container/$PACKAGE_NAME/versions" | \
-            jq -r '.[].metadata.container.tags[]' | \
-            grep -E '^nightly-[0-9]+$' | sort -V)
+          VERSION_LATEST=$(
+            echo $PACKAGE_INFO | \
+            jq -r '
+              [
+                .[].metadata?.container?.tags? // [] | 
+                .[] | 
+                select(test("^nightly-[0-9]+$")) | 
+                ltrimstr("nightly-") | 
+                tonumber
+              ] | max // -1
+            '
+          )
+          VERSION_NEW=$(($VERSION_LATEST + 1))
 
-          # Find highest tag or start at 0
-          if [ -z "$TAGS" ]; then
-            NEW_VERSION=1
-          else
-            LATEST_TAG=$(echo "$TAGS" | tail -n 1)
-            # Extract just the number part after "nightly-"
-            LATEST_VERSION=$(echo "$LATEST_TAG" | sed 's/nightly-//')
-            NEW_VERSION=$((LATEST_VERSION + 1))
-          fi
-
-          # Form the new tag with the nightly- prefix
-          NEW_TAG="nightly-$NEW_VERSION"
-
-          echo "new-tag=$NEW_TAG" >> $GITHUB_OUTPUT
-          echo "New tag will be: $NEW_TAG"
+          TAG_NEW="nightly-$VERSION_NEW"
+          echo "new-tag=$TAG_NEW" >> $GITHUB_OUTPUT
+          echo "New tag will be: $TAG_NEW"
 
       - name: fail
         run: |
