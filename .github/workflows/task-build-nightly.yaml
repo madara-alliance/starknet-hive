@@ -76,7 +76,7 @@ jobs:
           context: .
           push: true
           file: ${{ inputs.image-file }}
-          tags: ${{ inputs.image-name }}:${{ steps.get-latest-tag.outputs.new-tag }}
+          tags: ghcr.io/${{ github.repository_owner }}/${{ inputs.image-name }}:${{ steps.get-latest-tag.outputs.new-tag }}
 
       - name: Generate artifact attestation
         uses: actions/attest-build-provenance@v2
