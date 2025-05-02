@@ -44,6 +44,8 @@ jobs:
               "https://api.github.com/orgs/madara-alliance/packages/container/$PACKAGE_NAME/versions"
           )
 
+          echo $PACKAGE_INFO
+
           VERSION_LATEST=$(
             echo $PACKAGE_INFO | \
             jq -r '
@@ -62,6 +64,9 @@ jobs:
           echo "new-tag=$TAG_NEW" >> $GITHUB_OUTPUT
           echo "New tag will be: $TAG_NEW"
 
+      - name: fail
+        run: exit 1
+
       - name: Log in to the Container registry
         uses: docker/login-action@v3
         with:
@@ -76,11 +81,11 @@ jobs:
           context: .
           push: true
           file: ${{ inputs.image-file }}
-          tags: ghcr.io/${{ github.repository_owner }}/${{ inputs.image-name }}:${{ steps.get-latest-tag.outputs.new-tag }}
+          tags: ${{ inputs.registry }}/${{ github.repository_owner }}/${{ inputs.image-name }}:${{ steps.get-latest-tag.outputs.new-tag }}
 
       - name: Generate artifact attestation
         uses: actions/attest-build-provenance@v2
         with:
-          subject-name: ${{ inputs.registry }}/${{ inputs.image-name }}
+          subject-name: ${{ inputs.registry }}/${{ github.repository_owner }}/${{ inputs.image-name }}
           subject-digest: ${{ steps.push.outputs.digest }}
           push-to-registry: true
