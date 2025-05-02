@@ -19,7 +19,7 @@ on:
         type: string
 
 jobs:
-  build-and-push-image:
+  build-nightly:
     runs-on: ubuntu-latest
 
     permissions:
