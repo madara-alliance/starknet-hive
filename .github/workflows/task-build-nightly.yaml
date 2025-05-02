@@ -35,7 +35,7 @@ jobs:
       - name: Get latest tag
         id: get-latest-tag
         run: |
-          PACKAGE_NAME=$(echo ${{ inputs.image-name }} | tr '[:upper:]' '[:lower:]')
+          PACKAGE_NAME=${{ inputs.image-name }}
           PACKAGE_INFO=$(
             curl -L \
               -H "Accept: application/vnd.github+json" \
