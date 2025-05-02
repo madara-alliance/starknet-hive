@@ -79,10 +79,3 @@ jobs:
           push: true
           file: ${{ inputs.image-file }}
           tags: ${{ inputs.registry }}/${{ github.repository_owner }}/${{ inputs.image-name }}:${{ steps.get-latest-tag.outputs.new-tag }}
-
-      - name: Generate artifact attestation
-        uses: actions/attest-build-provenance@v2
-        with:
-          subject-name: ${{ inputs.registry }}/${{ github.repository_owner }}/${{ inputs.image-name }}
-          subject-digest: ${{ steps.push.outputs.digest }}
-          push-to-registry: true

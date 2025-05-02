@@ -11,7 +11,7 @@ on:
         type: string
 
 jobs:
-  build:
+  build-cargo:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout Repository

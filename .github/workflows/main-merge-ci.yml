@@ -19,9 +19,23 @@ jobs:
       rust-version: ${{ env.RUST_VERSION }}
       node-version: ${{ env.NODE_VERSION }}
 
-  build:
+  build-cargo:
     needs: env-expose
     uses: ./.github/workflows/task-features.yaml
     with:
       rust-version: ${{ needs.env-expose.outputs.rust-version }}
+    secrets: inherit
+
+  build-nightly:
+    needs: [env-expose, build-cargo]
+    uses: ./.github/workflows/task-build-nightly.yaml
+    with:
+      registry: ${{ needs.env-expose.outputs.registry }}
+      image-name: openrpc-testgen-runner
+      image-file: ./runner.dockerfile
+    permissions:
+      contents: read
+      packages: write
+      attestations: write
+      id-token: write
     secrets: inherit
