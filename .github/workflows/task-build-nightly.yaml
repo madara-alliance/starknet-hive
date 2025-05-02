@@ -18,19 +18,53 @@ on:
         required: true
         type: string
 
+permissions:
+  contents: read
+  packages: write
+  attestations: write
+  id-token: write
+
 jobs:
   build-nightly:
     runs-on: ubuntu-latest
 
-    permissions:
-      contents: read
-      packages: write
-      attestations: write
-      id-token: write
-
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
+
+      - name: Get latest tag
+        id: get-latest-tag
+        run: |
+          TOKEN="${{ secrets.GITHUB_TOKEN }}"
+          REPO="${{ github.repository }}"
+          # Convert repo name to lowercase (GHCR requirement)
+          PACKAGE_NAME=$(echo "$REPO" | tr '[:upper:]' '[:lower:]')
+
+          # Query existing tags with nightly-NUMBER format
+          TAGS=$(curl -s -H "Authorization: Bearer $TOKEN" \
+            "https://api.github.com/packages/container/$PACKAGE_NAME/versions" | \
+            jq -r '.[].metadata.container.tags[]' | \
+            grep -E '^nightly-[0-9]+$' | sort -V)
+
+          # Find highest tag or start at 0
+          if [ -z "$TAGS" ]; then
+            NEW_VERSION=1
+          else
+            LATEST_TAG=$(echo "$TAGS" | tail -n 1)
+            # Extract just the number part after "nightly-"
+            LATEST_VERSION=$(echo "$LATEST_TAG" | sed 's/nightly-//')
+            NEW_VERSION=$((LATEST_VERSION + 1))
+          fi
+
+          # Form the new tag with the nightly- prefix
+          NEW_TAG="nightly-$NEW_VERSION"
+
+          echo "new-tag=$NEW_TAG" >> $GITHUB_OUTPUT
+          echo "New tag will be: $NEW_TAG"
+
+      - name: fail
+        run: |
+          exit 1
 
       - name: Log in to the Container registry
         uses: docker/login-action@v3
@@ -46,7 +80,7 @@ jobs:
           context: .
           push: true
           file: ${{ inputs.image-file }}
-          tags: ${{ inputs.image-name }}:nightly${{ github.run_number }}
+          tags: ${{ inputs.image-name }}:${{ steps.get-latest-tag.outputs.new-tag }}
 
       - name: Generate artifact attestation
         uses: actions/attest-build-provenance@v2
