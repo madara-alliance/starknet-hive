@@ -12,8 +12,8 @@ use crate::{
     RunnableTrait,
 };
 
-const BLOB_GAS_PRICE: Felt = Felt::from_hex_unchecked("0x28");
-const GAS_PRICE: Felt = Felt::from_hex_unchecked("0x1e");
+const BLOB_GAS_PRICE: Felt = Felt::from_hex_unchecked("0x1");
+const GAS_PRICE: Felt = Felt::from_hex_unchecked("0x1");
 
 #[derive(Clone, Debug)]
 pub struct TestCase {}

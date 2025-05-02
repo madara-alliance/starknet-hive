@@ -17,9 +17,6 @@ use starknet_types_core::felt::Felt;
 use starknet_types_rpc::{DaMode, DeployAccountTxn, Txn};
 use t9n::txn_validation::deploy_account::verify_deploy_account_v3_signature;
 
-const DEPLOY_ACCOUNT_TXN_GAS: u64 = 886;
-const DEPLOY_ACCOUNT_TXN_GAS_PRICE: u128 = 15;
-
 #[derive(Clone, Debug)]
 pub struct TestCase {}
 
@@ -188,7 +185,7 @@ impl RunnableTrait for TestCase {
             format!("Expected tip to be {:?}, but got {:?}", expected_tip, txn.tip)
         );
 
-        let deploy_account_tx_gas_hex = Felt::from_dec_str(&DEPLOY_ACCOUNT_TXN_GAS.to_string())?.to_hex_string();
+        let deploy_account_tx_gas_hex = String::from("0x1d1");
         assert_result!(
             txn.resource_bounds.l1_gas.max_amount == deploy_account_tx_gas_hex,
             format!(
@@ -197,8 +194,7 @@ impl RunnableTrait for TestCase {
             )
         );
 
-        let deploy_account_txn_gas_price_hex =
-            Felt::from_dec_str(&DEPLOY_ACCOUNT_TXN_GAS_PRICE.to_string())?.to_hex_string();
+        let deploy_account_txn_gas_price_hex = String::from("0x1");
         assert_result!(
             txn.resource_bounds.l1_gas.max_price_per_unit == deploy_account_txn_gas_price_hex,
             format!(

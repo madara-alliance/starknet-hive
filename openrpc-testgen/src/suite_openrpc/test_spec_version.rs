@@ -6,8 +6,8 @@ use crate::{
     RunnableTrait,
 };
 
-/// These tests check node compatibility with spec version 0.7.1
-const EXPECTED_SPEC_VERSION: &str = "0.7.1";
+/// These tests check node compatibility with spec version 0.8.0
+const EXPECTED_SPEC_VERSION: &str = "0.8.0";
 
 #[derive(Clone, Debug)]
 pub struct TestCase {}

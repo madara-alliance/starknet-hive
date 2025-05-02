@@ -21,8 +21,8 @@ use crate::{
 use starknet_types_core::felt::Felt;
 use starknet_types_rpc::{BlockId, DaMode, DeployAccountTxn, MaybePendingBlockWithTxs, Txn};
 use t9n::txn_validation::deploy_account::verify_deploy_account_v3_signature;
-const DEPLOY_ACCOUNT_TXN_GAS: Felt = Felt::from_hex_unchecked("0x376");
-const DEPLOY_ACCOUNT_TXN_GAS_PRICE: Felt = Felt::from_hex_unchecked("0xf");
+const DEPLOY_ACCOUNT_TXN_GAS: Felt = Felt::from_hex_unchecked("0x1d1");
+const DEPLOY_ACCOUNT_TXN_GAS_PRICE: Felt = Felt::from_hex_unchecked("0x1");
 const STRK: Felt = Felt::from_hex_unchecked("0x4718F5A0FC34CC1AF16A1CDEE98FFB20C31F5CD61D6AB07201858F4287C938D");
 #[derive(Clone, Debug)]
 pub struct TestCase {}
@@ -224,16 +224,16 @@ impl RunnableTrait for TestCase {
             l1_gas_max_amount == DEPLOY_ACCOUNT_TXN_GAS,
             format!(
                 "Expected L1 gas to be {:?}, but got {:?}",
-                DEPLOY_ACCOUNT_TXN_GAS, deploy_account_txn.resource_bounds.l1_gas
+                DEPLOY_ACCOUNT_TXN_GAS, deploy_account_txn.resource_bounds.l1_gas.max_amount
             )
         );
-        let l1_gas_max_price_per_unit = Felt::from_hex(&deploy_account_txn.resource_bounds.l1_gas.max_price_per_unit)?;
 
+        let l1_gas_max_price_per_unit = Felt::from_hex(&deploy_account_txn.resource_bounds.l1_gas.max_price_per_unit)?;
         assert_result!(
             l1_gas_max_price_per_unit == DEPLOY_ACCOUNT_TXN_GAS_PRICE,
             format!(
                 "Expected L1 gas price to be {:?}, but got {:?}",
-                DEPLOY_ACCOUNT_TXN_GAS_PRICE, deploy_account_txn.resource_bounds.l1_gas
+                DEPLOY_ACCOUNT_TXN_GAS_PRICE, deploy_account_txn.resource_bounds.l1_gas.max_price_per_unit
             )
         );
 

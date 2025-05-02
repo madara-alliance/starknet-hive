@@ -22,8 +22,8 @@ use starknet_types_core::felt::Felt;
 use starknet_types_rpc::{BlockId, DaMode, DeployAccountTxn, MaybePendingBlockWithTxs, Txn};
 use t9n::txn_validation::deploy_account::verify_deploy_account_v3_signature;
 
-const DEPLOY_ACCOUNT_TXN_GAS: &str = "0x376";
-const DEPLOY_ACCOUNT_TXN_GAS_PRICE: &str = "0xf";
+const DEPLOY_ACCOUNT_TXN_GAS: &str = "0x1d1";
+const DEPLOY_ACCOUNT_TXN_GAS_PRICE: &str = "0x1";
 
 #[derive(Clone, Debug)]
 pub struct TestCase {}

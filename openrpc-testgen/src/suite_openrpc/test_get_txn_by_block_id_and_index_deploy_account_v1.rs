@@ -22,7 +22,7 @@ use starknet_types_core::felt::Felt;
 use starknet_types_rpc::{BlockId, DeployAccountTxn, MaybePendingBlockWithTxs, Txn};
 use t9n::txn_validation::deploy_account::verify_deploy_account_v1_signature;
 
-const EXPECTED_MAX_FEE: Felt = Felt::from_hex_unchecked("0x336f");
+const EXPECTED_MAX_FEE: Felt = Felt::from_hex_unchecked("0x155");
 #[derive(Clone, Debug)]
 pub struct TestCase {}
 

@@ -8,8 +8,8 @@ use crate::{
 use starknet_types_core::felt::Felt;
 use starknet_types_rpc::{BlockId, BlockTag, MsgFromL1, PriceUnit};
 
-const BLOB_GAS_PRICE: Felt = Felt::from_hex_unchecked("0x28");
-const GAS_PRICE: Felt = Felt::from_hex_unchecked("0x1e");
+const BLOB_GAS_PRICE: Felt = Felt::from_hex_unchecked("0x1");
+const GAS_PRICE: Felt = Felt::from_hex_unchecked("0x1");
 
 #[derive(Clone, Debug)]
 pub struct TestCase {}

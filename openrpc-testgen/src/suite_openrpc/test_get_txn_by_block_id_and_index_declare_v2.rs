@@ -14,7 +14,7 @@ use starknet_types_rpc::{BlockId, DeclareTxn, MaybePendingBlockWithTxs, Txn};
 use std::{path::PathBuf, str::FromStr, sync::Arc};
 use t9n::txn_validation::declare::verify_declare_v2_signature;
 
-const EXPECTED_MAX_FEE: Felt = Felt::from_hex_unchecked("0xfbee6");
+const EXPECTED_MAX_FEE: Felt = Felt::from_hex_unchecked("0xe4");
 
 #[derive(Clone, Debug)]
 pub struct TestCase {}

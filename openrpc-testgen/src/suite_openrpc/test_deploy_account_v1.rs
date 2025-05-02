@@ -22,7 +22,7 @@ use starknet_types_core::felt::Felt;
 use starknet_types_rpc::{BlockId, DeployAccountTxn, MaybePendingBlockWithTxs, Txn};
 use t9n::txn_validation::deploy_account::verify_deploy_account_v1_signature;
 
-const DEPLOY_ACCOUNT_MAX_FEE: Felt = Felt::from_hex_unchecked("0x336f");
+const DEPLOY_ACCOUNT_MAX_FEE: Felt = Felt::from_hex_unchecked("0x155");
 const ETH: Felt = Felt::from_hex_unchecked("0x49D36570D4E46F48E99674BD3FCC84644DDD6B96F7C741B1562B82F9E004DC7");
 
 #[derive(Clone, Debug)]

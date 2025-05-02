@@ -241,7 +241,7 @@ impl RunnableTrait for TestCase {
             format!("Expected paymaster data to be empty, got {:#?}", txn.paymaster_data)
         );
 
-        let l1_gas_max_amount = String::from("0x2c2");
+        let l1_gas_max_amount = String::from("0x180");
         assert_result!(
             txn.resource_bounds.l1_gas.max_amount == l1_gas_max_amount,
             format!(
@@ -250,7 +250,7 @@ impl RunnableTrait for TestCase {
             )
         );
 
-        let l1_gas_max_price_per_unit = String::from("0xf");
+        let l1_gas_max_price_per_unit = String::from("0x1");
         assert_result!(
             txn.resource_bounds.l1_gas.max_price_per_unit == l1_gas_max_price_per_unit,
             format!(
