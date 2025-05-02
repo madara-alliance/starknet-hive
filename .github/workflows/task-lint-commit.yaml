@@ -30,4 +30,4 @@ jobs:
 
       - name: Run commitlint
         run: |
-          echo ${{ github.event.pull_request.title }} | npx commitlint --verbose
+          echo "${{ github.event.pull_request.title }}" | npx commitlint --verbose
