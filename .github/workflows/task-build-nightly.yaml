@@ -64,9 +64,6 @@ jobs:
           echo "new-tag=$TAG_NEW" >> $GITHUB_OUTPUT
           echo "New tag will be: $TAG_NEW"
 
-      - name: fail
-        run: exit 1
-
       - name: Log in to the Container registry
         uses: docker/login-action@v3
         with:
