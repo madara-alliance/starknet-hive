@@ -19,6 +19,13 @@ jobs:
       rust-version: ${{ env.RUST_VERSION }}
       node-version: ${{ env.NODE_VERSION }}
 
+  lint-commit:
+    needs: env-expose
+    uses: ./.github/workflows/task-lint-commit.yaml
+    with:
+      node-version: ${{ needs.env-expose.outputs.node-version }}
+    secrets: inherit
+
   build-cargo:
     needs: env-expose
     uses: ./.github/workflows/task-features.yaml
