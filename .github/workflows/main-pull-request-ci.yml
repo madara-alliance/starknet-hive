@@ -9,6 +9,7 @@ on:
 env:
   RUST_VERSION: 1.85
   NODE_VERSION: 22
+  REGISTRY: ghcr.io
 
 jobs:
   env-expose:
@@ -19,6 +20,7 @@ jobs:
     outputs:
       rust-version: ${{ env.RUST_VERSION }}
       node-version: ${{ env.NODE_VERSION }}
+      registry: ${{ env.REGISTRY }}
 
   lint-cargo:
     needs: env-expose
@@ -43,7 +45,16 @@ jobs:
 
   build:
     needs: [env-expose, lint-prettier]
-    uses: ./.github/workflows/task-build.yaml
+    uses: ./.github/workflows/task-build-cargo.yaml
     with:
       rust-version: ${{ needs.env-expose.outputs.rust-version }}
+    secrets: inherit
+
+  build-nightly:
+    needs: env-expose
+    uses: ./.github/workflows/task-build-nightly.yaml
+    with:
+      registry: ${{ needs.env-expose.outputs.registry }}
+      image-name: openrpc-testgen-runner
+      image-file: ./runner.dockerfile
     secrets: inherit
