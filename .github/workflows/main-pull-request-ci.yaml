@@ -51,27 +51,13 @@ jobs:
     secrets: inherit
 
   build-cargo:
-    needs: [env-expose, lint-prettier]
+    needs: lint-prettier
     uses: ./.github/workflows/task-build-cargo.yaml
     with:
       rust-version: ${{ needs.env-expose.outputs.rust-version }}
     secrets: inherit
 
+  # Stub for the build queue
   build-nightly:
-    needs: [env-expose]
-    uses: ./.github/workflows/task-build-nightly.yaml
-    with:
-      registry: ${{ needs.env-expose.outputs.registry }}
-      image-name: openrpc-testgen-runner
-      image-file: ./runner.dockerfile
-    permissions:
-      contents: read
-      packages: write
-      attestations: write
-      id-token: write
-    secrets: inherit
-
-  # # Stub for the build queue
-  # build-nightly:
-  #   needs: [env-expose, build-cargo]
-  #   uses: ./.github/workflows/task-do-nothing.yaml
+    needs: build-cargo
+    uses: ./.github/workflows/task-do-nothing.yaml

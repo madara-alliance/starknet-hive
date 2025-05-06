@@ -29,7 +29,7 @@ jobs:
     secrets: inherit
 
   build-nightly:
-    needs: [env-expose, build-cargo]
+    needs: build-cargo
     uses: ./.github/workflows/task-build-nightly.yaml
     with:
       registry: ${{ needs.env-expose.outputs.registry }}
