@@ -43,6 +43,7 @@ jobs:
         id: push
         uses: docker/build-push-action@v6
         with:
+          context: .
           push: true
           file: ${{ inputs.image-file }}
           tags: |
