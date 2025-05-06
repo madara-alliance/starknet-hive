@@ -3,11 +3,11 @@ name: Task - Build And Publish Release Docker Image
 
 on:
   workflow_dispatch:
-  workflow_call:
     inputs:
       registry:
         description: Container registry domain
-        required: true
+        required: false
+        default: ghcr.io
         type: string
       image-name:
         description: Name for the Docker image
