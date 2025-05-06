@@ -3,6 +3,7 @@ name: Task - Build And Publish Release Docker Image
 
 on:
   workflow_dispatch:
+  workflow_call:
     inputs:
       registry:
         description: Container registry domain
