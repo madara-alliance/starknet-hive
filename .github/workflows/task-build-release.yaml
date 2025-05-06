@@ -128,10 +128,16 @@ jobs:
         run: docker pull ${{ steps.tag.outputs.nightly }}
 
       - name: Tag image with version tag
-        run: docker tag "${{ steps.tag.outputs.nightly }}" "${{ steps.tag.outputs.version }}"
+        run: |
+          echo "nightly:" ${{ steps.tag.outputs.nightly }} 
+          echo "version:" ${{ steps.tag.outputs.version }}
+          docker tag ${{ steps.tag.outputs.nightly }} ${{ steps.tag.outputs.version }}
 
       - name: Tag image with latest tag
-        run: docker tag "${{ steps.tag.outputs.nightly }}" "${{ steps.tag.outputs.latest }}"
+        run: |
+          echo "nightly:" ${{ steps.tag.outputs.nightly }} 
+          echo "version:" ${{ steps.tag.outputs.version }}
+          docker tag ${{ steps.tag.outputs.nightly }} ${{ steps.tag.outputs.latest }}
 
       - name: Push updated docker image
         run: |
