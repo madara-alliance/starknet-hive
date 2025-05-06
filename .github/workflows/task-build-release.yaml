@@ -99,10 +99,7 @@ jobs:
           fi
 
           echo "tag=$NIGHTLY_LATEST" >> $GITHUB_OUTPUT
-          echo "Nighlty tag is: $TAG_NEW"
-
-      - name: Fail
-        run: exit 1
+          echo "Nighlty tag is: $NIGHTLY_LATEST"
 
       - name: Tags
         id: tag
