@@ -14,17 +14,7 @@ ENV RUSTC_WRAPPER=sccache SCCACHE_DIR=/sccache
 # Step 1: Cache dependencies
 FROM base-rust AS planner
 
-COPY b11r b11r
-COPY t8n t8n
-COPY t9n t9n
-COPY openrpc-testgen openrpc-testgen
-COPY openrpc-testgen-runner openrpc-testgen-runner
-COPY crypto-utils crypto-utils
-COPY production-nodes-types production-nodes-types
-COPY proxy proxy
-COPY proxy-testgen proxy-testgen
-COPY Cargo.toml Cargo.lock .
-
+COPY . .
 RUN --mount=type=cache,target=$SCCACHE_DIR,sharing=locked \
     --mount=type=cache,target=/usr/local/cargo/registry \
     cargo chef prepare --recipe-path recipe.json
@@ -57,9 +47,7 @@ RUN ./asdf set -u scarb 2.8.4
 # Step 4: Build cairo contracts
 FROM base-cairo AS builder-cairo
 
-COPY contracts contracts
-COPY Scarb.toml .
-
+COPY . .
 RUN ./asdf exec scarb build
 
 # Step 5: runner
