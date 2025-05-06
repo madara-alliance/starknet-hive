@@ -47,14 +47,14 @@ jobs:
            echo $PACKAGE_INFO | \
             jq -r '
               [
-                .[].metadata?.container?.tags? // [] |
-                .[] |
-                select(test("^v[0-9]+(\\.[0-9]+)*(\\.[0-9]+)*$")) |
-                ltrimstr("v")
-              ] |
-              sort_by(split(".") |
-              map(tonumber)) |
-              last // "zilch"
+                .[].metadata?.container?.tags? // []
+                | .[]
+                | select(test("^v[0-9]+(\\.[0-9]+)*(\\.[0-9]+)*$"))
+                | ltrimstr("v")
+              ]
+              | sort_by(split(".")
+              | map(tonumber))
+              | last // "zilch"
             '
           )
           VERSION_NEW=$(grep -oP "(?<=^version = \").*(?=\"$)" Cargo.toml)
@@ -85,25 +85,21 @@ jobs:
           NIGHTLY_LATEST=$(
             echo $PACKAGE_INFO | \
             jq -r '
-              [
-                .[].metadata?.container?.tags? // [] | 
-                .[] | 
-                select(test("^nightly-[0-9]+$")) | 
-                ltrimstr("nightly-") | 
-                tonumber
-              ] | max // -1
+              sort_by(.created_at)
+              | reverse 
+              | .[0].metadata?.container.tags? // []
+              | map(select(test("nightly-[0-9a-f]+")))
+              | .[0] // ""
             '
           )
-          NIGHTLY_NEW=$(($NIGHTLY_LATEST + 1))
 
-          if [[ "$NIGHTLY_LATEST" == "-1" ]]; then
+          if [[ "$NIGHTLY_LATEST" == "" ]]; then
             echo "ERROR - Release actions called without a nightly build!"
             exit 1
           fi
 
-          TAG_NEW="nightly-${{ github.event.pull_request.number }}"
-          echo "tag=$TAG_NEW" >> $GITHUB_OUTPUT
-          echo "Release tag is: $TAG_NEW"
+          echo "tag=$NIGHTLY_LATEST" >> $GITHUB_OUTPUT
+          echo "Nighlty tag is: $TAG_NEW"
 
       - name: Fail
         run: exit 1

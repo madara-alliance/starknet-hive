@@ -63,7 +63,7 @@ jobs:
     uses: ./.github/workflows/task-do-nothing.yaml
 
   build-release:
-    needs: build-cargo
+    needs: env-expose
     uses: ./.github/workflows/task-build-release.yaml
     with:
       registry: ${{ needs.env-expose.outputs.registry }}
