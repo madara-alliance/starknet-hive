@@ -58,12 +58,26 @@ jobs:
     secrets: inherit
 
   # Stub for the build queue
+  # build-nightly:
+  #   needs: build-cargo
+  #   uses: ./.github/workflows/task-do-nothing.yaml
+
   build-nightly:
-    needs: build-cargo
-    uses: ./.github/workflows/task-do-nothing.yaml
+    needs: env-expose
+    uses: ./.github/workflows/task-build-nightly.yaml
+    with:
+      registry: ${{ needs.env-expose.outputs.registry }}
+      image-name: openrpc-testgen-runner
+      image-file: ./runner.dockerfile
+    permissions:
+      contents: read
+      packages: write
+      attestations: write
+      id-token: write
+    secrets: inherit
 
   build-release:
-    needs: env-expose
+    needs: build-nightly
     uses: ./.github/workflows/task-build-release.yaml
     with:
       registry: ${{ needs.env-expose.outputs.registry }}
