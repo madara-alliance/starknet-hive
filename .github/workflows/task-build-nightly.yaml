@@ -50,7 +50,7 @@ jobs:
           push: true
           file: ${{ inputs.image-file }}
           tags: |
-            ${{ inputs.registry }}/${{ github.repository_owner }}/${{ inputs.image-name }}:nightly-${{ github.event.pull_request.number }}
+            ${{ inputs.registry }}/${{ github.repository_owner }}/${{ inputs.image-name }}:nightly-${{ github.event.number }}
             ${{ inputs.registry }}/${{ github.repository_owner }}/${{ inputs.image-name }}:nightly
           cache-from: type=gha
           cache-to: type=gha,mode=max
