@@ -8,6 +8,7 @@ on:
 env:
   RUST_VERSION: 1.85
   NODE_VERSION: 22
+  REGISTRY: ghcr.io
 
 jobs:
   env-expose:
@@ -18,14 +19,7 @@ jobs:
     outputs:
       rust-version: ${{ env.RUST_VERSION }}
       node-version: ${{ env.NODE_VERSION }}
-
-  debug:
-    runs-on: ubuntu-latest
-    steps:
-      - name: Debug event
-        run: |
-          echo '${{ toJSON(github.event) }}'
-          echo '${{ toJSON(github.event.merge_group) }}'
+      registry: ${{ env.REGISTRY }}
 
   build-cargo:
     needs: env-expose
