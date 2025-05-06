@@ -58,7 +58,7 @@ RUN ./asdf set -u scarb 2.8.4
 FROM base-cairo AS builder-cairo
 
 COPY contracts contracts
-COPY Scarb.toml Scarb.lock .
+COPY Scarb.toml .
 
 RUN ./asdf exec scarb build
 
