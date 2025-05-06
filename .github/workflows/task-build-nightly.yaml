@@ -51,3 +51,6 @@ jobs:
             ${{ inputs.registry }}/${{ github.repository_owner }}/${{ inputs.image-name }}:nightly
           cache-from: type=gha
           cache-to: type=gha,mode=max
+
+      - name: fail
+        run: exit 1
