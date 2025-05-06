@@ -17,7 +17,7 @@ runs:
       uses: actions-rust-lang/setup-rust-toolchain@v1
       with:
         toolchain: ${{ inputs.rust-version }}
-        components: cargo, clippy, rustfmt, rustc
+        components: cargo, clippy, rustfmt
 
     - name: Rust version
       shell: bash
