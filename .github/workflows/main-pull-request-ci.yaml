@@ -56,22 +56,22 @@ jobs:
       rust-version: ${{ needs.env-expose.outputs.rust-version }}
     secrets: inherit
 
-  # build-nightly:
-  #   needs: [env-expose, build-cargo]
-  #   uses: ./.github/workflows/task-build-nightly.yaml
-  #   with:
-  #     registry: ${{ needs.env-expose.outputs.registry }}
-  #     image-name: openrpc-testgen-runner
-  #     image-file: ./runner.dockerfile
-  #   permissions:
-  #     contents: read
-  #     packages: write
-  #     attestations: write
-  #     id-token: write
-  #   secrets: inherit
+  build-nightly:
+    needs: [env-expose, build-cargo]
+    uses: ./.github/workflows/task-build-nightly.yaml
+    with:
+      registry: ${{ needs.env-expose.outputs.registry }}
+      image-name: openrpc-testgen-runner
+      image-file: ./runner.dockerfile
+    permissions:
+      contents: read
+      packages: write
+      attestations: write
+      id-token: write
+    secrets: inherit
 
   build-release:
-    needs: [env-expose, build-cargo]
+    needs: [env-expose, build-nightly]
     uses: ./.github/workflows/task-build-release.yaml
     with:
       registry: ${{ needs.env-expose.outputs.registry }}
