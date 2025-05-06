@@ -59,7 +59,4 @@ jobs:
   # Stub for the build queue
   build-nightly:
     needs: [env-expose, build-cargo]
-    runs-on: ubuntu-latest
-    steps:
-      - name: build-nightly
-        run: exit 0
+    uses: ./.github/workflows/task-do-nothing.yaml
