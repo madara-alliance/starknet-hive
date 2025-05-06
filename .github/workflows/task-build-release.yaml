@@ -135,4 +135,4 @@ jobs:
       - name: Push updated docker image
         run: |
           docker push ${{ steps.outputs.version }}
-          docker push ${{ steps.outputs.latest }
+          docker push ${{ steps.outputs.latest }}
