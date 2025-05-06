@@ -61,3 +61,16 @@ jobs:
   build-nightly:
     needs: build-cargo
     uses: ./.github/workflows/task-do-nothing.yaml
+
+  build-release:
+    needs: build-cargo
+    uses: ./.github/workflows/task-build-release.yaml
+    with:
+      registry: ${{ needs.env-expose.outputs.registry }}
+      image-name: openrpc-testgen-runner
+    permissions:
+      contents: read
+      packages: write
+      attestations: write
+      id-token: write
+    secrets: inherit

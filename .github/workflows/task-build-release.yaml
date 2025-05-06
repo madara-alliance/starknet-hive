@@ -104,6 +104,9 @@ jobs:
           echo "tag=$TAG_NEW" >> $GITHUB_OUTPUT
           echo "Release tag is: $TAG_NEW"
 
+      - name: Fail
+        run: exit 1
+
       - name: Tags
         id: tag
         run: |
