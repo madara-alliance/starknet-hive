@@ -9,6 +9,10 @@ on:
         description: Node version to use for testing
         required: true
         type: string
+      commit:
+        description: Commit message to lint
+        required: true
+        type: string
 
 jobs:
   lint-commit:
@@ -30,4 +34,4 @@ jobs:
 
       - name: Run commitlint
         run: |
-          echo "${{ github.event.pull_request.title }}" | npx commitlint --verbose
+          echo "${{ inputs.commit }}" | npx commitlint --verbose

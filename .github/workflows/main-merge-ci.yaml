@@ -24,6 +24,7 @@ jobs:
     uses: ./.github/workflows/task-lint-commit.yaml
     with:
       node-version: ${{ needs.env-expose.outputs.node-version }}
+      commit: ${{ github.event.merge_group.title }}
     secrets: inherit
 
   build-cargo:
