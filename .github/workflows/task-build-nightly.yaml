@@ -65,6 +65,3 @@ jobs:
             ${{ steps.tag.outputs.nightly-sha }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
-
-      - name: fail
-        run: exit 1
