@@ -71,7 +71,7 @@ jobs:
   #   secrets: inherit
 
   build-release:
-    needs: [env-expose, build-nightly]
+    needs: [env-expose, build-cargo]
     uses: ./.github/workflows/task-build-release.yaml
     with:
       registry: ${{ needs.env-expose.outputs.registry }}
