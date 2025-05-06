@@ -32,38 +32,6 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Get latest tag
-        id: get-latest-tag
-        run: |
-          PACKAGE_NAME=$(echo ${{ inputs.image-name }} | tr '[:upper:]' '[:lower:]')
-          PACKAGE_INFO=$(
-            curl -Ls \
-              -H "Accept: application/vnd.github+json" \
-              -H "Authorization: Bearer ${{ secrets.GITHUB_TOKEN }}" \
-              -H "X-GitHub-Api-Version: 2022-11-28" \
-              "https://api.github.com/orgs/madara-alliance/packages/container/$PACKAGE_NAME/versions"
-          )
-
-          echo $PACKAGE_INFO
-
-          VERSION_LATEST=$(
-            echo $PACKAGE_INFO | \
-            jq -r '
-              [
-                .[].metadata?.container?.tags? // [] | 
-                .[] | 
-                select(test("^nightly-[0-9]+$")) | 
-                ltrimstr("nightly-") | 
-                tonumber
-              ] | max // -1
-            '
-          )
-          VERSION_NEW=$(($VERSION_LATEST + 1))
-
-          TAG_NEW="nightly-$VERSION_NEW"
-          echo "new-tag=$TAG_NEW" >> $GITHUB_OUTPUT
-          echo "New tag will be: $TAG_NEW"
-
       - name: Log in to the Container registry
         uses: docker/login-action@v3
         with:
@@ -78,4 +46,4 @@ jobs:
           context: .
           push: true
           file: ${{ inputs.image-file }}
-          tags: ${{ inputs.registry }}/${{ github.repository_owner }}/${{ inputs.image-name }}:${{ steps.get-latest-tag.outputs.new-tag }}
+          tags: ${{ inputs.registry }}/${{ github.repository_owner }}/${{ inputs.image-name }}:${{ github.event.pull_request.number }}
