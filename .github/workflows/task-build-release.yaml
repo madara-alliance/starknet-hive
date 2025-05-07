@@ -87,7 +87,8 @@ jobs:
             jq -r '
               sort_by(.created_at)
               | reverse 
-              | .[0].metadata?.container.tags? // []
+              | map(select(.metadata?.container?.tags? // [] | length != 0))
+              | .[0].metadata?.container?.tags? // []
               | map(select(test("nightly-[0-9a-f]+")))
               | .[0] // ""
             '
