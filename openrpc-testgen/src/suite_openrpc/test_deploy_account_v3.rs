@@ -6,10 +6,7 @@ use crate::{
             call::Call,
             creation::create::{create_account, AccountType},
             deployment::{
-                deploy::{
-                    deploy_account_v3_from_request, get_deploy_account_request,
-                    DeployAccountVersion,
-                },
+                deploy::{deploy_account_v3_from_request, get_deploy_account_request, DeployAccountVersion},
                 structs::{ValidatedWaitParams, WaitForTx},
             },
         },
@@ -24,10 +21,9 @@ use crate::{
 use starknet_types_core::felt::Felt;
 use starknet_types_rpc::{BlockId, DaMode, DeployAccountTxn, MaybePendingBlockWithTxs, Txn};
 use t9n::txn_validation::deploy_account::verify_deploy_account_v3_signature;
-const DEPLOY_ACCOUNT_TXN_GAS: Felt = Felt::from_hex_unchecked("0x376");
-const DEPLOY_ACCOUNT_TXN_GAS_PRICE: Felt = Felt::from_hex_unchecked("0xf");
-const STRK: Felt =
-    Felt::from_hex_unchecked("0x4718F5A0FC34CC1AF16A1CDEE98FFB20C31F5CD61D6AB07201858F4287C938D");
+const DEPLOY_ACCOUNT_TXN_GAS: Felt = Felt::from_hex_unchecked("0x1d1");
+const DEPLOY_ACCOUNT_TXN_GAS_PRICE: Felt = Felt::from_hex_unchecked("0x1");
+const STRK: Felt = Felt::from_hex_unchecked("0x4718F5A0FC34CC1AF16A1CDEE98FFB20C31F5CD61D6AB07201858F4287C938D");
 #[derive(Clone, Debug)]
 pub struct TestCase {}
 
@@ -61,10 +57,7 @@ impl RunnableTrait for TestCase {
         )
         .await?;
 
-        let wait_config = WaitForTx {
-            wait: true,
-            wait_params: ValidatedWaitParams::default(),
-        };
+        let wait_config = WaitForTx { wait: true, wait_params: ValidatedWaitParams::default() };
 
         let txn_req = get_deploy_account_request(
             test_input.random_paymaster_account.provider(),
@@ -90,18 +83,12 @@ impl RunnableTrait for TestCase {
         let (valid_signature, deploy_hash) = verify_deploy_account_v3_signature(
             &deploy_account_request,
             None,
-            test_input
-                .random_paymaster_account
-                .chain_id()
-                .to_hex_string()
-                .as_str(),
+            test_input.random_paymaster_account.chain_id().to_hex_string().as_str(),
         )?;
 
-        let deploy_account_result = deploy_account_v3_from_request(
-            test_input.random_paymaster_account.provider(),
-            deploy_account_request,
-        )
-        .await?;
+        let deploy_account_result =
+            deploy_account_v3_from_request(test_input.random_paymaster_account.provider(), deploy_account_request)
+                .await?;
 
         wait_for_sent_transaction(
             deploy_account_result.transaction_hash,
@@ -117,18 +104,10 @@ impl RunnableTrait for TestCase {
             )
         );
 
-        let block_number = test_input
-            .random_paymaster_account
-            .provider()
-            .block_hash_and_number()
-            .await?
-            .block_number;
+        let block_number = test_input.random_paymaster_account.provider().block_hash_and_number().await?.block_number;
 
-        let block_with_txns = test_input
-            .random_paymaster_account
-            .provider()
-            .get_block_with_txs(BlockId::Number(block_number))
-            .await?;
+        let block_with_txns =
+            test_input.random_paymaster_account.provider().get_block_with_txs(BlockId::Number(block_number)).await?;
 
         let txn_index: u64 = match block_with_txns {
             MaybePendingBlockWithTxs::Block(block_with_txs) => block_with_txs
@@ -136,9 +115,7 @@ impl RunnableTrait for TestCase {
                 .iter()
                 .position(|tx| tx.transaction_hash == deploy_account_result.transaction_hash)
                 .ok_or_else(|| {
-                    OpenRpcTestGenError::TransactionNotFound(
-                        deploy_account_result.transaction_hash.to_string(),
-                    )
+                    OpenRpcTestGenError::TransactionNotFound(deploy_account_result.transaction_hash.to_string())
                 })?
                 .try_into()
                 .map_err(|_| OpenRpcTestGenError::TransactionIndexOverflow)?,
@@ -147,9 +124,7 @@ impl RunnableTrait for TestCase {
                 .iter()
                 .position(|tx| tx.transaction_hash == deploy_account_result.transaction_hash)
                 .ok_or_else(|| {
-                    OpenRpcTestGenError::TransactionNotFound(
-                        deploy_account_result.transaction_hash.to_string(),
-                    )
+                    OpenRpcTestGenError::TransactionNotFound(deploy_account_result.transaction_hash.to_string())
                 })?
                 .try_into()
                 .map_err(|_| OpenRpcTestGenError::TransactionIndexOverflow)?,
@@ -174,10 +149,7 @@ impl RunnableTrait for TestCase {
         let expected_class_hash = test_input.account_class_hash;
         assert_result!(
             deploy_account_txn.class_hash == expected_class_hash,
-            format!(
-                "Expected class hash to be {:?}, but got {:?}",
-                expected_class_hash, deploy_account_txn.class_hash
-            )
+            format!("Expected class hash to be {:?}, but got {:?}", expected_class_hash, deploy_account_txn.class_hash)
         );
 
         assert_result!(
@@ -188,13 +160,10 @@ impl RunnableTrait for TestCase {
             )
         );
 
-        let constructor_calldata =
-            *deploy_account_txn
-                .constructor_calldata
-                .first()
-                .ok_or_else(|| {
-                    OpenRpcTestGenError::Other("Constructor calldata is empty".to_string())
-                })?;
+        let constructor_calldata = *deploy_account_txn
+            .constructor_calldata
+            .first()
+            .ok_or_else(|| OpenRpcTestGenError::Other("Constructor calldata is empty".to_string()))?;
 
         let expected_account_public_key = account_data.signing_key.verifying_key().scalar();
         assert_result!(
@@ -205,26 +174,17 @@ impl RunnableTrait for TestCase {
             )
         );
 
-        assert_result!(
-            valid_signature,
-            "Invalid signature for deploy account request, checked by t9n."
-        );
+        assert_result!(valid_signature, "Invalid signature for deploy account request, checked by t9n.");
 
         assert_result!(
             deploy_account_txn.signature == signature,
-            format!(
-                "Expected signature: {:?}, got {:?}",
-                signature, deploy_account_txn.signature
-            )
+            format!("Expected signature: {:?}, got {:?}", signature, deploy_account_txn.signature)
         );
 
         let expected_salt = account_data.salt;
         assert_result!(
             deploy_account_txn.contract_address_salt == expected_salt,
-            format!(
-                "Expected salt to be {:?}, but got {:?}",
-                expected_salt, deploy_account_txn.contract_address_salt
-            )
+            format!("Expected salt to be {:?}, but got {:?}", expected_salt, deploy_account_txn.contract_address_salt)
         );
 
         let expected_fee_damode = DaMode::L1;
@@ -256,44 +216,33 @@ impl RunnableTrait for TestCase {
 
         assert_result!(
             deploy_account_txn.paymaster_data.is_empty(),
-            format!(
-                "Expected paymaster data to be empty, but got {:?}",
-                deploy_account_txn.paymaster_data
-            )
+            format!("Expected paymaster data to be empty, but got {:?}", deploy_account_txn.paymaster_data)
         );
 
-        let l1_gas_max_amount =
-            Felt::from_hex(&deploy_account_txn.resource_bounds.l1_gas.max_amount)?;
+        let l1_gas_max_amount = Felt::from_hex(&deploy_account_txn.resource_bounds.l1_gas.max_amount)?;
         assert_result!(
             l1_gas_max_amount == DEPLOY_ACCOUNT_TXN_GAS,
             format!(
                 "Expected L1 gas to be {:?}, but got {:?}",
-                DEPLOY_ACCOUNT_TXN_GAS, deploy_account_txn.resource_bounds.l1_gas
+                DEPLOY_ACCOUNT_TXN_GAS, deploy_account_txn.resource_bounds.l1_gas.max_amount
             )
         );
-        let l1_gas_max_price_per_unit =
-            Felt::from_hex(&deploy_account_txn.resource_bounds.l1_gas.max_price_per_unit)?;
 
+        let l1_gas_max_price_per_unit = Felt::from_hex(&deploy_account_txn.resource_bounds.l1_gas.max_price_per_unit)?;
         assert_result!(
             l1_gas_max_price_per_unit == DEPLOY_ACCOUNT_TXN_GAS_PRICE,
             format!(
                 "Expected L1 gas price to be {:?}, but got {:?}",
-                DEPLOY_ACCOUNT_TXN_GAS_PRICE, deploy_account_txn.resource_bounds.l1_gas
+                DEPLOY_ACCOUNT_TXN_GAS_PRICE, deploy_account_txn.resource_bounds.l1_gas.max_price_per_unit
             )
         );
 
-        let l2_gas_max_amount =
-            Felt::from_hex(&deploy_account_txn.resource_bounds.l2_gas.max_amount)?;
+        let l2_gas_max_amount = Felt::from_hex(&deploy_account_txn.resource_bounds.l2_gas.max_amount)?;
         assert_result!(
             l2_gas_max_amount == Felt::ZERO,
-            format!(
-                "Expected L2 gas to be {:?}, but got {:?}",
-                Felt::ZERO,
-                deploy_account_txn.resource_bounds.l2_gas
-            )
+            format!("Expected L2 gas to be {:?}, but got {:?}", Felt::ZERO, deploy_account_txn.resource_bounds.l2_gas)
         );
-        let l2_gas_max_price_per_unit =
-            Felt::from_hex(&deploy_account_txn.resource_bounds.l2_gas.max_price_per_unit)?;
+        let l2_gas_max_price_per_unit = Felt::from_hex(&deploy_account_txn.resource_bounds.l2_gas.max_price_per_unit)?;
 
         assert_result!(
             l2_gas_max_price_per_unit == Felt::ZERO,
@@ -307,10 +256,7 @@ impl RunnableTrait for TestCase {
         let expected_tip = Felt::ZERO;
         assert_result!(
             deploy_account_txn.tip == expected_tip,
-            format!(
-                "Expected tip to be {:?}, but got {:?}",
-                expected_tip, deploy_account_txn.tip
-            )
+            format!("Expected tip to be {:?}, but got {:?}", expected_tip, deploy_account_txn.tip)
         );
 
         Ok(Self {})

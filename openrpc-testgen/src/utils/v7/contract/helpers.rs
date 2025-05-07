@@ -11,17 +11,10 @@ pub fn get_udc_deployed_address(
     constructor_calldata: &[Felt],
 ) -> Felt {
     match uniqueness {
-        UdcUniqueness::NotUnique => {
-            get_contract_address(salt, class_hash, constructor_calldata, Felt::ZERO)
-        }
+        UdcUniqueness::NotUnique => get_contract_address(salt, class_hash, constructor_calldata, Felt::ZERO),
         UdcUniqueness::Unique(settings) => {
             let unique_salt = Pedersen::hash(&settings.deployer_address, &salt);
-            get_contract_address(
-                unique_salt,
-                class_hash,
-                constructor_calldata,
-                settings.udc_contract_address,
-            )
+            get_contract_address(unique_salt, class_hash, constructor_calldata, settings.udc_contract_address)
         }
     }
 }

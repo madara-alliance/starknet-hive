@@ -38,19 +38,13 @@ impl RunnableTrait for TestCase {
             )
             .await?
             .first()
-            .ok_or(OpenRpcTestGenError::Other(
-                "Empty initial user balance".to_string(),
-            ))?;
+            .ok_or(OpenRpcTestGenError::Other("Empty initial user balance".to_string()))?;
 
         let user_balance_slot = get_storage_var_address("balances", &[paymaster_address])?;
         let initial_storage_value = test_input
             .random_paymaster_account
             .provider()
-            .get_storage_at(
-                test_input.deployed_contract_address,
-                user_balance_slot,
-                BlockId::Tag(BlockTag::Latest),
-            )
+            .get_storage_at(test_input.deployed_contract_address, user_balance_slot, BlockId::Tag(BlockTag::Latest))
             .await?;
 
         // Step 2: Deposit funds into the user's balance
@@ -61,11 +55,7 @@ impl RunnableTrait for TestCase {
             calldata: vec![paymaster_address, deposit_amount],
         };
 
-        let invoke_result = test_input
-            .random_paymaster_account
-            .execute_v3(vec![deposit_call])
-            .send()
-            .await?;
+        let invoke_result = test_input.random_paymaster_account.execute_v3(vec![deposit_call]).send().await?;
 
         wait_for_sent_transaction(
             invoke_result.transaction_hash,
@@ -87,9 +77,7 @@ impl RunnableTrait for TestCase {
             )
             .await?
             .first()
-            .ok_or(OpenRpcTestGenError::Other(
-                "Empty updated user balance".to_string(),
-            ))?;
+            .ok_or(OpenRpcTestGenError::Other("Empty updated user balance".to_string()))?;
 
         assert_result!(
             updated_user_balance == initial_user_balance + deposit_amount,
@@ -105,11 +93,7 @@ impl RunnableTrait for TestCase {
         let updated_storage_value = test_input
             .random_paymaster_account
             .provider()
-            .get_storage_at(
-                test_input.deployed_contract_address,
-                user_balance_slot,
-                BlockId::Tag(BlockTag::Latest),
-            )
+            .get_storage_at(test_input.deployed_contract_address, user_balance_slot, BlockId::Tag(BlockTag::Latest))
             .await;
 
         let result = updated_storage_value.is_ok();
@@ -137,10 +121,7 @@ impl RunnableTrait for TestCase {
 
         assert_result!(
             updated_storage_value == updated_user_balance,
-            format!(
-                "Storage value mismatch. Expected: {}, Found: {}.",
-                updated_user_balance, updated_storage_value
-            )
+            format!("Storage value mismatch. Expected: {}, Found: {}.", updated_user_balance, updated_storage_value)
         );
 
         Ok(Self {})

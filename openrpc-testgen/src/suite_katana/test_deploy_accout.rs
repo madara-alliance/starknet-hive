@@ -30,11 +30,7 @@ impl RunnableTrait for TestCase {
     async fn run(test_input: &Self::Input) -> Result<Self, OpenRpcTestGenError> {
         let funding_account = test_input.random_paymaster_account.random_accounts()?;
 
-        let provider = test_input
-            .random_paymaster_account
-            .random_accounts()?
-            .provider()
-            .clone();
+        let provider = test_input.random_paymaster_account.random_accounts()?.provider().clone();
         let chain_id = provider.chain_id().await?;
 
         // Precompute the contract address of the new account with the given parameters:
@@ -50,9 +46,7 @@ impl RunnableTrait for TestCase {
 
         let transfer_execution = funding_account
             .execute_v1(vec![Call {
-                to: Felt::from_hex(
-                    "0x49D36570D4E46F48E99674BD3FCC84644DDD6B96F7C741B1562B82F9E004DC7",
-                )?,
+                to: Felt::from_hex("0x49D36570D4E46F48E99674BD3FCC84644DDD6B96F7C741B1562B82F9E004DC7")?,
                 selector: get_selector_from_name("transfer")?,
                 calldata: vec![recipient, amount, Felt::ZERO],
             }])
@@ -61,17 +55,14 @@ impl RunnableTrait for TestCase {
 
         wait_for_sent_transaction(transfer_execution.transaction_hash, &funding_account).await?;
 
-        let factory =
-            OpenZeppelinAccountFactory::new(class_hash, chain_id, &signer, &provider).await?;
+        let factory = OpenZeppelinAccountFactory::new(class_hash, chain_id, &signer, &provider).await?;
         let res = factory.deploy_v1(salt).send().await?;
         // the contract address in the send tx result must be the same as the computed one
         assert_eq_result!(res.contract_address, computed_address);
 
         wait_for_sent_transaction(res.transaction_hash, &funding_account).await?;
 
-        let receipt = provider
-            .get_transaction_receipt(res.transaction_hash)
-            .await?;
+        let receipt = provider.get_transaction_receipt(res.transaction_hash).await?;
 
         assert_matches_result!(
             receipt,
@@ -83,9 +74,7 @@ impl RunnableTrait for TestCase {
 
         // Verify the `getClassHashAt` returns the same class hash that we use for the account
         // deployment
-        let res = provider
-            .get_class_hash_at(BlockId::Tag(BlockTag::Pending), computed_address)
-            .await?;
+        let res = provider.get_class_hash_at(BlockId::Tag(BlockTag::Pending), computed_address).await?;
         assert_eq_result!(res, class_hash);
 
         Ok(Self {})

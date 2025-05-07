@@ -31,4 +31,3 @@ proxy-testgen = { path = "../proxy-testgen" }
 
 [features]
 no_unknown_fields = []
-rust-analyzer = []

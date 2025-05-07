@@ -25,19 +25,18 @@ pub struct RandomSingleOwnerAccount {
 impl RandomizableAccountsTrait for RandomSingleOwnerAccount {
     fn random_accounts(
         &self,
-    ) -> Result<SingleOwnerAccount<JsonRpcClient<HttpTransport>, LocalWallet>, OpenRpcTestGenError>
-    {
+    ) -> Result<SingleOwnerAccount<JsonRpcClient<HttpTransport>, LocalWallet>, OpenRpcTestGenError> {
         let mut rng = thread_rng();
-        let account = self.accounts.choose(&mut rng).cloned().ok_or_else(|| {
-            OpenRpcTestGenError::EmptyUrlList("Accounts list is empty - no urls.".to_string())
-        })?;
+        let account = self
+            .accounts
+            .choose(&mut rng)
+            .cloned()
+            .ok_or_else(|| OpenRpcTestGenError::EmptyUrlList("Accounts list is empty - no urls.".to_string()))?;
         Ok(account)
     }
 }
 impl RandomSingleOwnerAccount {
-    pub fn new(
-        accounts: Vec<SingleOwnerAccount<JsonRpcClient<HttpTransport>, LocalWallet>>,
-    ) -> Self {
+    pub fn new(accounts: Vec<SingleOwnerAccount<JsonRpcClient<HttpTransport>, LocalWallet>>) -> Self {
         Self { accounts }
     }
 
@@ -51,8 +50,7 @@ impl RandomSingleOwnerAccount {
 }
 
 impl Account for RandomSingleOwnerAccount {
-    type SignError =
-        SignError<<LocalWallet as crate::utils::v7::signers::signer::Signer>::SignError>;
+    type SignError = SignError<<LocalWallet as crate::utils::v7::signers::signer::Signer>::SignError>;
 
     fn address(&self) -> Felt {
         let random_account = self.random_accounts().unwrap();
@@ -73,9 +71,7 @@ impl Account for RandomSingleOwnerAccount {
     ) -> Result<Vec<Felt>, Self::SignError> {
         let random_account = self.random_accounts().unwrap();
 
-        random_account
-            .sign_execution_v1(execution, query_only)
-            .await
+        random_account.sign_execution_v1(execution, query_only).await
     }
 
     async fn sign_execution_v3(
@@ -85,9 +81,7 @@ impl Account for RandomSingleOwnerAccount {
     ) -> Result<Vec<Felt>, Self::SignError> {
         let random_account = self.random_accounts().unwrap();
 
-        random_account
-            .sign_execution_v3(execution, _query_only)
-            .await
+        random_account.sign_execution_v3(execution, _query_only).await
     }
 
     async fn sign_declaration_v2(
@@ -97,9 +91,7 @@ impl Account for RandomSingleOwnerAccount {
     ) -> Result<Vec<Felt>, Self::SignError> {
         let random_account = self.random_accounts().unwrap();
 
-        random_account
-            .sign_declaration_v2(declaration, query_only)
-            .await
+        random_account.sign_declaration_v2(declaration, query_only).await
     }
 
     async fn sign_declaration_v3(
@@ -109,9 +101,7 @@ impl Account for RandomSingleOwnerAccount {
     ) -> Result<Vec<Felt>, Self::SignError> {
         let random_account = self.random_accounts().unwrap();
 
-        random_account
-            .sign_declaration_v3(declaration, query_only)
-            .await
+        random_account.sign_declaration_v3(declaration, query_only).await
     }
 
     fn is_signer_interactive(&self) -> bool {

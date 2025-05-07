@@ -110,20 +110,12 @@ impl Starknet {
     ///
     /// * `rpc_url` - The L1 node RPC URL.
     /// * `contract_address` - The messaging contract address deployed on L1 node.
-    pub async fn configure_messaging(
-        &mut self,
-        rpc_url: &str,
-        contract_address: Option<&str>,
-    ) -> DevnetResult<String> {
+    pub async fn configure_messaging(&mut self, rpc_url: &str, contract_address: Option<&str>) -> DevnetResult<String> {
         tracing::trace!("Configuring messaging: {}", rpc_url);
 
-        self.messaging
-            .configure_ethereum(EthereumMessaging::new(rpc_url, contract_address).await?);
+        self.messaging.configure_ethereum(EthereumMessaging::new(rpc_url, contract_address).await?);
 
-        Ok(format!(
-            "0x{:x}",
-            self.messaging.ethereum_ref()?.messaging_contract_address()
-        ))
+        Ok(format!("0x{:x}", self.messaging.ethereum_ref()?.messaging_contract_address()))
     }
 
     /// Retrieves the ethereum node URL, if configured.
@@ -147,10 +139,7 @@ impl Starknet {
     pub async fn collect_messages_to_l1(&mut self) -> DevnetResult<Vec<MessageToL1>> {
         let from_block = self.messaging.last_local_block;
 
-        match self
-            .blocks
-            .get_blocks(Some(BlockId::Number(from_block)), None)
-        {
+        match self.blocks.get_blocks(Some(BlockId::Number(from_block)), None) {
             Ok(blocks) => {
                 let mut messages = vec![];
 
@@ -162,11 +151,7 @@ impl Starknet {
 
                 for message in &messages {
                     let hash = format!("{}", message.hash());
-                    let count = self
-                        .messaging
-                        .l2_to_l1_messages_hashes
-                        .entry(hash)
-                        .or_insert(0);
+                    let count = self.messaging.l2_to_l1_messages_hashes.entry(hash).or_insert(0);
                     *count += 1;
                 }
 
@@ -189,9 +174,7 @@ impl Starknet {
     /// Returns the list of sent messages.
     pub async fn send_messages_to_l1(&mut self) -> DevnetResult<Vec<MessageToL1>> {
         let ethereum = self.messaging.ethereum_ref()?;
-        ethereum
-            .send_mock_messages(&self.messaging.l2_to_l1_messages_to_flush)
-            .await?;
+        ethereum.send_mock_messages(&self.messaging.l2_to_l1_messages_to_flush).await?;
 
         let messages = self.messaging.l2_to_l1_messages_to_flush.clone();
         self.messaging.l2_to_l1_messages_to_flush.clear();
@@ -206,27 +189,18 @@ impl Starknet {
     /// # Arguments
     ///
     /// * `message` - The message to consume.
-    pub async fn consume_l2_to_l1_message(
-        &mut self,
-        message: &MessageToL1,
-    ) -> DevnetResult<Hash256> {
+    pub async fn consume_l2_to_l1_message(&mut self, message: &MessageToL1) -> DevnetResult<Hash256> {
         // Ensure latest messages are collected before consuming the message.
         self.collect_messages_to_l1().await?;
 
         let hash = format!("{}", message.hash());
-        let count = self
-            .messaging
-            .l2_to_l1_messages_hashes
-            .entry(hash.clone())
-            .or_insert(0);
+        let count = self.messaging.l2_to_l1_messages_hashes.entry(hash.clone()).or_insert(0);
 
         if *count > 0 {
             *count -= 1;
             Ok(message.hash())
         } else {
-            Err(Error::MessagingError(
-                MessagingError::MessageToL1NotPresent(hash),
-            ))
+            Err(Error::MessagingError(MessagingError::MessageToL1NotPresent(hash)))
         }
     }
 
@@ -242,10 +216,7 @@ impl Starknet {
     /// # Arguments
     ///
     /// * `messages` - Messages to execute.
-    pub async fn execute_messages_to_l2(
-        &mut self,
-        messages: &[MessageToL2],
-    ) -> DevnetResult<Vec<TransactionHash>> {
+    pub async fn execute_messages_to_l2(&mut self, messages: &[MessageToL2]) -> DevnetResult<Vec<TransactionHash>> {
         let mut transactions_hashes = vec![];
 
         for message in messages {
@@ -266,22 +237,15 @@ impl Starknet {
     fn get_block_messages(&self, block: &StarknetBlock) -> DevnetResult<Vec<MessageToL1>> {
         let mut messages = vec![];
 
-        block
-            .get_transactions()
-            .iter()
-            .for_each(|transaction_hash| {
-                if let Ok(transaction) = self
-                    .transactions
-                    .get_by_hash(*transaction_hash)
-                    .ok_or(Error::NoTransaction)
-                {
-                    // As we will send the messages to L1 node, we don't want to include
-                    // the messages of reverted transactions.
-                    if let ExecutionResult::Succeeded = transaction.execution_result {
-                        messages.extend(transaction.get_l2_to_l1_messages())
-                    }
+        block.get_transactions().iter().for_each(|transaction_hash| {
+            if let Ok(transaction) = self.transactions.get_by_hash(*transaction_hash).ok_or(Error::NoTransaction) {
+                // As we will send the messages to L1 node, we don't want to include
+                // the messages of reverted transactions.
+                if let ExecutionResult::Succeeded = transaction.execution_result {
+                    messages.extend(transaction.get_l2_to_l1_messages())
                 }
-            });
+            }
+        });
 
         Ok(messages)
     }

@@ -1,0 +1,63 @@
+# yaml-language-server: $schema=https://raw.githubusercontent.com/SchemaStore/schemastore/refs/heads/master/src/schemas/json/github-workflow.json
+name: Workflow - Pull Request Main
+
+on:
+  workflow_dispatch:
+  pull_request:
+    branches: [main]
+
+env:
+  RUST_VERSION: 1.85
+  NODE_VERSION: 22
+  REGISTRY: ghcr.io
+
+permissions:
+  contents: read
+  packages: write
+  attestations: write
+  id-token: write
+
+jobs:
+  env-expose:
+    if: github.event.pull_request.draft == false
+    runs-on: ubuntu-latest
+    steps:
+      - run: echo "Exposing env vars..."
+    outputs:
+      rust-version: ${{ env.RUST_VERSION }}
+      node-version: ${{ env.NODE_VERSION }}
+      registry: ${{ env.REGISTRY }}
+
+  lint-cargo:
+    needs: env-expose
+    uses: ./.github/workflows/task-lint-cargo.yaml
+    with:
+      rust-version: ${{ needs.env-expose.outputs.rust-version }}
+    secrets: inherit
+
+  lint-prettier:
+    needs: env-expose
+    uses: ./.github/workflows/task-lint-prettier.yaml
+    with:
+      node-version: ${{ needs.env-expose.outputs.node-version }}
+    secrets: inherit
+
+  lint-commit:
+    needs: env-expose
+    uses: ./.github/workflows/task-lint-commit.yaml
+    with:
+      node-version: ${{ needs.env-expose.outputs.node-version }}
+      commit: ${{ github.event.pull_request.title }}
+    secrets: inherit
+
+  build-cargo:
+    needs: lint-prettier
+    uses: ./.github/workflows/task-build-cargo.yaml
+    with:
+      rust-version: ${{ needs.env-expose.outputs.rust-version }}
+    secrets: inherit
+
+  # Stub for the build queue
+  build-nightly:
+    needs: build-cargo
+    uses: ./.github/workflows/task-do-nothing.yaml

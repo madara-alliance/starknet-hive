@@ -15,7 +15,7 @@ impl<'de> DeserializeAs<'de, GasPrice> for GasPriceAsHexStr {
     {
         struct GasPriceVisitor;
 
-        impl<'de> Visitor<'de> for GasPriceVisitor {
+        impl Visitor<'_> for GasPriceVisitor {
             type Value = GasPrice;
 
             fn expecting(&self, formatter: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
@@ -26,9 +26,7 @@ impl<'de> DeserializeAs<'de, GasPrice> for GasPriceAsHexStr {
             where
                 E: serde::de::Error,
             {
-                bytes_from_hex_str::<16>(v)
-                    .map_err(serde::de::Error::custom)
-                    .map(GasPrice::from_be_bytes)
+                bytes_from_hex_str::<16>(v).map_err(serde::de::Error::custom).map(GasPrice::from_be_bytes)
             }
         }
 
@@ -83,10 +81,7 @@ fn bytes_from_hex_str<const N: usize>(hex_str: &str) -> Result<[u8; N], HexParse
 
     let hex_str = hex_str.strip_prefix("0x").unwrap_or(hex_str);
     if hex_str.len() > N * 2 {
-        return Err(HexParseError::InvalidLength {
-            max: N * 2,
-            actual: hex_str.len(),
-        });
+        return Err(HexParseError::InvalidLength { max: N * 2, actual: hex_str.len() });
     }
 
     let mut buf = [0u8; N];
@@ -104,7 +99,7 @@ fn bytes_from_hex_str<const N: usize>(hex_str: &str) -> Result<[u8; N], HexParse
 
     for (i, c) in chunks.enumerate() {
         // Indexing c[0] and c[1] are safe since chunk-size is 2.
-        buf[N - 1 - i] = parse_hex_digit(c[0])? << 4 | parse_hex_digit(c[1])?;
+        buf[N - 1 - i] = (parse_hex_digit(c[0])? << 4) | parse_hex_digit(c[1])?;
     }
 
     Ok(buf)
@@ -127,7 +122,7 @@ impl<'de> DeserializeAs<'de, EthereumAddress> for EthereumAddressAsHexStr {
     {
         struct EthereumAddressVisitor;
 
-        impl<'de> Visitor<'de> for EthereumAddressVisitor {
+        impl Visitor<'_> for EthereumAddressVisitor {
             type Value = EthereumAddress;
 
             fn expecting(&self, formatter: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
@@ -150,12 +145,7 @@ impl<'de> DeserializeAs<'de, EthereumAddress> for EthereumAddressAsHexStr {
 
 pub fn bytes_as_hex_str<'a>(bytes: &'a [u8], buf: &'a mut [u8]) -> &'a str {
     let expected_buf_len = bytes.len() * 2 + 2;
-    assert!(
-        buf.len() >= expected_buf_len,
-        "buffer size is {}, expected at least {}",
-        buf.len(),
-        expected_buf_len
-    );
+    assert!(buf.len() >= expected_buf_len, "buffer size is {}, expected at least {}", buf.len(), expected_buf_len);
 
     if !bytes.iter().any(|b| *b != 0) {
         return "0x0";
@@ -181,12 +171,7 @@ fn skip_zeros(bytes: &[u8]) -> (impl Iterator<Item = &u8>, usize, usize) {
 }
 
 /// The second stage of conversion - map bytes to hex str
-fn it_to_hex_str<'a>(
-    it: impl Iterator<Item = &'a u8>,
-    start: usize,
-    len: usize,
-    buf: &'a mut [u8],
-) -> &'a [u8] {
+fn it_to_hex_str<'a>(it: impl Iterator<Item = &'a u8>, start: usize, len: usize, buf: &'a mut [u8]) -> &'a [u8] {
     const LUT: [u8; 16] = *b"0123456789abcdef";
     buf[0] = b'0';
     // Same small lookup table is ~25% faster than hex::encode_from_slice 🤷

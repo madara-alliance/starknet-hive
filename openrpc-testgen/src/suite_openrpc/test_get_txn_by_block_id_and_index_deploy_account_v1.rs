@@ -6,10 +6,7 @@ use crate::{
             call::Call,
             creation::create::{create_account, AccountType},
             deployment::{
-                deploy::{
-                    deploy_account_v1_from_request, get_deploy_account_request,
-                    DeployAccountVersion,
-                },
+                deploy::{deploy_account_v1_from_request, get_deploy_account_request, DeployAccountVersion},
                 structs::{ValidatedWaitParams, WaitForTx},
             },
         },
@@ -25,7 +22,7 @@ use starknet_types_core::felt::Felt;
 use starknet_types_rpc::{BlockId, DeployAccountTxn, MaybePendingBlockWithTxs, Txn};
 use t9n::txn_validation::deploy_account::verify_deploy_account_v1_signature;
 
-const EXPECTED_MAX_FEE: Felt = Felt::from_hex_unchecked("0x336f");
+const EXPECTED_MAX_FEE: Felt = Felt::from_hex_unchecked("0x155");
 #[derive(Clone, Debug)]
 pub struct TestCase {}
 
@@ -46,9 +43,7 @@ impl RunnableTrait for TestCase {
         let transfer_execution = test_input
             .random_paymaster_account
             .execute_v3(vec![Call {
-                to: Felt::from_hex(
-                    "0x49D36570D4E46F48E99674BD3FCC84644DDD6B96F7C741B1562B82F9E004DC7",
-                )?,
+                to: Felt::from_hex("0x49D36570D4E46F48E99674BD3FCC84644DDD6B96F7C741B1562B82F9E004DC7")?,
                 selector: get_selector_from_name("transfer")?,
                 calldata: vec![account_data.address, transfer_amount, Felt::ZERO],
             }])
@@ -61,10 +56,7 @@ impl RunnableTrait for TestCase {
         )
         .await?;
 
-        let wait_config = WaitForTx {
-            wait: true,
-            wait_params: ValidatedWaitParams::default(),
-        };
+        let wait_config = WaitForTx { wait: true, wait_params: ValidatedWaitParams::default() };
 
         let txn_req = get_deploy_account_request(
             test_input.random_paymaster_account.provider(),
@@ -90,18 +82,12 @@ impl RunnableTrait for TestCase {
         let (is_valid_signature, deploy_hash) = verify_deploy_account_v1_signature(
             &deploy_account_request,
             None,
-            test_input
-                .random_paymaster_account
-                .chain_id()
-                .to_hex_string()
-                .as_str(),
+            test_input.random_paymaster_account.chain_id().to_hex_string().as_str(),
         )?;
 
-        let deploy_account_result = deploy_account_v1_from_request(
-            test_input.random_paymaster_account.provider(),
-            deploy_account_request,
-        )
-        .await?;
+        let deploy_account_result =
+            deploy_account_v1_from_request(test_input.random_paymaster_account.provider(), deploy_account_request)
+                .await?;
 
         wait_for_sent_transaction(
             deploy_account_result.transaction_hash,
@@ -117,18 +103,10 @@ impl RunnableTrait for TestCase {
             )
         );
 
-        let block_number = test_input
-            .random_paymaster_account
-            .provider()
-            .block_hash_and_number()
-            .await?
-            .block_number;
+        let block_number = test_input.random_paymaster_account.provider().block_hash_and_number().await?.block_number;
 
-        let block_with_txns = test_input
-            .random_paymaster_account
-            .provider()
-            .get_block_with_txs(BlockId::Number(block_number))
-            .await?;
+        let block_with_txns =
+            test_input.random_paymaster_account.provider().get_block_with_txs(BlockId::Number(block_number)).await?;
 
         let txn_index: u64 = match block_with_txns {
             MaybePendingBlockWithTxs::Block(block_with_txs) => block_with_txs
@@ -136,9 +114,7 @@ impl RunnableTrait for TestCase {
                 .iter()
                 .position(|tx| tx.transaction_hash == deploy_account_result.transaction_hash)
                 .ok_or_else(|| {
-                    OpenRpcTestGenError::TransactionNotFound(
-                        deploy_account_result.transaction_hash.to_string(),
-                    )
+                    OpenRpcTestGenError::TransactionNotFound(deploy_account_result.transaction_hash.to_string())
                 })?
                 .try_into()
                 .map_err(|_| OpenRpcTestGenError::TransactionIndexOverflow)?,
@@ -147,9 +123,7 @@ impl RunnableTrait for TestCase {
                 .iter()
                 .position(|tx| tx.transaction_hash == deploy_account_result.transaction_hash)
                 .ok_or_else(|| {
-                    OpenRpcTestGenError::TransactionNotFound(
-                        deploy_account_result.transaction_hash.to_string(),
-                    )
+                    OpenRpcTestGenError::TransactionNotFound(deploy_account_result.transaction_hash.to_string())
                 })?
                 .try_into()
                 .map_err(|_| OpenRpcTestGenError::TransactionIndexOverflow)?,
@@ -167,33 +141,26 @@ impl RunnableTrait for TestCase {
         let txn = match txn? {
             Txn::DeployAccount(DeployAccountTxn::V1(txn)) => txn,
             _ => {
-                return Err(OpenRpcTestGenError::UnexpectedTxnType(
-                    "Unexpected txn type ".to_string(),
-                ));
+                return Err(OpenRpcTestGenError::UnexpectedTxnType("Unexpected txn type ".to_string()));
             }
         };
 
         let expected_class_hash = test_input.account_class_hash;
         assert_result!(
             txn.class_hash == expected_class_hash,
-            format!(
-                "Expected class hash {:?} but got {:?}",
-                expected_class_hash, txn.class_hash
-            )
+            format!("Expected class hash {:?} but got {:?}", expected_class_hash, txn.class_hash)
         );
 
         let constructor_calldata_len = txn.constructor_calldata.len();
         assert_result!(
             constructor_calldata_len == 1,
-            format!(
-                "Expected constructor calldata length to be 1, but got {}.",
-                constructor_calldata_len
-            )
+            format!("Expected constructor calldata length to be 1, but got {}.", constructor_calldata_len)
         );
 
-        let constructor_calldata = *txn.constructor_calldata.first().ok_or_else(|| {
-            OpenRpcTestGenError::Other("Missing constructor calldata".to_string())
-        })?;
+        let constructor_calldata = *txn
+            .constructor_calldata
+            .first()
+            .ok_or_else(|| OpenRpcTestGenError::Other("Missing constructor calldata".to_string()))?;
         let account_public_key = account_data.signing_key.verifying_key().scalar();
         assert_result!(
             constructor_calldata == account_public_key,
@@ -205,32 +172,20 @@ impl RunnableTrait for TestCase {
 
         assert_result!(
             txn.max_fee == EXPECTED_MAX_FEE,
-            format!(
-                "Expected max fee to be {:?}, but got {:?}.",
-                EXPECTED_MAX_FEE, txn.max_fee
-            )
+            format!("Expected max fee to be {:?}, but got {:?}.", EXPECTED_MAX_FEE, txn.max_fee)
         );
 
         let expected_initial_nonce = Felt::ZERO;
         assert_result!(
             txn.nonce == expected_initial_nonce,
-            format!(
-                "Expected nonce to be {:?}, but got {:?}.",
-                expected_initial_nonce, txn.nonce
-            )
+            format!("Expected nonce to be {:?}, but got {:?}.", expected_initial_nonce, txn.nonce)
         );
 
-        assert_result!(
-            is_valid_signature,
-            "Invalid signature for deploy account request, checked by t9n."
-        );
+        assert_result!(is_valid_signature, "Invalid signature for deploy account request, checked by t9n.");
 
         assert_result!(
             txn.signature == signature,
-            format!(
-                "Expected signature: {:?}, got {:?}",
-                signature, txn.signature
-            )
+            format!("Expected signature: {:?}, got {:?}", signature, txn.signature)
         );
 
         Ok(Self {})

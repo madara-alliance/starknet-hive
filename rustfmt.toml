@@ -1,0 +1,17 @@
+# Specifies the Rust edition for code compatibility
+edition = "2021"
+
+# Sets line endings to use Unix style (\n) instead of Windows style (\r\n)
+newline_style = "Unix"
+
+# Enables shorthand syntax when variable names match struct field names
+use_field_init_shorthand = true
+
+# Controls when to use single-line vs multi-line formatting (Max = prefer single line when possible)
+use_small_heuristics = "Max"
+
+# Enables the `?` operator shorthand instead of `try!` macro
+use_try_shorthand = true
+
+# Sets maximum line width before wrapping
+max_width = 120

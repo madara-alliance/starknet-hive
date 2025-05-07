@@ -35,59 +35,33 @@ impl RunnableTrait for TestCase {
 
         // send a valid transaction first to increment the nonce (so that we can test nonce < current
         // nonce later)
-        let res = account
-            .execute_v1(vec![increase_balance_call.clone()])
-            .send()
-            .await?;
+        let res = account.execute_v1(vec![increase_balance_call.clone()]).send().await?;
 
         wait_for_sent_transaction(res.transaction_hash, &account).await?;
 
         // estimate fee with current nonce (the expected nonce)
-        let nonce = provider
-            .get_nonce(BlockId::Tag(BlockTag::Pending), account.address())
-            .await?;
-        let result = account
-            .execute_v1(vec![increase_balance_call.clone()])
-            .nonce(nonce)
-            .estimate_fee()
-            .await;
+        let nonce = provider.get_nonce(BlockId::Tag(BlockTag::Pending), account.address()).await?;
+        let result = account.execute_v1(vec![increase_balance_call.clone()]).nonce(nonce).estimate_fee().await;
         let result_is_ok: bool = result.is_ok();
 
-        assert_result!(
-            result_is_ok,
-            "estimate should succeed with nonce == current nonce"
-        );
+        assert_result!(result_is_ok, "estimate should succeed with nonce == current nonce");
 
         // estimate fee with arbitrary nonce < current nonce
         //
         // here we're essentially estimating a transaction with a nonce that has already been
         // used, so it should fail.
         let nonce = nonce - 1;
-        let result = account
-            .execute_v1(vec![increase_balance_call.clone()])
-            .nonce(nonce)
-            .estimate_fee()
-            .await;
+        let result = account.execute_v1(vec![increase_balance_call.clone()]).nonce(nonce).estimate_fee().await;
         let result_is_err = result.is_err();
 
-        assert_result!(
-            result_is_err,
-            "estimate should fail with nonce < current nonce"
-        );
+        assert_result!(result_is_err, "estimate should fail with nonce < current nonce");
 
         // estimate fee with arbitrary nonce >= current nonce
         let nonce = Felt::from_hex_unchecked("0x1337");
-        let result = account
-            .execute_v1(vec![increase_balance_call.clone()])
-            .nonce(nonce)
-            .estimate_fee()
-            .await;
+        let result = account.execute_v1(vec![increase_balance_call.clone()]).nonce(nonce).estimate_fee().await;
         let result_is_ok: bool = result.is_ok();
 
-        assert_result!(
-            result_is_ok,
-            "estimate should succeed with nonce >= current nonce"
-        );
+        assert_result!(result_is_ok, "estimate should succeed with nonce >= current nonce");
 
         Ok(Self {})
     }

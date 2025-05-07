@@ -1,0 +1,11 @@
+# yaml-language-server: $schema=https://raw.githubusercontent.com/SchemaStore/schemastore/refs/heads/master/src/schemas/json/github-workflow.json
+name: Task - A stub task for use in the merge queue
+
+on:
+  workflow_call:
+
+jobs:
+  build-nightly:
+    runs-on: ubuntu-latest
+    steps:
+      - run: exit 0

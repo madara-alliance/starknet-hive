@@ -25,25 +25,15 @@ impl<S> StateUpdatePendingStateMachine<S> {
 
 impl StateUpdatePendingStateMachine<Ok> {
     pub fn new() -> Self {
-        Self {
-            path: "/feeder_gateway/get_state_update?blockNumber=pending&includeBlock=true"
-                .to_string(),
-            state: Ok,
-        }
+        Self { path: "/feeder_gateway/get_state_update?blockNumber=pending&includeBlock=true".to_string(), state: Ok }
     }
 
     pub fn to_invalid(self) -> StateUpdatePendingStateMachine<Invalid> {
-        StateUpdatePendingStateMachine {
-            path: self.path,
-            state: Invalid,
-        }
+        StateUpdatePendingStateMachine { path: self.path, state: Invalid }
     }
 
     pub fn to_skipped(&self) -> StateUpdatePendingStateMachine<Skipped> {
-        StateUpdatePendingStateMachine {
-            path: self.path.clone(),
-            state: Skipped,
-        }
+        StateUpdatePendingStateMachine { path: self.path.clone(), state: Skipped }
     }
 }
 
@@ -55,19 +45,13 @@ impl Default for StateUpdatePendingStateMachine<Ok> {
 
 impl StateUpdatePendingStateMachine<Invalid> {
     pub fn to_skipped(self) -> StateUpdatePendingStateMachine<Skipped> {
-        StateUpdatePendingStateMachine {
-            path: self.path,
-            state: Skipped,
-        }
+        StateUpdatePendingStateMachine { path: self.path, state: Skipped }
     }
 }
 
 impl StateUpdatePendingStateMachine<Skipped> {
     pub fn to_okk(self) -> StateUpdatePendingStateMachine<Ok> {
-        StateUpdatePendingStateMachine {
-            path: self.path,
-            state: Ok,
-        }
+        StateUpdatePendingStateMachine { path: self.path, state: Ok }
     }
 }
 
@@ -78,20 +62,13 @@ pub enum StateUpdatePendingStateMachineWrapper {
 }
 
 impl StateMachine for StateUpdatePendingStateMachineWrapper {
-    fn run(
-        &mut self,
-        request_body: String,
-        response_body: String,
-        path: String,
-    ) -> StateMachineResult {
+    fn run(&mut self, request_body: String, response_body: String, path: String) -> StateMachineResult {
         if self.filter(path) {
             self.step(request_body, response_body)
         } else {
             *self = StateUpdatePendingStateMachineWrapper::Skipped(match self {
                 StateUpdatePendingStateMachineWrapper::Ok(machine) => machine.to_skipped(),
-                StateUpdatePendingStateMachineWrapper::Invalid(machine) => {
-                    machine.clone().to_skipped()
-                }
+                StateUpdatePendingStateMachineWrapper::Invalid(machine) => machine.clone().to_skipped(),
                 StateUpdatePendingStateMachineWrapper::Skipped(machine) => machine.clone(),
             });
             StateMachineResult::Skipped
@@ -110,12 +87,8 @@ impl StateMachine for StateUpdatePendingStateMachineWrapper {
         *self = match self {
             StateUpdatePendingStateMachineWrapper::Ok(machine) => {
                 match serde_json::from_str::<PendingBlockStateMachine>(&response_body) {
-                    std::result::Result::Ok(_) => {
-                        StateUpdatePendingStateMachineWrapper::Ok(machine.clone())
-                    }
-                    Err(_) => {
-                        StateUpdatePendingStateMachineWrapper::Invalid(machine.clone().to_invalid())
-                    }
+                    std::result::Result::Ok(_) => StateUpdatePendingStateMachineWrapper::Ok(machine.clone()),
+                    Err(_) => StateUpdatePendingStateMachineWrapper::Invalid(machine.clone().to_invalid()),
                 }
             }
             StateUpdatePendingStateMachineWrapper::Invalid(machine) => {

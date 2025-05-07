@@ -1,68 +1,65 @@
-# Build Stage
-FROM rust:latest AS builder
+# =========================================================================== #
+#                            Openrpc-testgen-runner                           #
+#       Based off https://depot.dev/blog/rust-dockerfile-best-practices       #
+# =========================================================================== #
 
-# Instalacja zależności: curl, git, bash, unzip oraz asdf
-RUN apt-get update && apt-get install -y \
-    curl \
-    git \
-    bash \
-    unzip \
-    && rm -rf /var/lib/apt/lists/*
-
-# Instalacja asdf
-RUN git clone https://github.com/asdf-vm/asdf.git ~/.asdf --branch v0.14.1
-
-# Dodanie asdf do zmiennych środowiskowych
-ENV PATH="/root/.asdf/bin:/root/.asdf/shims:${PATH}"
-
-# Instalacja pluginu scarb
-RUN asdf plugin add scarb
-
-# Instalacja scarb
-RUN asdf install scarb 2.8.4
-RUN asdf global scarb 2.8.4
-
-# Praca w katalogu projektu
-WORKDIR /usr/src/starknet-rpc-tests
-
-# Kopiowanie Cargo.toml i Cargo.lock, aby cache'ować zależności
-COPY Cargo.toml Cargo.lock ./
-
-# Kopiowanie reszty projektu
-COPY . .
-
-RUN scarb build && cargo build
-
-RUN cargo build --release --bin openrpc-testgen-runner --features katana
-
-# Budowanie aplikacji
-WORKDIR /usr/src/starknet-rpc-tests/openrpc-testgen-runner
-ENV CARGO_TARGET_DIR=/usr/src/starknet-rpc-tests/openrpc-testgen-runner/target
-
-# Budowanie aplikacji z Cargo
-RUN cargo build --release --bin openrpc-testgen-runner --features katana
-
-# Final Stage (produkcja)
-FROM ubuntu:22.04
-
-# Instalowanie tylko niezbędnych zależności dla uruchomienia aplikacji
-RUN apt-get update && apt-get install -y \
-    libssl3 \
-    ca-certificates \
-    && rm -rf /var/lib/apt/lists/*
-
-COPY --from=builder /usr/src/starknet-rpc-tests/target /usr/src/starknet-rpc-tests/target
-
-
-# Kopiowanie skompilowanego pliku binarnego
-COPY --from=builder /usr/src/starknet-rpc-tests/openrpc-testgen-runner/target/release/openrpc-testgen-runner /usr/local/bin/openrpc-testgen-runner
-
-# Określenie katalogu roboczego
+# Step 0: setup tooling (rust)
+FROM rust:1.85 AS base-rust
 WORKDIR /app
 
-# Domyślny punkt wejścia
-# ENTRYPOINT ["/usr/local/bin/openrpc-testgen-runner"]
-ENTRYPOINT ["/bin/bash"]
+RUN cargo install sccache
+RUN cargo install cargo-chef
+ENV RUSTC_WRAPPER=sccache SCCACHE_DIR=/sccache
 
-# Opcjonalnie, możesz dodać argumenty do aplikacji (np. --help)
-# CMD ["--help"]
+# Step 1: Cache dependencies
+FROM base-rust AS planner
+
+COPY . .
+RUN --mount=type=cache,target=$SCCACHE_DIR,sharing=locked \
+    --mount=type=cache,target=/usr/local/cargo/registry \
+    cargo chef prepare --recipe-path recipe.json
+
+# Step 2: Build crate
+FROM base-rust AS builder-rust
+
+COPY --from=planner /app/recipe.json recipe.json
+RUN --mount=type=cache,target=$SCCACHE_DIR,sharing=locked \
+    --mount=type=cache,target=/usr/local/cargo/registry \
+    cargo chef cook --features openrpc --recipe-path recipe.json
+
+COPY . .
+RUN --mount=type=cache,target=$SCCACHE_DIR,sharing=locked \
+    --mount=type=cache,target=/usr/local/cargo/registry \
+    cargo build --features openrpc --bin openrpc-testgen-runner
+
+# Step 3: setup tooling (cairo)
+FROM rust:1.85 AS base-cairo
+WORKDIR /app
+
+RUN apt-get update && apt-get install -y git wget
+RUN wget https://github.com/asdf-vm/asdf/releases/download/v0.16.7/asdf-v0.16.7-linux-386.tar.gz
+RUN tar -xvpf asdf-v0.16.7-linux-386.tar.gz
+
+RUN ./asdf plugin add scarb
+RUN ./asdf install scarb 2.8.4
+RUN ./asdf set -u scarb 2.8.4
+
+# Step 4: Build cairo contracts
+FROM base-cairo AS builder-cairo
+
+COPY . .
+RUN ./asdf exec scarb build
+
+# Step 5: runner
+FROM debian:bookworm-slim
+
+WORKDIR /app
+
+COPY --from=builder-rust /app/target/debug/openrpc-testgen-runner .
+COPY --from=builder-cairo /app/target/dev target/dev
+
+ENV TINI_VERSION=v0.19.0
+ADD https://github.com/krallin/tini/releases/download/${TINI_VERSION}/tini /tini
+RUN chmod +x /tini
+
+ENTRYPOINT ["/tini", "--", "./openrpc-testgen-runner"]

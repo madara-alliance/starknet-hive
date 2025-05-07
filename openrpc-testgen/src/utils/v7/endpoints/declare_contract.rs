@@ -30,23 +30,15 @@ pub async fn declare_contract<P: Provider + Send + Sync>(
     sierra_path: PathBuf,
     casm_path: PathBuf,
 ) -> Result<Felt, RunnerError> {
-    let (flattened_sierra_class, compiled_class_hash) =
-        get_compiled_contract(sierra_path, casm_path).await.unwrap();
+    let (flattened_sierra_class, compiled_class_hash) = get_compiled_contract(sierra_path, casm_path).await.unwrap();
 
-    match account
-        .declare_v2(Arc::new(flattened_sierra_class), compiled_class_hash)
-        .send()
-        .await
-    {
+    match account.declare_v2(Arc::new(flattened_sierra_class), compiled_class_hash).send().await {
         Ok(result) => Ok(result.class_hash),
         Err(AccountError::Signing(sign_error)) => {
             if sign_error.to_string().contains("is already declared") {
                 Ok(parse_class_hash_from_error(&sign_error.to_string())?)
             } else {
-                Err(RunnerError::AccountFailure(format!(
-                    "Transaction execution error: {}",
-                    sign_error
-                )))
+                Err(RunnerError::AccountFailure(format!("Transaction execution error: {}", sign_error)))
             }
         }
 
@@ -54,10 +46,7 @@ pub async fn declare_contract<P: Provider + Send + Sync>(
             if starkneterror.to_string().contains("is already declared") {
                 Ok(parse_class_hash_from_error(&starkneterror.to_string())?)
             } else {
-                Err(RunnerError::AccountFailure(format!(
-                    "Transaction execution error: {}",
-                    starkneterror
-                )))
+                Err(RunnerError::AccountFailure(format!("Transaction execution error: {}", starkneterror)))
             }
         }
         Err(e) => {
@@ -75,19 +64,13 @@ pub fn parse_class_hash_from_error(error_msg: &str) -> Result<Felt, RunnerError>
         if let Some(contract_address) = captures.get(1) {
             match Felt::from_hex(contract_address.as_str()) {
                 Ok(felt) => Ok(felt),
-                Err(_) => Err(RunnerError::ClassHash(
-                    ClassHashParseError::InvalidClassHash,
-                )),
+                Err(_) => Err(RunnerError::ClassHash(ClassHashParseError::InvalidClassHash)),
             }
         } else {
-            Err(RunnerError::ClassHash(
-                ClassHashParseError::NoClassHashFound,
-            ))
+            Err(RunnerError::ClassHash(ClassHashParseError::NoClassHashFound))
         }
     } else {
-        Err(RunnerError::ClassHash(
-            ClassHashParseError::NoClassHashFound,
-        ))
+        Err(RunnerError::ClassHash(ClassHashParseError::NoClassHashFound))
     }
 }
 
@@ -97,14 +80,10 @@ pub fn extract_class_hash_from_error(error_msg: &str) -> Result<Felt, RunnerErro
     if let Some(capture) = re.find(error_msg) {
         match Felt::from_hex(capture.as_str()) {
             Ok(felt) => Ok(felt),
-            Err(_) => Err(RunnerError::ClassHash(
-                ClassHashParseError::InvalidClassHash,
-            )),
+            Err(_) => Err(RunnerError::ClassHash(ClassHashParseError::InvalidClassHash)),
         }
     } else {
-        Err(RunnerError::ClassHash(
-            ClassHashParseError::NoClassHashFound,
-        ))
+        Err(RunnerError::ClassHash(ClassHashParseError::NoClassHashFound))
     }
 }
 
@@ -114,32 +93,24 @@ pub async fn get_compiled_contract(
 ) -> Result<(ContractClass<Felt>, TxnHash<Felt>), RunnerError> {
     let mut file = tokio::fs::File::open(&sierra_path).await.map_err(|e| {
         if e.kind() == std::io::ErrorKind::NotFound {
-            RunnerError::ReadFileError(
-                "Contract json file not found, please execute scarb build command".to_string(),
-            )
+            RunnerError::ReadFileError("Contract json file not found, please execute scarb build command".to_string())
         } else {
             RunnerError::ReadFileError(e.to_string())
         }
     })?;
 
     let mut sierra = String::new();
-    file.read_to_string(&mut sierra)
-        .await
-        .map_err(|e| RunnerError::ReadFileError(e.to_string()))?;
+    file.read_to_string(&mut sierra).await.map_err(|e| RunnerError::ReadFileError(e.to_string()))?;
 
     let mut file = tokio::fs::File::open(&casm_path).await.map_err(|e| {
         if e.kind() == std::io::ErrorKind::NotFound {
-            RunnerError::ReadFileError(
-                "Contract json file not found, please execute scarb build command".to_string(),
-            )
+            RunnerError::ReadFileError("Contract json file not found, please execute scarb build command".to_string())
         } else {
             RunnerError::ReadFileError(e.to_string())
         }
     })?;
     let mut casm = String::new();
-    file.read_to_string(&mut casm)
-        .await
-        .map_err(|e| RunnerError::ReadFileError(e.to_string()))?;
+    file.read_to_string(&mut casm).await.map_err(|e| RunnerError::ReadFileError(e.to_string()))?;
 
     let contract_artifact: SierraClass = serde_json::from_str(&sierra)?;
     let compiled_class: CompiledClass = serde_json::from_str(&casm)?;
@@ -156,32 +127,24 @@ pub async fn get_compiled_contract_string(
 ) -> Result<(String, String), RunnerError> {
     let mut file = tokio::fs::File::open(&sierra_path).await.map_err(|e| {
         if e.kind() == std::io::ErrorKind::NotFound {
-            RunnerError::ReadFileError(
-                "Contract json file not found, please execute scarb build command".to_string(),
-            )
+            RunnerError::ReadFileError("Contract json file not found, please execute scarb build command".to_string())
         } else {
             RunnerError::ReadFileError(e.to_string())
         }
     })?;
 
     let mut sierra = String::new();
-    file.read_to_string(&mut sierra)
-        .await
-        .map_err(|e| RunnerError::ReadFileError(e.to_string()))?;
+    file.read_to_string(&mut sierra).await.map_err(|e| RunnerError::ReadFileError(e.to_string()))?;
 
     let mut file = tokio::fs::File::open(&casm_path).await.map_err(|e| {
         if e.kind() == std::io::ErrorKind::NotFound {
-            RunnerError::ReadFileError(
-                "Contract json file not found, please execute scarb build command".to_string(),
-            )
+            RunnerError::ReadFileError("Contract json file not found, please execute scarb build command".to_string())
         } else {
             RunnerError::ReadFileError(e.to_string())
         }
     })?;
     let mut casm = String::new();
-    file.read_to_string(&mut casm)
-        .await
-        .map_err(|e| RunnerError::ReadFileError(e.to_string()))?;
+    file.read_to_string(&mut casm).await.map_err(|e| RunnerError::ReadFileError(e.to_string()))?;
 
     Ok((sierra, casm))
 }
@@ -229,8 +192,7 @@ fn get_compiled_class_hash(artifact_path: &PathBuf) -> Result<Felt, RunnerError>
     })?;
 
     let casm_contract_class: CairoContractClass = serde_json::from_reader(file)?;
-    let casm_contract =
-        CasmContractClass::from_contract_class(casm_contract_class, true, usize::MAX)?;
+    let casm_contract = CasmContractClass::from_contract_class(casm_contract_class, true, usize::MAX)?;
     let res = serde_json::to_string_pretty(&casm_contract)?;
     let compiled_class: CompiledClass = serde_json::from_str(&res)?;
     Ok(compiled_class.class_hash()?)

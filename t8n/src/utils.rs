@@ -43,59 +43,33 @@ pub fn add_transaction_receipts(starknet: &mut Starknet) -> Result<(), Error> {
     Ok(())
 }
 
-pub fn handle_transactions(
-    starknet: &mut Starknet,
-    transactions: Vec<BroadcastedTransaction>,
-) -> Result<(), Error> {
+pub fn handle_transactions(starknet: &mut Starknet, transactions: Vec<BroadcastedTransaction>) -> Result<(), Error> {
     for (index, transaction) in transactions.into_iter().enumerate() {
         match transaction {
             BroadcastedTransaction::Invoke(tx) => match add_invoke_transaction(starknet, tx) {
                 Err(e) => {
-                    tracing::error!(
-                        "Error processing Invoke transaction at index {}: {:?}",
-                        index,
-                        e
-                    );
+                    tracing::error!("Error processing Invoke transaction at index {}: {:?}", index, e);
                 }
                 Ok(_) => {
-                    tracing::info!(
-                        "Successfully processed Invoke transaction at index {}",
-                        index
-                    );
+                    tracing::info!("Successfully processed Invoke transaction at index {}", index);
                 }
             },
             BroadcastedTransaction::Declare(tx) => match add_declare_transaction(starknet, tx) {
                 Err(e) => {
-                    tracing::error!(
-                        "Error processing Declare transaction at index {}: {:?}",
-                        index,
-                        e
-                    );
+                    tracing::error!("Error processing Declare transaction at index {}: {:?}", index, e);
                 }
                 Ok(_) => {
-                    tracing::info!(
-                        "Successfully processed Declare transaction at index {}",
-                        index
-                    );
+                    tracing::info!("Successfully processed Declare transaction at index {}", index);
                 }
             },
-            BroadcastedTransaction::DeployAccount(tx) => {
-                match add_deploy_account_transaction(starknet, tx) {
-                    Err(e) => {
-                        tracing::error!(
-                            "Error processing DeployAccount transaction at index {}: {:?}",
-                            index,
-                            e
-                        );
-                    }
-                    Ok(_) => {
-                        tracing::info!(
-                            "Successfully processed DeployAccount transaction at index {}",
-                            index
-                        );
-                    }
+            BroadcastedTransaction::DeployAccount(tx) => match add_deploy_account_transaction(starknet, tx) {
+                Err(e) => {
+                    tracing::error!("Error processing DeployAccount transaction at index {}: {:?}", index, e);
                 }
-            }
+                Ok(_) => {
+                    tracing::info!("Successfully processed DeployAccount transaction at index {}", index);
+                }
+            },
         }
     }
     let state_diff = starknet.state.commit_with_diff()?;

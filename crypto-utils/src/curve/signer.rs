@@ -14,64 +14,30 @@ use std::error::Error as StdError;
 use std::fmt;
 use zeroize::{Zeroize, Zeroizing};
 
-const EC_ORDER: Felt = Felt::from_raw([
-    369010039416812937,
-    9,
-    1143265896874747514,
-    8939893405601011193,
-]);
+const EC_ORDER: Felt = Felt::from_raw([369010039416812937, 9, 1143265896874747514, 8939893405601011193]);
 
-const EC_ORDER_2: U256 =
-    U256::from_be_hex("0800000000000010ffffffffffffffffb781126dcae7b2321e66a241adc64d2f");
+const EC_ORDER_2: U256 = U256::from_be_hex("0800000000000010ffffffffffffffffb781126dcae7b2321e66a241adc64d2f");
 
-const ELEMENT_UPPER_BOUND: Felt = Felt::from_raw([
-    576459263475450960,
-    18446744073709255680,
-    160989183,
-    18446743986131435553,
-]);
+const ELEMENT_UPPER_BOUND: Felt =
+    Felt::from_raw([576459263475450960, 18446744073709255680, 160989183, 18446743986131435553]);
 
 const GENERATOR: AffinePoint = AffinePoint::new_unchecked(
-    Felt::from_raw([
-        232005955912912577,
-        299981207024966779,
-        5884444832209845738,
-        14484022957141291997,
-    ]),
-    Felt::from_raw([
-        405578048423154473,
-        18147424675297964973,
-        664812301889158119,
-        6241159653446987914,
-    ]),
+    Felt::from_raw([232005955912912577, 299981207024966779, 5884444832209845738, 14484022957141291997]),
+    Felt::from_raw([405578048423154473, 18147424675297964973, 664812301889158119, 6241159653446987914]),
 );
 
-pub const ALPHA: Felt = Felt::from_raw([
-    576460752303422960,
-    18446744073709551615,
-    18446744073709551615,
-    18446744073709551585,
-]);
+pub const ALPHA: Felt =
+    Felt::from_raw([576460752303422960, 18446744073709551615, 18446744073709551615, 18446744073709551585]);
 
-pub const BETA: Felt = Felt::from_raw([
-    88155977965380735,
-    12360725113329547591,
-    7432612994240712710,
-    3863487492851900874,
-]);
+pub const BETA: Felt =
+    Felt::from_raw([88155977965380735, 12360725113329547591, 7432612994240712710, 3863487492851900874]);
 
 pub trait Signer {
-    fn ecdsa_sign(
-        private_key: &Felt,
-        message_hash: &Felt,
-    ) -> Result<ExtendedSignature, EcdsaSignError>;
+    fn ecdsa_sign(private_key: &Felt, message_hash: &Felt) -> Result<ExtendedSignature, EcdsaSignError>;
 }
 
 impl Signer for StarkCurve {
-    fn ecdsa_sign(
-        private_key: &Felt,
-        message_hash: &Felt,
-    ) -> Result<ExtendedSignature, EcdsaSignError> {
+    fn ecdsa_sign(private_key: &Felt, message_hash: &Felt) -> Result<ExtendedSignature, EcdsaSignError> {
         let mut seed = None;
         loop {
             let k = generate_k(private_key, message_hash, seed.as_ref());
@@ -80,9 +46,7 @@ impl Signer for StarkCurve {
                 Ok(sig) => {
                     return Ok(sig);
                 }
-                Err(SignError::InvalidMessageHash) => {
-                    return Err(EcdsaSignError::MessageHashOutOfRange)
-                }
+                Err(SignError::InvalidMessageHash) => return Err(EcdsaSignError::MessageHashOutOfRange),
                 Err(SignError::InvalidK) => {
                     // Bump seed and retry
                     seed = match seed {
@@ -132,10 +96,7 @@ pub struct ExtendedSignature {
 
 impl From<ExtendedSignature> for Signature {
     fn from(value: ExtendedSignature) -> Self {
-        Self {
-            r: value.r,
-            s: value.s,
-        }
+        Self { r: value.r, s: value.s }
     }
 }
 
@@ -238,10 +199,7 @@ where
 ///
 /// * `private_key`: The private key
 pub fn get_public_key(private_key: &Felt) -> Felt {
-    mul_by_bits(&GENERATOR, private_key)
-        .to_affine()
-        .unwrap()
-        .x()
+    mul_by_bits(&GENERATOR, private_key).to_affine().unwrap().x()
 }
 
 /// Computes ECDSA signature given a Stark private key and message hash.
@@ -274,11 +232,7 @@ pub fn sign(private_key: &Felt, message: &Felt, k: &Felt) -> Result<ExtendedSign
         return Err(SignError::InvalidK);
     }
 
-    Ok(ExtendedSignature {
-        r,
-        s,
-        v: (full_r.y().to_bigint() & Felt::ONE.to_bigint()).into(),
-    })
+    Ok(ExtendedSignature { r, s, v: (full_r.y().to_bigint() & Felt::ONE.to_bigint()).into() })
 }
 
 pub fn add_unbounded(augend: &Felt, addend: &Felt) -> BigInt {
@@ -320,11 +274,7 @@ pub fn mod_inverse(operand: &Felt, modulus: &Felt) -> Felt {
     if extended_gcd.gcd != BigInt::one() {
         panic!("GCD must be one");
     }
-    let result = if extended_gcd.x < BigInt::zero() {
-        extended_gcd.x + modulus
-    } else {
-        extended_gcd.x
-    };
+    let result = if extended_gcd.x < BigInt::zero() { extended_gcd.x + modulus } else { extended_gcd.x };
 
     let (_, buffer) = result.to_bytes_be();
     let mut result = [0u8; 32];
@@ -402,9 +352,7 @@ pub fn verify(public_key: &Felt, message: &Felt, r: &Felt, s: &Felt) -> Result<b
 
     let full_public_key = AffinePoint::new(
         *public_key,
-        (public_key.square() * public_key + ALPHA * public_key + BETA)
-            .sqrt()
-            .ok_or(VerifyError::InvalidPublicKey)?,
+        (public_key.square() * public_key + ALPHA * public_key + BETA).sqrt().ok_or(VerifyError::InvalidPublicKey)?,
     )
     .unwrap();
 
@@ -419,8 +367,7 @@ pub fn verify(public_key: &Felt, message: &Felt, r: &Felt, s: &Felt) -> Result<b
     let rw = mul_mod_floor(r, &w, &EC_ORDER);
     let rw_q = mul_by_bits(&full_public_key, &rw);
 
-    Ok((&zw_g + &rw_q).to_affine().unwrap().x() == *r
-        || (&zw_g - &rw_q).to_affine().unwrap().x() == *r)
+    Ok((&zw_g + &rw_q).to_affine().unwrap().x() == *r || (&zw_g - &rw_q).to_affine().unwrap().x() == *r)
 }
 
 pub fn recover(message: &Felt, r: &Felt, s: &Felt, v: &Felt) -> Result<Felt, RecoverError> {
@@ -437,25 +384,13 @@ pub fn recover(message: &Felt, r: &Felt, s: &Felt, v: &Felt) -> Result<Felt, Rec
         return Err(RecoverError::InvalidV);
     }
 
-    let full_r = AffinePoint::new(
-        *r,
-        (r * r * r + ALPHA * r + BETA)
-            .sqrt()
-            .ok_or(RecoverError::InvalidR)?,
-    )
-    .unwrap();
+    let full_r = AffinePoint::new(*r, (r * r * r + ALPHA * r + BETA).sqrt().ok_or(RecoverError::InvalidR)?).unwrap();
 
     let mut full_r_y = full_r.y();
 
     let mut bits = [false; 256];
 
-    for (i, (&a, &b)) in full_r
-        .y()
-        .to_bits_le()
-        .iter()
-        .zip(Felt::ONE.to_bits_le().iter())
-        .enumerate()
-    {
+    for (i, (&a, &b)) in full_r.y().to_bits_le().iter().zip(Felt::ONE.to_bits_le().iter()).enumerate() {
         bits[i] = a && b;
     }
 
@@ -485,12 +420,8 @@ mod tests {
     #[test]
     #[cfg_attr(target_arch = "wasm32", wasm_bindgen_test::wasm_bindgen_test)]
     fn test_get_public_key_1() {
-        let private_key = Felt::from_hex_unchecked(
-            "03c1e9550e66958296d11b60f8e8e7a7ad990d07fa65d5f7652c4a6c87d4e3cc",
-        );
-        let expected_key = Felt::from_hex_unchecked(
-            "077a3b314db07c45076d11f62b6f9e748a39790441823307743cf00d6597ea43",
-        );
+        let private_key = Felt::from_hex_unchecked("03c1e9550e66958296d11b60f8e8e7a7ad990d07fa65d5f7652c4a6c87d4e3cc");
+        let expected_key = Felt::from_hex_unchecked("077a3b314db07c45076d11f62b6f9e748a39790441823307743cf00d6597ea43");
 
         assert_eq!(get_public_key(&private_key), expected_key);
     }
@@ -498,12 +429,8 @@ mod tests {
     #[test]
     #[cfg_attr(target_arch = "wasm32", wasm_bindgen_test::wasm_bindgen_test)]
     fn test_get_public_key_2() {
-        let private_key = Felt::from_hex_unchecked(
-            "0000000000000000000000000000000000000000000000000000000000000012",
-        );
-        let expected_key = Felt::from_hex_unchecked(
-            "019661066e96a8b9f06a1d136881ee924dfb6a885239caa5fd3f87a54c6b25c4",
-        );
+        let private_key = Felt::from_hex_unchecked("0000000000000000000000000000000000000000000000000000000000000012");
+        let expected_key = Felt::from_hex_unchecked("019661066e96a8b9f06a1d136881ee924dfb6a885239caa5fd3f87a54c6b25c4");
 
         assert_eq!(get_public_key(&private_key), expected_key);
     }
@@ -511,18 +438,10 @@ mod tests {
     #[test]
     #[cfg_attr(target_arch = "wasm32", wasm_bindgen_test::wasm_bindgen_test)]
     fn test_verify_valid_message() {
-        let stark_key = Felt::from_hex_unchecked(
-            "01ef15c18599971b7beced415a40f0c7deacfd9b0d1819e03d723d8bc943cfca",
-        );
-        let msg_hash = Felt::from_hex_unchecked(
-            "0000000000000000000000000000000000000000000000000000000000000002",
-        );
-        let r_bytes = Felt::from_hex_unchecked(
-            "0411494b501a98abd8262b0da1351e17899a0c4ef23dd2f96fec5ba847310b20",
-        );
-        let s_bytes = Felt::from_hex_unchecked(
-            "0405c3191ab3883ef2b763af35bc5f5d15b3b4e99461d70e84c654a351a7c81b",
-        );
+        let stark_key = Felt::from_hex_unchecked("01ef15c18599971b7beced415a40f0c7deacfd9b0d1819e03d723d8bc943cfca");
+        let msg_hash = Felt::from_hex_unchecked("0000000000000000000000000000000000000000000000000000000000000002");
+        let r_bytes = Felt::from_hex_unchecked("0411494b501a98abd8262b0da1351e17899a0c4ef23dd2f96fec5ba847310b20");
+        let s_bytes = Felt::from_hex_unchecked("0405c3191ab3883ef2b763af35bc5f5d15b3b4e99461d70e84c654a351a7c81b");
 
         assert!(verify(&stark_key, &msg_hash, &r_bytes, &s_bytes).unwrap());
     }
@@ -530,18 +449,10 @@ mod tests {
     #[test]
     #[cfg_attr(target_arch = "wasm32", wasm_bindgen_test::wasm_bindgen_test)]
     fn test_verify_invalid_message() {
-        let stark_key = Felt::from_hex_unchecked(
-            "077a4b314db07c45076d11f62b6f9e748a39790441823307743cf00d6597ea43",
-        );
-        let msg_hash = Felt::from_hex_unchecked(
-            "0397e76d1667c4454bfb83514e120583af836f8e32a516765497823eabe16a3f",
-        );
-        let r_bytes = Felt::from_hex_unchecked(
-            "0173fd03d8b008ee7432977ac27d1e9d1a1f6c98b1a2f05fa84a21c84c44e882",
-        );
-        let s_bytes = Felt::from_hex_unchecked(
-            "01f2c44a7798f55192f153b4c48ea5c1241fbb69e6132cc8a0da9c5b62a4286e",
-        );
+        let stark_key = Felt::from_hex_unchecked("077a4b314db07c45076d11f62b6f9e748a39790441823307743cf00d6597ea43");
+        let msg_hash = Felt::from_hex_unchecked("0397e76d1667c4454bfb83514e120583af836f8e32a516765497823eabe16a3f");
+        let r_bytes = Felt::from_hex_unchecked("0173fd03d8b008ee7432977ac27d1e9d1a1f6c98b1a2f05fa84a21c84c44e882");
+        let s_bytes = Felt::from_hex_unchecked("01f2c44a7798f55192f153b4c48ea5c1241fbb69e6132cc8a0da9c5b62a4286e");
 
         assert!(!verify(&stark_key, &msg_hash, &r_bytes, &s_bytes).unwrap());
     }
@@ -549,18 +460,10 @@ mod tests {
     #[test]
     #[cfg_attr(target_arch = "wasm32", wasm_bindgen_test::wasm_bindgen_test)]
     fn test_verify_invalid_public_key() {
-        let stark_key = Felt::from_hex_unchecked(
-            "03ee9bffffffffff26ffffffff60ffffffffffffffffffffffffffff004accff",
-        );
-        let msg_hash = Felt::from_hex_unchecked(
-            "0000000000000000000000000000000000000000000000000000000000000002",
-        );
-        let r_bytes = Felt::from_hex_unchecked(
-            "0411494b501a98abd8262b0da1351e17899a0c4ef23dd2f96fec5ba847310b20",
-        );
-        let s_bytes = Felt::from_hex_unchecked(
-            "0405c3191ab3883ef2b763af35bc5f5d15b3b4e99461d70e84c654a351a7c81b",
-        );
+        let stark_key = Felt::from_hex_unchecked("03ee9bffffffffff26ffffffff60ffffffffffffffffffffffffffff004accff");
+        let msg_hash = Felt::from_hex_unchecked("0000000000000000000000000000000000000000000000000000000000000002");
+        let r_bytes = Felt::from_hex_unchecked("0411494b501a98abd8262b0da1351e17899a0c4ef23dd2f96fec5ba847310b20");
+        let s_bytes = Felt::from_hex_unchecked("0405c3191ab3883ef2b763af35bc5f5d15b3b4e99461d70e84c654a351a7c81b");
 
         match verify(&stark_key, &msg_hash, &r_bytes, &s_bytes) {
             Err(VerifyError::InvalidPublicKey) => {}
@@ -571,15 +474,9 @@ mod tests {
     #[test]
     #[cfg_attr(target_arch = "wasm32", wasm_bindgen_test::wasm_bindgen_test)]
     fn test_sign() {
-        let private_key = Felt::from_hex_unchecked(
-            "0000000000000000000000000000000000000000000000000000000000000001",
-        );
-        let message = Felt::from_hex_unchecked(
-            "0000000000000000000000000000000000000000000000000000000000000002",
-        );
-        let k = Felt::from_hex_unchecked(
-            "0000000000000000000000000000000000000000000000000000000000000003",
-        );
+        let private_key = Felt::from_hex_unchecked("0000000000000000000000000000000000000000000000000000000000000001");
+        let message = Felt::from_hex_unchecked("0000000000000000000000000000000000000000000000000000000000000002");
+        let k = Felt::from_hex_unchecked("0000000000000000000000000000000000000000000000000000000000000003");
 
         let signature = sign(&private_key, &message, &k).unwrap();
         let public_key = get_public_key(&private_key);
@@ -590,15 +487,9 @@ mod tests {
     #[test]
     #[cfg_attr(target_arch = "wasm32", wasm_bindgen_test::wasm_bindgen_test)]
     fn test_recover() {
-        let private_key = Felt::from_hex_unchecked(
-            "0000000000000000000000000000000000000000000000000000000000000001",
-        );
-        let message = Felt::from_hex_unchecked(
-            "0000000000000000000000000000000000000000000000000000000000000002",
-        );
-        let k = Felt::from_hex_unchecked(
-            "0000000000000000000000000000000000000000000000000000000000000003",
-        );
+        let private_key = Felt::from_hex_unchecked("0000000000000000000000000000000000000000000000000000000000000001");
+        let message = Felt::from_hex_unchecked("0000000000000000000000000000000000000000000000000000000000000002");
+        let k = Felt::from_hex_unchecked("0000000000000000000000000000000000000000000000000000000000000003");
 
         let signature = sign(&private_key, &message, &k).unwrap();
         let public_key = recover(&message, &signature.r, &signature.s, &signature.v).unwrap();
@@ -609,18 +500,10 @@ mod tests {
     #[test]
     #[cfg_attr(target_arch = "wasm32", wasm_bindgen_test::wasm_bindgen_test)]
     fn test_recover_invalid_r() {
-        let message = Felt::from_hex_unchecked(
-            "0000000000000000000000000000000000000000000000000000000000000002",
-        );
-        let r = Felt::from_hex_unchecked(
-            "03ee9bffffffffff26ffffffff60ffffffffffffffffffffffffffff004accff",
-        );
-        let s = Felt::from_hex_unchecked(
-            "0405c3191ab3883ef2b763af35bc5f5d15b3b4e99461d70e84c654a351a7c81b",
-        );
-        let v = Felt::from_hex_unchecked(
-            "0000000000000000000000000000000000000000000000000000000000000000",
-        );
+        let message = Felt::from_hex_unchecked("0000000000000000000000000000000000000000000000000000000000000002");
+        let r = Felt::from_hex_unchecked("03ee9bffffffffff26ffffffff60ffffffffffffffffffffffffffff004accff");
+        let s = Felt::from_hex_unchecked("0405c3191ab3883ef2b763af35bc5f5d15b3b4e99461d70e84c654a351a7c81b");
+        let v = Felt::from_hex_unchecked("0000000000000000000000000000000000000000000000000000000000000000");
 
         match recover(&message, &r, &s, &v) {
             Err(RecoverError::InvalidR) => {}

@@ -6,21 +6,19 @@ pub mod utils;
 
 use colored::*;
 use endpoints_functions::{
-    add_declare_transaction_v2, add_declare_transaction_v3, add_invoke_transaction_v1,
-    add_invoke_transaction_v3, block_number, call, chain_id, estimate_message_fee,
-    get_block_transaction_count, get_block_with_tx_hashes, get_block_with_txs, get_class,
-    get_class_at, get_class_hash_at, get_state_update, get_storage_at,
-    get_transaction_by_block_id_and_index, get_transaction_by_hash_deploy_acc,
-    get_transaction_by_hash_invoke, get_transaction_by_hash_non_existent_tx,
-    get_transaction_receipt, get_transaction_status_succeeded, invoke_contract_v1,
-    invoke_contract_v3,
+    add_declare_transaction_v2, add_declare_transaction_v3, add_invoke_transaction_v1, add_invoke_transaction_v3,
+    block_number, call, chain_id, estimate_message_fee, get_block_transaction_count, get_block_with_tx_hashes,
+    get_block_with_txs, get_class, get_class_at, get_class_hash_at, get_state_update, get_storage_at,
+    get_transaction_by_block_id_and_index, get_transaction_by_hash_deploy_acc, get_transaction_by_hash_invoke,
+    get_transaction_by_hash_non_existent_tx, get_transaction_receipt, get_transaction_status_succeeded,
+    invoke_contract_v1, invoke_contract_v3,
 };
 use errors::OpenRpcTestGenError;
 use starknet_types_core::felt::Felt;
 use starknet_types_rpc::{
     v0_7_1::{
-        AddInvokeTransactionResult, BlockWithTxHashes, BlockWithTxs, ContractClass,
-        DeployAccountTxnV3, InvokeTxnV1, StateUpdate, Txn, TxnStatus,
+        AddInvokeTransactionResult, BlockWithTxHashes, BlockWithTxs, ContractClass, DeployAccountTxnV3, InvokeTxnV1,
+        StateUpdate, Txn, TxnStatus,
     },
     FeeEstimate, InvokeTxnReceipt,
 };
@@ -164,21 +162,15 @@ pub trait RpcEndpoints {
         amount_per_test: Option<Felt>,
     ) -> impl std::future::Future<Output = Result<FeeEstimate<Felt>, OpenRpcTestGenError>>;
 
-    fn get_block_transaction_count(
-        &self,
-    ) -> impl std::future::Future<Output = Result<u64, OpenRpcTestGenError>>;
+    fn get_block_transaction_count(&self) -> impl std::future::Future<Output = Result<u64, OpenRpcTestGenError>>;
 
     fn get_block_with_tx_hashes(
         &self,
     ) -> impl std::future::Future<Output = Result<BlockWithTxHashes<Felt>, OpenRpcTestGenError>>;
 
-    fn get_block_with_txs(
-        &self,
-    ) -> impl std::future::Future<Output = Result<BlockWithTxs<Felt>, OpenRpcTestGenError>>;
+    fn get_block_with_txs(&self) -> impl std::future::Future<Output = Result<BlockWithTxs<Felt>, OpenRpcTestGenError>>;
 
-    fn get_state_update(
-        &self,
-    ) -> impl std::future::Future<Output = Result<StateUpdate<Felt>, OpenRpcTestGenError>>;
+    fn get_state_update(&self) -> impl std::future::Future<Output = Result<StateUpdate<Felt>, OpenRpcTestGenError>>;
 
     fn get_storage_at(
         &self,
@@ -542,9 +534,7 @@ impl RpcEndpoints for Rpc {
         get_block_transaction_count(self.url.clone()).await
     }
 
-    async fn get_block_with_tx_hashes(
-        &self,
-    ) -> Result<BlockWithTxHashes<Felt>, OpenRpcTestGenError> {
+    async fn get_block_with_tx_hashes(&self) -> Result<BlockWithTxHashes<Felt>, OpenRpcTestGenError> {
         get_block_with_tx_hashes(self.url.clone()).await
     }
 
@@ -851,18 +841,11 @@ pub async fn test_rpc_endpoints_v0_0_7(
         .await
     {
         Ok(_) => {
-            info!(
-                "{} {}",
-                "\n✓ Rpc add_declare_transaction V2 COMPATIBLE".green(),
-                "✓".green()
-            )
+            info!("{} {}", "\n✓ Rpc add_declare_transaction V2 COMPATIBLE".green(), "✓".green())
         }
-        Err(e) => error!(
-            "{} {} {}",
-            "✗ Rpc add_declare_transaction V2 INCOMPATIBLE:".red(),
-            e.to_string().red(),
-            "✗".red()
-        ),
+        Err(e) => {
+            error!("{} {} {}", "✗ Rpc add_declare_transaction V2 INCOMPATIBLE:".red(), e.to_string().red(), "✗".red())
+        }
     }
 
     match rpc
@@ -879,18 +862,11 @@ pub async fn test_rpc_endpoints_v0_0_7(
         .await
     {
         Ok(_) => {
-            info!(
-                "{} {}",
-                "\n✓ Rpc add_declare_transaction V3 COMPATIBLE".green(),
-                "✓".green()
-            )
+            info!("{} {}", "\n✓ Rpc add_declare_transaction V3 COMPATIBLE".green(), "✓".green())
         }
-        Err(e) => error!(
-            "{} {} {}",
-            "✗ Rpc add_declare_transaction V3 INCOMPATIBLE:".red(),
-            e.to_string().red(),
-            "✗".red()
-        ),
+        Err(e) => {
+            error!("{} {} {}", "✗ Rpc add_declare_transaction V3 INCOMPATIBLE:".red(), e.to_string().red(), "✗".red())
+        }
     }
 
     match rpc
@@ -907,18 +883,11 @@ pub async fn test_rpc_endpoints_v0_0_7(
         .await
     {
         Ok(_) => {
-            info!(
-                "{} {}",
-                "\n✓ Rpc add_invoke_transaction V1 COMPATIBLE".green(),
-                "✓".green()
-            )
+            info!("{} {}", "\n✓ Rpc add_invoke_transaction V1 COMPATIBLE".green(), "✓".green())
         }
-        Err(e) => error!(
-            "{} {} {}",
-            "✗ Rpc add_invoke_transaction V1 INCOMPATIBLE:".red(),
-            e.to_string().red(),
-            "✗".red()
-        ),
+        Err(e) => {
+            error!("{} {} {}", "✗ Rpc add_invoke_transaction V1 INCOMPATIBLE:".red(), e.to_string().red(), "✗".red())
+        }
     }
 
     match rpc
@@ -935,18 +904,11 @@ pub async fn test_rpc_endpoints_v0_0_7(
         .await
     {
         Ok(_) => {
-            info!(
-                "{} {}",
-                "\n✓ Rpc add_invoke_transaction V3 COMPATIBLE".green(),
-                "✓".green()
-            )
+            info!("{} {}", "\n✓ Rpc add_invoke_transaction V3 COMPATIBLE".green(), "✓".green())
         }
-        Err(e) => error!(
-            "{} {} {}",
-            "✗ Rpc add_invoke_transaction V3 INCOMPATIBLE:".red(),
-            e.to_string().red(),
-            "✗".red()
-        ),
+        Err(e) => {
+            error!("{} {} {}", "✗ Rpc add_invoke_transaction V3 INCOMPATIBLE:".red(), e.to_string().red(), "✗".red())
+        }
     }
 
     match rpc
@@ -963,18 +925,9 @@ pub async fn test_rpc_endpoints_v0_0_7(
         .await
     {
         Ok(_) => {
-            info!(
-                "{} {}",
-                "\n✓ Rpc invoke_contract V1 COMPATIBLE".green(),
-                "✓".green()
-            )
+            info!("{} {}", "\n✓ Rpc invoke_contract V1 COMPATIBLE".green(), "✓".green())
         }
-        Err(e) => error!(
-            "{} {} {}",
-            "✗ Rpc invoke_contract V1 INCOMPATIBLE:".red(),
-            e.to_string().red(),
-            "✗".red()
-        ),
+        Err(e) => error!("{} {} {}", "✗ Rpc invoke_contract V1 INCOMPATIBLE:".red(), e.to_string().red(), "✗".red()),
     }
 
     match rpc
@@ -991,46 +944,23 @@ pub async fn test_rpc_endpoints_v0_0_7(
         .await
     {
         Ok(_) => {
-            info!(
-                "{} {}",
-                "\n✓ Rpc invoke_contract V3 COMPATIBLE".green(),
-                "✓".green()
-            )
+            info!("{} {}", "\n✓ Rpc invoke_contract V3 COMPATIBLE".green(), "✓".green())
         }
-        Err(e) => error!(
-            "{} {} {}",
-            "✗ Rpc invoke_contract V3 INCOMPATIBLE:".red(),
-            e.to_string().red(),
-            "✗".red()
-        ),
+        Err(e) => error!("{} {} {}", "✗ Rpc invoke_contract V3 INCOMPATIBLE:".red(), e.to_string().red(), "✗".red()),
     }
 
     match rpc.block_number().await {
         Ok(_) => {
-            info!(
-                "{} {}",
-                "\n✓ Rpc block_number COMPATIBLE".green(),
-                "✓".green()
-            )
+            info!("{} {}", "\n✓ Rpc block_number COMPATIBLE".green(), "✓".green())
         }
-        Err(e) => error!(
-            "{} {} {}",
-            "✗ Rpc block_number INCOMPATIBLE:".red(),
-            e.to_string().red(),
-            "✗".red()
-        ),
+        Err(e) => error!("{} {} {}", "✗ Rpc block_number INCOMPATIBLE:".red(), e.to_string().red(), "✗".red()),
     }
 
     match rpc.chain_id().await {
         Ok(_) => {
             info!("{} {}", "\n✓ Rpc chain_id COMPATIBLE".green(), "✓".green())
         }
-        Err(e) => error!(
-            "{} {} {}",
-            "✗ Rpc chain_id INCOMPATIBLE:".red(),
-            e.to_string().red(),
-            "✗".red()
-        ),
+        Err(e) => error!("{} {} {}", "✗ Rpc chain_id INCOMPATIBLE:".red(), e.to_string().red(), "✗".red()),
     }
 
     match rpc
@@ -1049,12 +979,7 @@ pub async fn test_rpc_endpoints_v0_0_7(
         Ok(_) => {
             info!("{} {}", "\n✓ Rpc call COMPATIBLE".green(), "✓".green())
         }
-        Err(e) => error!(
-            "{} {} {}",
-            "✗ Rpc call INCOMPATIBLE:".red(),
-            e.to_string().red(),
-            "✗".red()
-        ),
+        Err(e) => error!("{} {} {}", "✗ Rpc call INCOMPATIBLE:".red(), e.to_string().red(), "✗".red()),
     }
 
     match rpc
@@ -1071,96 +996,46 @@ pub async fn test_rpc_endpoints_v0_0_7(
         .await
     {
         Ok(_) => {
-            info!(
-                "{} {}",
-                "\n✓ Rpc estimate_message_fee COMPATIBLE".green(),
-                "✓".green()
-            )
+            info!("{} {}", "\n✓ Rpc estimate_message_fee COMPATIBLE".green(), "✓".green())
         }
-        Err(e) => error!(
-            "{} {} {}",
-            "✗ Rpc estimate_message_fee INCOMPATIBLE:".red(),
-            e.to_string().red(),
-            "✗".red()
-        ),
+        Err(e) => error!("{} {} {}", "✗ Rpc estimate_message_fee INCOMPATIBLE:".red(), e.to_string().red(), "✗".red()),
     }
     match rpc.get_block_transaction_count().await {
         Ok(_) => {
-            info!(
-                "{} {}",
-                "\n✓ Rpc get_block_transaction_count COMPATIBLE".green(),
-                "✓".green()
-            )
+            info!("{} {}", "\n✓ Rpc get_block_transaction_count COMPATIBLE".green(), "✓".green())
         }
-        Err(e) => error!(
-            "{} {} {}",
-            "✗ Rpc get_block_transaction_count INCOMPATIBLE:".red(),
-            e.to_string().red(),
-            "✗".red()
-        ),
+        Err(e) => {
+            error!("{} {} {}", "✗ Rpc get_block_transaction_count INCOMPATIBLE:".red(), e.to_string().red(), "✗".red())
+        }
     }
     match rpc.get_block_with_tx_hashes().await {
         Ok(_) => {
-            info!(
-                "{} {}",
-                "\n✓ Rpc get_block_with_tx_hashes COMPATIBLE".green(),
-                "✓".green()
-            )
+            info!("{} {}", "\n✓ Rpc get_block_with_tx_hashes COMPATIBLE".green(), "✓".green())
         }
-        Err(e) => error!(
-            "{} {} {}",
-            "✗ Rpc get_block_with_tx_hashes INCOMPATIBLE:".red(),
-            e.to_string().red(),
-            "✗".red()
-        ),
+        Err(e) => {
+            error!("{} {} {}", "✗ Rpc get_block_with_tx_hashes INCOMPATIBLE:".red(), e.to_string().red(), "✗".red())
+        }
     }
 
     match rpc.get_block_with_txs().await {
         Ok(_) => {
-            info!(
-                "{} {}",
-                "\n✓ Rpc get_block_with_txs COMPATIBLE".green(),
-                "✓".green()
-            )
+            info!("{} {}", "\n✓ Rpc get_block_with_txs COMPATIBLE".green(), "✓".green())
         }
-        Err(e) => error!(
-            "{} {} {}",
-            "✗ Rpc get_block_with_txs INCOMPATIBLE:".red(),
-            e.to_string().red(),
-            "✗".red()
-        ),
+        Err(e) => error!("{} {} {}", "✗ Rpc get_block_with_txs INCOMPATIBLE:".red(), e.to_string().red(), "✗".red()),
     }
 
     match rpc.get_state_update().await {
         Ok(_) => {
-            info!(
-                "{} {}",
-                "\n✓ Rpc get_state_update COMPATIBLE".green(),
-                "✓".green()
-            )
+            info!("{} {}", "\n✓ Rpc get_state_update COMPATIBLE".green(), "✓".green())
         }
-        Err(e) => error!(
-            "{} {} {}",
-            "✗ Rpc get_state_update INCOMPATIBLE:".red(),
-            e.to_string().red(),
-            "✗".red()
-        ),
+        Err(e) => error!("{} {} {}", "✗ Rpc get_state_update INCOMPATIBLE:".red(), e.to_string().red(), "✗".red()),
     }
 
     match rpc.get_storage_at(erc20_eth_contract_address).await {
         Ok(_) => {
-            info!(
-                "{} {}",
-                "\n✓ Rpc get_storage_at COMPATIBLE".green(),
-                "✓".green()
-            )
+            info!("{} {}", "\n✓ Rpc get_storage_at COMPATIBLE".green(), "✓".green())
         }
-        Err(e) => error!(
-            "{} {} {}",
-            "✗ Rpc get_storage_at INCOMPATIBLE:".red(),
-            e.to_string().red(),
-            "✗".red()
-        ),
+        Err(e) => error!("{} {} {}", "✗ Rpc get_storage_at INCOMPATIBLE:".red(), e.to_string().red(), "✗".red()),
     }
 
     match rpc
@@ -1177,11 +1052,7 @@ pub async fn test_rpc_endpoints_v0_0_7(
         .await
     {
         Ok(_) => {
-            info!(
-                "{} {}",
-                "\n✓ Rpc get_transaction_status_succeeded COMPATIBLE".green(),
-                "✓".green()
-            )
+            info!("{} {}", "\n✓ Rpc get_transaction_status_succeeded COMPATIBLE".green(), "✓".green())
         }
         Err(e) => error!(
             "{} {} {}",
@@ -1205,11 +1076,7 @@ pub async fn test_rpc_endpoints_v0_0_7(
         .await
     {
         Ok(_) => {
-            info!(
-                "{} {}",
-                "\n✓ Rpc get_transaction_by_hash_invoke COMPATIBLE".green(),
-                "✓".green()
-            )
+            info!("{} {}", "\n✓ Rpc get_transaction_by_hash_invoke COMPATIBLE".green(), "✓".green())
         }
         Err(e) => error!(
             "{} {} {}",
@@ -1231,11 +1098,7 @@ pub async fn test_rpc_endpoints_v0_0_7(
         .await
     {
         Ok(_) => {
-            info!(
-                "{} {}",
-                "\n✓ Rpc get_transaction_by_hash_deploy_acc COMPATIBLE".green(),
-                "✓".green()
-            )
+            info!("{} {}", "\n✓ Rpc get_transaction_by_hash_deploy_acc COMPATIBLE".green(), "✓".green())
         }
         Err(e) => error!(
             "{} {} {}",
@@ -1257,11 +1120,7 @@ pub async fn test_rpc_endpoints_v0_0_7(
         .await
     {
         Ok(_) => {
-            info!(
-                "{} {}",
-                "\n✓ Rpc get_transaction_by_block_id_and_index COMPATIBLE".green(),
-                "✓".green()
-            )
+            info!("{} {}", "\n✓ Rpc get_transaction_by_block_id_and_index COMPATIBLE".green(), "✓".green())
         }
         Err(e) => error!(
             "{} {} {}",
@@ -1273,11 +1132,7 @@ pub async fn test_rpc_endpoints_v0_0_7(
 
     match rpc.get_transaction_by_hash_non_existent_tx().await {
         Ok(_) => {
-            info!(
-                "{} {}",
-                "\n✓ Rpc get_transaction_by_hash_non_existent_tx COMPATIBLE".green(),
-                "✓".green()
-            )
+            info!("{} {}", "\n✓ Rpc get_transaction_by_hash_non_existent_tx COMPATIBLE".green(), "✓".green())
         }
         Err(e) => error!(
             "{} {} {}",
@@ -1301,18 +1156,11 @@ pub async fn test_rpc_endpoints_v0_0_7(
         .await
     {
         Ok(_) => {
-            info!(
-                "{} {}",
-                "\n✓ Rpc get_transaction_receipt COMPATIBLE".green(),
-                "✓".green()
-            )
+            info!("{} {}", "\n✓ Rpc get_transaction_receipt COMPATIBLE".green(), "✓".green())
         }
-        Err(e) => error!(
-            "{} {} {}",
-            "✗ Rpc get_transaction_receipt INCOMPATIBLE:".red(),
-            e.to_string().red(),
-            "✗".red()
-        ),
+        Err(e) => {
+            error!("{} {} {}", "✗ Rpc get_transaction_receipt INCOMPATIBLE:".red(), e.to_string().red(), "✗".red())
+        }
     }
 
     // match rpc
@@ -1360,12 +1208,7 @@ pub async fn test_rpc_endpoints_v0_0_7(
         Ok(_) => {
             info!("{} {}", "\n✓ Rpc get_class COMPATIBLE".green(), "✓".green())
         }
-        Err(e) => error!(
-            "{} {} {}",
-            "✗ Rpc get_class INCOMPATIBLE:".red(),
-            e.to_string().red(),
-            "✗".red()
-        ),
+        Err(e) => error!("{} {} {}", "✗ Rpc get_class INCOMPATIBLE:".red(), e.to_string().red(), "✗".red()),
     }
 
     match rpc
@@ -1382,18 +1225,9 @@ pub async fn test_rpc_endpoints_v0_0_7(
         .await
     {
         Ok(_) => {
-            info!(
-                "{} {}",
-                "\n✓ Rpc get_class_hash_at COMPATIBLE".green(),
-                "✓".green()
-            )
+            info!("{} {}", "\n✓ Rpc get_class_hash_at COMPATIBLE".green(), "✓".green())
         }
-        Err(e) => error!(
-            "{} {} {}",
-            "✗ Rpc get_class_hash_at INCOMPATIBLE:".red(),
-            e,
-            "✗".red()
-        ),
+        Err(e) => error!("{} {} {}", "✗ Rpc get_class_hash_at INCOMPATIBLE:".red(), e, "✗".red()),
     }
 
     match rpc
@@ -1410,17 +1244,9 @@ pub async fn test_rpc_endpoints_v0_0_7(
         .await
     {
         Ok(_) => {
-            info!(
-                "{} {}",
-                "\n✓ Rpc get_class_at COMPATIBLE".green(),
-                "✓".green()
-            )
+            info!("{} {}", "\n✓ Rpc get_class_at COMPATIBLE".green(), "✓".green())
         }
-        Err(e) => error!(
-            "{} {}",
-            "✗ Rpc get_class_at INCOMPATIBLE:".red(),
-            e.to_string().red(),
-        ),
+        Err(e) => error!("{} {}", "✗ Rpc get_class_at INCOMPATIBLE:".red(), e.to_string().red(),),
     }
 
     info!("{}", "🏁 Testing Devnet V7 endpoints -- END 🏁".yellow());

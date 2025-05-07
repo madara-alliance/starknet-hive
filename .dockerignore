@@ -1,9 +1,6 @@
 # will have compiled files and executables
 **/target/
 
-# Scarb
-**/Scarb.lock
-
 # vscode
 **/.vscode/
 
@@ -12,7 +9,6 @@
 
 # Docker
 **/Dockerfile
-
 
 # Ignores
 **/.gitignore

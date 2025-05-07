@@ -40,11 +40,7 @@ impl RunnableTrait for TestCase {
         let mut nonce = account.get_nonce().await?;
 
         for _ in 0..BLOCK_1_TX_COUNT {
-            let res = account
-                .execute_v1(vec![increase_balance_call.clone()])
-                .nonce(nonce)
-                .send()
-                .await?;
+            let res = account.execute_v1(vec![increase_balance_call.clone()]).nonce(nonce).send().await?;
             nonce += Felt::ONE;
             wait_for_sent_transaction_katana(res.transaction_hash, &account).await?;
         }
@@ -53,11 +49,7 @@ impl RunnableTrait for TestCase {
         dev_client.generate_block().await?;
 
         for _ in 0..PENDING_BLOCK_TX_COUNT {
-            let res = account
-                .execute_v1(vec![increase_balance_call.clone()])
-                .nonce(nonce)
-                .send()
-                .await?;
+            let res = account.execute_v1(vec![increase_balance_call.clone()]).nonce(nonce).send().await?;
             nonce += Felt::ONE;
             wait_for_sent_transaction_katana(res.transaction_hash, &account).await?;
         }
@@ -75,10 +67,7 @@ impl RunnableTrait for TestCase {
             continuation_token: None,
         };
 
-        let EventsChunk {
-            events,
-            continuation_token,
-        } = provider.get_events(filter.clone()).await?;
+        let EventsChunk { events, continuation_token } = provider.get_events(filter.clone()).await?;
 
         assert_eq_result!(events.len(), chunk_size);
 
@@ -93,10 +82,7 @@ impl RunnableTrait for TestCase {
         filter.continuation_token = continuation_token;
         filter.chunk_size = 3;
 
-        let EventsChunk {
-            events,
-            continuation_token,
-        } = provider.get_events(filter.clone()).await?;
+        let EventsChunk { events, continuation_token } = provider.get_events(filter.clone()).await?;
 
         assert_eq_result!(events.len(), 3);
 
@@ -110,10 +96,7 @@ impl RunnableTrait for TestCase {
         // we split the pending events into two chunks to cover different cases.
         filter.continuation_token = continuation_token;
 
-        let EventsChunk {
-            events,
-            continuation_token,
-        } = provider.get_events(filter.clone()).await?;
+        let EventsChunk { events, continuation_token } = provider.get_events(filter.clone()).await?;
 
         let chunk_size = 3;
 
@@ -130,10 +113,7 @@ impl RunnableTrait for TestCase {
 
         filter.continuation_token = continuation_token;
 
-        let EventsChunk {
-            events,
-            continuation_token: new_token,
-        } = provider.get_events(filter.clone()).await?;
+        let EventsChunk { events, continuation_token: new_token } = provider.get_events(filter.clone()).await?;
 
         assert_eq_result!(events.len(), 0);
         assert_eq!(new_token, filter.continuation_token);

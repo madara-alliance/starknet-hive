@@ -1,0 +1,37 @@
+# yaml-language-server: $schema=https://raw.githubusercontent.com/SchemaStore/schemastore/refs/heads/master/src/schemas/json/github-workflow.json
+name: Task - Lint Commit Message
+
+on:
+  workflow_dispatch:
+  workflow_call:
+    inputs:
+      node-version:
+        description: Node version to use for testing
+        required: true
+        type: string
+      commit:
+        description: Commit message to lint
+        required: true
+        type: string
+
+jobs:
+  lint-commit:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: ${{ inputs.node-version }}
+
+      - name: Install commitlint
+        run: |
+          npm install conventional-changelog-conventionalcommits
+          npm install commitlint@latest
+          npm install @commitlint/config-conventional
+
+      - name: Run commitlint
+        run: |
+          echo "${{ inputs.commit }}" | npx commitlint --verbose

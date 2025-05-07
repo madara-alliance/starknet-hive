@@ -12,8 +12,8 @@ use crate::{
     RunnableTrait,
 };
 
-const BLOB_GAS_PRICE: Felt = Felt::from_hex_unchecked("0x28");
-const GAS_PRICE: Felt = Felt::from_hex_unchecked("0x1e");
+const BLOB_GAS_PRICE: Felt = Felt::from_hex_unchecked("0x1");
+const GAS_PRICE: Felt = Felt::from_hex_unchecked("0x1");
 
 #[derive(Clone, Debug)]
 pub struct TestCase {}
@@ -23,12 +23,8 @@ impl RunnableTrait for TestCase {
 
     async fn run(test_input: &Self::Input) -> Result<Self, OpenRpcTestGenError> {
         let (flattened_sierra_class, compiled_class_hash) = get_compiled_contract(
-            PathBuf::from_str(
-                "target/dev/contracts_contracts_smpl14_HelloStarknet.contract_class.json",
-            )?,
-            PathBuf::from_str(
-                "target/dev/contracts_contracts_smpl14_HelloStarknet.compiled_contract_class.json",
-            )?,
+            PathBuf::from_str("target/dev/contracts_contracts_smpl14_HelloStarknet.contract_class.json")?,
+            PathBuf::from_str("target/dev/contracts_contracts_smpl14_HelloStarknet.compiled_contract_class.json")?,
         )
         .await?;
 
@@ -40,19 +36,12 @@ impl RunnableTrait for TestCase {
 
         assert_result!(
             estimate_fee.unit == PriceUnit::Wei,
-            format!(
-                "Estimate fee unit expected: {:?}, actual: {:?}",
-                PriceUnit::Wei,
-                estimate_fee.unit
-            )
+            format!("Estimate fee unit expected: {:?}, actual: {:?}", PriceUnit::Wei, estimate_fee.unit)
         );
 
         assert_result!(
             estimate_fee.gas_price == GAS_PRICE,
-            format!(
-                "Estimate fee gas price expected: {:?}, actual: {:?}",
-                GAS_PRICE, estimate_fee.gas_price
-            )
+            format!("Estimate fee gas price expected: {:?}, actual: {:?}", GAS_PRICE, estimate_fee.gas_price)
         );
 
         assert_result!(
@@ -71,10 +60,7 @@ impl RunnableTrait for TestCase {
 
         assert_result!(
             overall_fee == estimate_fee.overall_fee,
-            format!(
-                "Estimate fee overall fee expected: {:?}, actual: {:?}",
-                overall_fee, estimate_fee.overall_fee
-            )
+            format!("Estimate fee overall fee expected: {:?}, actual: {:?}", overall_fee, estimate_fee.overall_fee)
         );
 
         Ok(Self {})

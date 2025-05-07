@@ -15,9 +15,7 @@ use blockifier::{abi::sierra_types::next_storage_key, state::state_api::StateRea
 use serde::{Deserialize, Serialize};
 use starknet_api::core::PatriciaKey;
 use starknet_api::hash::StarkHash;
-use starknet_api::{
-    core::calculate_contract_address, patricia_key, stark_felt, transaction::ContractAddressSalt,
-};
+use starknet_api::{core::calculate_contract_address, patricia_key, stark_felt, transaction::ContractAddressSalt};
 use starknet_api::{hash::StarkFelt, transaction::Calldata};
 use starknet_devnet_types::{
     contract_address::ContractAddress,
@@ -100,9 +98,7 @@ impl Account {
         Ok(Self {
             public_key: Key::from_prefixed_hex_str(CHARGEABLE_ACCOUNT_PUBLIC_KEY)?,
             private_key: Key::from_prefixed_hex_str(CHARGEABLE_ACCOUNT_PRIVATE_KEY)?,
-            account_address: ContractAddress::new(Felt::from_prefixed_hex_str(
-                CHARGEABLE_ACCOUNT_ADDRESS,
-            )?)?,
+            account_address: ContractAddress::new(Felt::from_prefixed_hex_str(CHARGEABLE_ACCOUNT_ADDRESS)?)?,
             initial_balance,
             class_hash,
             contract_class: account_contract_class.into(),
@@ -197,24 +193,15 @@ impl Deployed for UserAccount {
 
 impl Accounted for Account {
     fn set_initial_balance(&self, state: &mut DictState) -> DevnetResult<()> {
-        let storage_var_address_low =
-            get_storage_var_address("ERC20_balances", &[Felt::from(self.account_address)])?;
+        let storage_var_address_low = get_storage_var_address("ERC20_balances", &[Felt::from(self.account_address)])?;
         let storage_var_address_high = next_storage_key(&storage_var_address_low.try_into()?)?;
 
         let (high, low) = split_biguint(self.initial_balance.clone())?;
 
         for fee_token_address in [self.eth_fee_token_address, self.strk_fee_token_address] {
-            state.set_storage_at(
-                fee_token_address.try_into()?,
-                storage_var_address_low.try_into()?,
-                low.into(),
-            )?;
+            state.set_storage_at(fee_token_address.try_into()?, storage_var_address_low.try_into()?, low.into())?;
 
-            state.set_storage_at(
-                fee_token_address.try_into()?,
-                storage_var_address_high,
-                high.into(),
-            )?;
+            state.set_storage_at(fee_token_address.try_into()?, storage_var_address_high, high.into())?;
         }
 
         Ok(())
@@ -225,10 +212,8 @@ impl Accounted for Account {
             FeeToken::ETH => self.eth_fee_token_address,
             FeeToken::STRK => self.strk_fee_token_address,
         };
-        let (low, high) = state.get_fee_token_balance(
-            self.account_address.try_into()?,
-            fee_token_address.try_into()?,
-        )?;
+        let (low, high) =
+            state.get_fee_token_balance(self.account_address.try_into()?, fee_token_address.try_into()?)?;
         let low: BigUint = Felt::from(low).into();
         let high: BigUint = Felt::from(high).into();
         Ok(low + (high << 128))
@@ -237,24 +222,15 @@ impl Accounted for Account {
 
 impl Accounted for UserAccount {
     fn set_initial_balance(&self, state: &mut DictState) -> DevnetResult<()> {
-        let storage_var_address_low =
-            get_storage_var_address("ERC20_balances", &[Felt::from(self.account_address)])?;
+        let storage_var_address_low = get_storage_var_address("ERC20_balances", &[Felt::from(self.account_address)])?;
         let storage_var_address_high = next_storage_key(&storage_var_address_low.try_into()?)?;
 
         let (high, low) = split_biguint(self.initial_balance.clone())?;
 
         for fee_token_address in [self.eth_fee_token_address, self.strk_fee_token_address] {
-            state.set_storage_at(
-                fee_token_address.try_into()?,
-                storage_var_address_low.try_into()?,
-                low.into(),
-            )?;
+            state.set_storage_at(fee_token_address.try_into()?, storage_var_address_low.try_into()?, low.into())?;
 
-            state.set_storage_at(
-                fee_token_address.try_into()?,
-                storage_var_address_high,
-                high.into(),
-            )?;
+            state.set_storage_at(fee_token_address.try_into()?, storage_var_address_high, high.into())?;
         }
 
         Ok(())
@@ -265,10 +241,8 @@ impl Accounted for UserAccount {
             FeeToken::ETH => self.eth_fee_token_address,
             FeeToken::STRK => self.strk_fee_token_address,
         };
-        let (low, high) = state.get_fee_token_balance(
-            self.account_address.try_into()?,
-            fee_token_address.try_into()?,
-        )?;
+        let (low, high) =
+            state.get_fee_token_balance(self.account_address.try_into()?, fee_token_address.try_into()?)?;
         let low: BigUint = Felt::from(low).into();
         let high: BigUint = Felt::from(high).into();
         Ok(low + (high << 128))

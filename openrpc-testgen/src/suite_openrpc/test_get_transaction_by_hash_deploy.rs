@@ -8,8 +8,7 @@ use crate::utils::v7::endpoints::utils::wait_for_sent_transaction;
 use crate::{assert_result, RandomizableAccountsTrait};
 use crate::{
     utils::v7::{
-        accounts::account::ConnectedAccount, endpoints::errors::OpenRpcTestGenError,
-        providers::provider::Provider,
+        accounts::account::ConnectedAccount, endpoints::errors::OpenRpcTestGenError, providers::provider::Provider,
     },
     RunnableTrait,
 };
@@ -30,20 +29,13 @@ impl RunnableTrait for TestCase {
 
     async fn run(test_input: &Self::Input) -> Result<Self, OpenRpcTestGenError> {
         let (flattened_sierra_class, compiled_class_hash) = get_compiled_contract(
-            PathBuf::from_str(
-                "target/dev/contracts_contracts_smpl18_HelloStarknet.contract_class.json",
-            )?,
-            PathBuf::from_str(
-                "target/dev/contracts_contracts_smpl18_HelloStarknet.compiled_contract_class.json",
-            )?,
+            PathBuf::from_str("target/dev/contracts_contracts_smpl18_HelloStarknet.contract_class.json")?,
+            PathBuf::from_str("target/dev/contracts_contracts_smpl18_HelloStarknet.compiled_contract_class.json")?,
         )
         .await?;
 
-        let declaration_result = test_input
-            .random_paymaster_account
-            .declare_v3(flattened_sierra_class, compiled_class_hash)
-            .send()
-            .await?;
+        let declaration_result =
+            test_input.random_paymaster_account.declare_v3(flattened_sierra_class, compiled_class_hash).send().await?;
 
         wait_for_sent_transaction(
             declaration_result.transaction_hash,
@@ -73,20 +65,13 @@ impl RunnableTrait for TestCase {
         let (valid_signature, deploy_hash) = verify_invoke_v3_signature(
             &deploy_request,
             None,
-            deployer_account
-                .provider()
-                .chain_id()
-                .await?
-                .to_hex_string()
-                .as_str(),
+            deployer_account.provider().chain_id().await?.to_hex_string().as_str(),
         )?;
 
         let deploy_result = test_input
             .random_paymaster_account
             .provider()
-            .add_invoke_transaction(BroadcastedTxn::Invoke(BroadcastedInvokeTxn::V3(
-                deploy_request,
-            )))
+            .add_invoke_transaction(BroadcastedTxn::Invoke(BroadcastedInvokeTxn::V3(deploy_request)))
             .await?;
 
         wait_for_sent_transaction(
@@ -97,10 +82,7 @@ impl RunnableTrait for TestCase {
 
         assert_result!(
             deploy_result.transaction_hash == deploy_hash,
-            format!(
-                "Exptected transaction hash to be {:?}, got {:?}",
-                deploy_hash, deploy_result.transaction_hash
-            )
+            format!("Exptected transaction hash to be {:?}, got {:?}", deploy_hash, deploy_result.transaction_hash)
         );
 
         let txn = test_input
@@ -119,59 +101,48 @@ impl RunnableTrait for TestCase {
 
         assert_result!(
             txn.account_deployment_data.is_empty(),
-            format!(
-                "Expected empty account deployment data, got {:#?}",
-                txn.account_deployment_data
-            )
+            format!("Expected empty account deployment data, got {:#?}", txn.account_deployment_data)
         );
 
-        assert_result!(
-            txn.calldata.len() == 8,
-            format!("Expected calldata len 8, got {:#?} ", txn.calldata.len())
-        );
+        assert_result!(txn.calldata.len() == 8, format!("Expected calldata len 8, got {:#?} ", txn.calldata.len()));
 
-        let calldata_first = *txn.calldata.first().ok_or_else(|| {
-            OpenRpcTestGenError::Other("Missing first calldata element".to_string())
-        })?;
+        let calldata_first = *txn
+            .calldata
+            .first()
+            .ok_or_else(|| OpenRpcTestGenError::Other("Missing first calldata element".to_string()))?;
 
         let calls_amount = Felt::ONE;
         assert_result!(
             calldata_first == calls_amount,
-            format!(
-                "Expected first calldata element to be {:#?}, got {:#?} ",
-                calls_amount, calldata_first
-            )
+            format!("Expected first calldata element to be {:#?}, got {:#?} ", calls_amount, calldata_first)
         );
 
-        let calldata_second = *txn.calldata.get(1).ok_or_else(|| {
-            OpenRpcTestGenError::Other("Missing last calldata element".to_string())
-        })?;
+        let calldata_second = *txn
+            .calldata
+            .get(1)
+            .ok_or_else(|| OpenRpcTestGenError::Other("Missing last calldata element".to_string()))?;
 
         assert_result!(
             calldata_second == UDC_ADDRESS,
-            format!(
-                "Expected second calldata element to be {:#?}, got {:#?}",
-                UDC_ADDRESS, calldata_second
-            )
+            format!("Expected second calldata element to be {:#?}, got {:#?}", UDC_ADDRESS, calldata_second)
         );
 
-        let calldata_third = *txn.calldata.get(2).ok_or_else(|| {
-            OpenRpcTestGenError::Other("Missing last calldata element".to_string())
-        })?;
+        let calldata_third = *txn
+            .calldata
+            .get(2)
+            .ok_or_else(|| OpenRpcTestGenError::Other("Missing last calldata element".to_string()))?;
         let keccak_deploy_contract = starknet_keccak("deployContract".as_bytes());
 
         assert_result!(
             calldata_third == keccak_deploy_contract,
-            format!(
-                "Expected third calldata element to be {:#?}, got {:#?}",
-                keccak_deploy_contract, calldata_third
-            )
+            format!("Expected third calldata element to be {:#?}, got {:#?}", keccak_deploy_contract, calldata_third)
         );
 
         // Calldata call length
-        let calldata_fourth = *txn.calldata.get(3).ok_or_else(|| {
-            OpenRpcTestGenError::Other("Missing last calldata element".to_string())
-        })?;
+        let calldata_fourth = *txn
+            .calldata
+            .get(3)
+            .ok_or_else(|| OpenRpcTestGenError::Other("Missing last calldata element".to_string()))?;
         let expected_calldata_call_length = Felt::from_hex("0x4")?;
         assert_result!(
             calldata_fourth == expected_calldata_call_length,
@@ -181,9 +152,10 @@ impl RunnableTrait for TestCase {
             )
         );
 
-        let calldata_fifth = *txn.calldata.get(4).ok_or_else(|| {
-            OpenRpcTestGenError::Other("Missing last calldata element".to_string())
-        })?;
+        let calldata_fifth = *txn
+            .calldata
+            .get(4)
+            .ok_or_else(|| OpenRpcTestGenError::Other("Missing last calldata element".to_string()))?;
 
         assert_result!(
             calldata_fifth == declaration_result.class_hash,
@@ -193,21 +165,20 @@ impl RunnableTrait for TestCase {
             )
         );
 
-        let calldata_sixth = *txn.calldata.get(5).ok_or_else(|| {
-            OpenRpcTestGenError::Other("Missing last calldata element".to_string())
-        })?;
+        let calldata_sixth = *txn
+            .calldata
+            .get(5)
+            .ok_or_else(|| OpenRpcTestGenError::Other("Missing last calldata element".to_string()))?;
 
         assert_result!(
             calldata_sixth == salt,
-            format!(
-                "Expected sixth calldata element to be {:#?}, got {:#?}",
-                salt, calldata_sixth
-            )
+            format!("Expected sixth calldata element to be {:#?}, got {:#?}", salt, calldata_sixth)
         );
 
-        let calldata_seventh = *txn.calldata.get(6).ok_or_else(|| {
-            OpenRpcTestGenError::Other("Missing last calldata element".to_string())
-        })?;
+        let calldata_seventh = *txn
+            .calldata
+            .get(6)
+            .ok_or_else(|| OpenRpcTestGenError::Other("Missing last calldata element".to_string()))?;
 
         let unique_hex = match unique {
             true => Felt::ONE,
@@ -222,11 +193,11 @@ impl RunnableTrait for TestCase {
             )
         );
 
-        let calldata_eight = *txn.calldata.get(7).ok_or_else(|| {
-            OpenRpcTestGenError::Other("Missing last calldata element".to_string())
-        })?;
-        let contructor_calldata_len_hex =
-            Felt::from_dec_str(&constructor_calldata.len().to_string())?;
+        let calldata_eight = *txn
+            .calldata
+            .get(7)
+            .ok_or_else(|| OpenRpcTestGenError::Other("Missing last calldata element".to_string()))?;
+        let contructor_calldata_len_hex = Felt::from_dec_str(&constructor_calldata.len().to_string())?;
         assert_result!(
             calldata_eight == contructor_calldata_len_hex,
             format!(
@@ -244,25 +215,16 @@ impl RunnableTrait for TestCase {
             )
         );
 
-        assert_result!(
-            valid_signature,
-            format!("Invalid signature, checked by t9n.",)
-        );
+        assert_result!(valid_signature, format!("Invalid signature, checked by t9n.",));
 
         assert_result!(
             txn.signature == signature,
-            format!(
-                "Expected signature: {:?}, got {:?}",
-                signature, txn.signature
-            )
+            format!("Expected signature: {:?}, got {:?}", signature, txn.signature)
         );
 
         assert_result!(
             txn.nonce == sender_nonce,
-            format!(
-                "Expected nonce to be {:#?}, got {:#?}",
-                sender_nonce, txn.nonce
-            )
+            format!("Expected nonce to be {:#?}, got {:#?}", sender_nonce, txn.nonce)
         );
 
         let expected_nonce_damode = DaMode::L1;
@@ -276,13 +238,10 @@ impl RunnableTrait for TestCase {
 
         assert_result!(
             txn.paymaster_data.is_empty(),
-            format!(
-                "Expected paymaster data to be empty, got {:#?}",
-                txn.paymaster_data
-            )
+            format!("Expected paymaster data to be empty, got {:#?}", txn.paymaster_data)
         );
 
-        let l1_gas_max_amount = String::from("0x2c2");
+        let l1_gas_max_amount = String::from("0x180");
         assert_result!(
             txn.resource_bounds.l1_gas.max_amount == l1_gas_max_amount,
             format!(
@@ -291,7 +250,7 @@ impl RunnableTrait for TestCase {
             )
         );
 
-        let l1_gas_max_price_per_unit = String::from("0xf");
+        let l1_gas_max_price_per_unit = String::from("0x1");
         assert_result!(
             txn.resource_bounds.l1_gas.max_price_per_unit == l1_gas_max_price_per_unit,
             format!(
@@ -321,17 +280,11 @@ impl RunnableTrait for TestCase {
         let sender_address = deployer_account.address();
         assert_result!(
             txn.sender_address == sender_address,
-            format!(
-                "Expected sender address to be {:#?}, got {:#?}",
-                sender_address, txn.sender_address
-            )
+            format!("Expected sender address to be {:#?}, got {:#?}", sender_address, txn.sender_address)
         );
 
         let expected_tip = Felt::from_hex("0x0")?;
-        assert_result!(
-            txn.tip == expected_tip,
-            format!("Expected tip to be {:#?}, got {:#?}", expected_tip, txn.tip)
-        );
+        assert_result!(txn.tip == expected_tip, format!("Expected tip to be {:#?}, got {:#?}", expected_tip, txn.tip));
 
         Ok(Self {})
     }

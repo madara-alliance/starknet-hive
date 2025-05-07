@@ -2,9 +2,7 @@ use std::{path::PathBuf, str::FromStr};
 
 use rand::{rngs::StdRng, RngCore, SeedableRng};
 use starknet_types_core::felt::Felt;
-use starknet_types_rpc::{
-    BlockId, BlockTag, ClassAndTxnHash, DeclareTxn, EventFilterWithPageRequest, Txn, TxnReceipt,
-};
+use starknet_types_rpc::{BlockId, BlockTag, ClassAndTxnHash, DeclareTxn, EventFilterWithPageRequest, Txn, TxnReceipt};
 use tracing::info;
 use url::Url;
 
@@ -24,8 +22,7 @@ use crate::{
             contract::factory::ContractFactory,
             endpoints::{
                 declare_contract::{
-                    extract_class_hash_from_error, get_compiled_contract,
-                    parse_class_hash_from_error, RunnerError,
+                    extract_class_hash_from_error, get_compiled_contract, parse_class_hash_from_error, RunnerError,
                 },
                 errors::{CallError, OpenRpcTestGenError},
                 utils::{get_selector_from_name, wait_for_sent_transaction},
@@ -77,17 +74,14 @@ impl SetupableTrait for TestSuiteKatana {
         let (executable_account_flattened_sierra_class, executable_account_compiled_class_hash) =
             get_compiled_contract(
                 PathBuf::from_str("target/dev/contracts_ExecutableAccount.contract_class.json")?,
-                PathBuf::from_str(
-                    "target/dev/contracts_ExecutableAccount.compiled_contract_class.json",
-                )?,
+                PathBuf::from_str("target/dev/contracts_ExecutableAccount.compiled_contract_class.json")?,
             )
             .await?;
 
         let provider = JsonRpcClient::new(HttpTransport::new(setup_input.urls[0].clone()));
         let chain_id = get_chain_id(&provider).await?;
 
-        let paymaster_private_key =
-            SigningKey::from_secret_scalar(setup_input.paymaster_private_key);
+        let paymaster_private_key = SigningKey::from_secret_scalar(setup_input.paymaster_private_key);
 
         let mut paymaster_account = SingleOwnerAccount::new(
             provider.clone(),
@@ -100,10 +94,7 @@ impl SetupableTrait for TestSuiteKatana {
         paymaster_account.set_block_id(BlockId::Tag(BlockTag::Pending));
 
         let declare_executable_account_hash = match paymaster_account
-            .declare_v3(
-                executable_account_flattened_sierra_class.clone(),
-                executable_account_compiled_class_hash,
-            )
+            .declare_v3(executable_account_flattened_sierra_class.clone(), executable_account_compiled_class_hash)
             .send()
             .await
         {
@@ -115,12 +106,10 @@ impl SetupableTrait for TestSuiteKatana {
                 if sign_error.to_string().contains("is already declared") {
                     Ok(parse_class_hash_from_error(&sign_error.to_string())?)
                 } else {
-                    Err(OpenRpcTestGenError::RunnerError(
-                        RunnerError::AccountFailure(format!(
-                            "Transaction execution error: {}",
-                            sign_error
-                        )),
-                    ))
+                    Err(OpenRpcTestGenError::RunnerError(RunnerError::AccountFailure(format!(
+                        "Transaction execution error: {}",
+                        sign_error
+                    ))))
                 }
             }
 
@@ -128,12 +117,10 @@ impl SetupableTrait for TestSuiteKatana {
                 if starkneterror.to_string().contains("is already declared") {
                     Ok(parse_class_hash_from_error(&starkneterror.to_string())?)
                 } else {
-                    Err(OpenRpcTestGenError::RunnerError(
-                        RunnerError::AccountFailure(format!(
-                            "Transaction execution error: {}",
-                            starkneterror
-                        )),
-                    ))
+                    Err(OpenRpcTestGenError::RunnerError(RunnerError::AccountFailure(format!(
+                        "Transaction execution error: {}",
+                        starkneterror
+                    ))))
                 }
             }
             Err(e) => {
@@ -141,20 +128,13 @@ impl SetupableTrait for TestSuiteKatana {
                 if full_error_message.contains("is already declared") {
                     Ok(extract_class_hash_from_error(&full_error_message)?)
                 } else {
-                    Err(OpenRpcTestGenError::AccountError(AccountError::Other(
-                        full_error_message,
-                    )))
+                    Err(OpenRpcTestGenError::AccountError(AccountError::Other(full_error_message)))
                 }
             }
         }?;
 
-        let executable_account_data = create_account(
-            &provider,
-            AccountType::Oz,
-            Option::None,
-            Some(declare_executable_account_hash),
-        )
-        .await?;
+        let executable_account_data =
+            create_account(&provider, AccountType::Oz, Option::None, Some(declare_executable_account_hash)).await?;
 
         let deploy_executable_account_call: Call = Call {
             to: setup_input.udc_address,
@@ -168,16 +148,10 @@ impl SetupableTrait for TestSuiteKatana {
             ],
         };
 
-        let deploy_executable_account_result = paymaster_account
-            .execute_v3(vec![deploy_executable_account_call])
-            .send()
-            .await?;
+        let deploy_executable_account_result =
+            paymaster_account.execute_v3(vec![deploy_executable_account_call]).send().await?;
 
-        wait_for_sent_transaction(
-            deploy_executable_account_result.transaction_hash,
-            &paymaster_account,
-        )
-        .await?;
+        wait_for_sent_transaction(deploy_executable_account_result.transaction_hash, &paymaster_account).await?;
 
         let mut executable_account = SingleOwnerAccount::new(
             provider.clone(),
@@ -215,184 +189,144 @@ impl SetupableTrait for TestSuiteKatana {
             executable_accounts.push(executable_account);
         }
 
-        let random_executable_account = RandomSingleOwnerAccount {
-            accounts: executable_accounts,
-        };
-        let random_paymaster_account = RandomSingleOwnerAccount {
-            accounts: paymaster_accounts,
-        };
+        let random_executable_account = RandomSingleOwnerAccount { accounts: executable_accounts };
+        let random_paymaster_account = RandomSingleOwnerAccount { accounts: paymaster_accounts };
 
-        let (flattened_sierra_class, compiled_class_hash) =
-        get_compiled_contract(
+        let (flattened_sierra_class, compiled_class_hash) = get_compiled_contract(
             PathBuf::from_str("target/dev/contracts_contracts_sample_contract_1_HelloStarknet.contract_class.json")?,
-        PathBuf::from_str("target/dev/contracts_contracts_sample_contract_1_HelloStarknet.compiled_contract_class.json")?,
+            PathBuf::from_str(
+                "target/dev/contracts_contracts_sample_contract_1_HelloStarknet.compiled_contract_class.json",
+            )?,
         )
         .await?;
 
-        let declaration_result = match random_paymaster_account
-            .declare_v3(flattened_sierra_class, compiled_class_hash)
-            .send()
-            .await
-        {
-            Ok(result) => {
-                wait_for_sent_transaction(
-                    result.transaction_hash,
-                    &random_paymaster_account.random_accounts()?,
-                )
-                .await?;
-                Ok(result)
-            }
-            Err(AccountError::Signing(sign_error)) => {
-                if sign_error.to_string().contains("is already declared") {
-                    Ok(ClassAndTxnHash {
-                        class_hash: parse_class_hash_from_error(&sign_error.to_string())?,
-                        transaction_hash: Felt::ZERO,
-                    })
-                } else {
-                    Err(OpenRpcTestGenError::RunnerError(
-                        RunnerError::AccountFailure(format!(
+        let declaration_result =
+            match random_paymaster_account.declare_v3(flattened_sierra_class, compiled_class_hash).send().await {
+                Ok(result) => {
+                    wait_for_sent_transaction(result.transaction_hash, &random_paymaster_account.random_accounts()?)
+                        .await?;
+                    Ok(result)
+                }
+                Err(AccountError::Signing(sign_error)) => {
+                    if sign_error.to_string().contains("is already declared") {
+                        Ok(ClassAndTxnHash {
+                            class_hash: parse_class_hash_from_error(&sign_error.to_string())?,
+                            transaction_hash: Felt::ZERO,
+                        })
+                    } else {
+                        Err(OpenRpcTestGenError::RunnerError(RunnerError::AccountFailure(format!(
                             "Transaction execution error: {}",
                             sign_error
-                        )),
-                    ))
+                        ))))
+                    }
                 }
-            }
 
-            Err(AccountError::Provider(ProviderError::Other(starkneterror))) => {
-                if starkneterror.to_string().contains("is already declared") {
-                    Ok(ClassAndTxnHash {
-                        class_hash: parse_class_hash_from_error(&starkneterror.to_string())?,
-                        transaction_hash: Felt::ZERO,
-                    })
-                } else {
-                    Err(OpenRpcTestGenError::RunnerError(
-                        RunnerError::AccountFailure(format!(
+                Err(AccountError::Provider(ProviderError::Other(starkneterror))) => {
+                    if starkneterror.to_string().contains("is already declared") {
+                        Ok(ClassAndTxnHash {
+                            class_hash: parse_class_hash_from_error(&starkneterror.to_string())?,
+                            transaction_hash: Felt::ZERO,
+                        })
+                    } else {
+                        Err(OpenRpcTestGenError::RunnerError(RunnerError::AccountFailure(format!(
                             "Transaction execution error: {}",
                             starkneterror
-                        )),
-                    ))
+                        ))))
+                    }
                 }
-            }
-            Err(e) => {
-                let full_error_message = format!("{:?}", e);
+                Err(e) => {
+                    let full_error_message = format!("{:?}", e);
 
-                if full_error_message.contains("is already declared") {
-                    let class_hash = extract_class_hash_from_error(&full_error_message)?;
+                    if full_error_message.contains("is already declared") {
+                        let class_hash = extract_class_hash_from_error(&full_error_message)?;
 
-                    let filter = EventFilterWithPageRequest {
-                        address: None,
-                        from_block: Some(BlockId::Number(322421)),
-                        to_block: Some(BlockId::Number(322421)),
-                        keys: Some(vec![vec![]]),
-                        chunk_size: 100,
-                        continuation_token: None,
-                    };
+                        let filter = EventFilterWithPageRequest {
+                            address: None,
+                            from_block: Some(BlockId::Number(322421)),
+                            to_block: Some(BlockId::Number(322421)),
+                            keys: Some(vec![vec![]]),
+                            chunk_size: 100,
+                            continuation_token: None,
+                        };
 
-                    let provider = random_paymaster_account.provider();
-                    let random_account_address =
-                        random_paymaster_account.random_accounts()?.address();
+                        let provider = random_paymaster_account.provider();
+                        let random_account_address = random_paymaster_account.random_accounts()?.address();
 
-                    let mut continuation_token = None;
-                    let mut found_txn_hash = None;
+                        let mut continuation_token = None;
+                        let mut found_txn_hash = None;
 
-                    loop {
-                        let mut current_filter = filter.clone();
-                        current_filter.continuation_token = continuation_token.clone();
+                        loop {
+                            let mut current_filter = filter.clone();
+                            current_filter.continuation_token = continuation_token.clone();
 
-                        let events_chunk = provider.get_events(current_filter).await?;
+                            let events_chunk = provider.get_events(current_filter).await?;
 
-                        for event in events_chunk.events {
-                            if event.event.data.contains(&random_account_address) {
-                                let txn_hash = event.transaction_hash;
+                            for event in events_chunk.events {
+                                if event.event.data.contains(&random_account_address) {
+                                    let txn_hash = event.transaction_hash;
 
-                                let txn_details =
-                                    provider.get_transaction_by_hash(txn_hash).await?;
+                                    let txn_details = provider.get_transaction_by_hash(txn_hash).await?;
 
-                                if let Txn::Declare(DeclareTxn::V3(declare_txn)) = txn_details {
-                                    if declare_txn.class_hash == class_hash {
-                                        found_txn_hash = Some(txn_hash);
-                                        break;
+                                    if let Txn::Declare(DeclareTxn::V3(declare_txn)) = txn_details {
+                                        if declare_txn.class_hash == class_hash {
+                                            found_txn_hash = Some(txn_hash);
+                                            break;
+                                        }
                                     }
                                 }
                             }
+
+                            if found_txn_hash.is_some() {
+                                break;
+                            }
+
+                            if let Some(token) = events_chunk.continuation_token {
+                                continuation_token = Some(token);
+                            } else {
+                                break;
+                            }
                         }
 
-                        if found_txn_hash.is_some() {
-                            break;
-                        }
-
-                        if let Some(token) = events_chunk.continuation_token {
-                            continuation_token = Some(token);
+                        if let Some(tx_hash) = found_txn_hash {
+                            Ok(ClassAndTxnHash { class_hash, transaction_hash: tx_hash })
                         } else {
-                            break;
-                        }
-                    }
-
-                    if let Some(tx_hash) = found_txn_hash {
-                        Ok(ClassAndTxnHash {
-                            class_hash,
-                            transaction_hash: tx_hash,
-                        })
-                    } else {
-                        info!("Transaction hash not found for the declared clas");
-                        Err(OpenRpcTestGenError::RunnerError(
-                            RunnerError::AccountFailure(
+                            info!("Transaction hash not found for the declared clas");
+                            Err(OpenRpcTestGenError::RunnerError(RunnerError::AccountFailure(
                                 "Transaction hash not found for the declared class.".to_string(),
-                            ),
-                        ))
+                            )))
+                        }
+                    } else {
+                        return Err(OpenRpcTestGenError::AccountError(AccountError::Other(full_error_message)));
                     }
-                } else {
-                    return Err(OpenRpcTestGenError::AccountError(AccountError::Other(
-                        full_error_message,
-                    )));
                 }
-            }
-        }?;
+            }?;
 
-        let factory = ContractFactory::new(
-            declaration_result.class_hash,
-            random_paymaster_account.random_accounts()?,
-        );
+        let factory = ContractFactory::new(declaration_result.class_hash, random_paymaster_account.random_accounts()?);
         let mut salt_buffer = [0u8; 32];
         let mut rng = StdRng::from_entropy();
         rng.fill_bytes(&mut salt_buffer[1..]);
 
-        let deployment_result = factory
-            .deploy_v3(vec![], Felt::from_bytes_be(&salt_buffer), true)
-            .send()
+        let deployment_result = factory.deploy_v3(vec![], Felt::from_bytes_be(&salt_buffer), true).send().await?;
+
+        wait_for_sent_transaction(deployment_result.transaction_hash, &random_paymaster_account.random_accounts()?)
             .await?;
 
-        wait_for_sent_transaction(
-            deployment_result.transaction_hash,
-            &random_paymaster_account.random_accounts()?,
-        )
-        .await?;
-
-        let deployment_receipt = random_paymaster_account
-            .provider()
-            .get_transaction_receipt(deployment_result.transaction_hash)
-            .await?;
+        let deployment_receipt =
+            random_paymaster_account.provider().get_transaction_receipt(deployment_result.transaction_hash).await?;
 
         let deployed_contract_address = match &deployment_receipt {
             TxnReceipt::Deploy(receipt) => receipt.contract_address,
             TxnReceipt::Invoke(receipt) => {
-                if let Some(contract_address) = receipt
-                    .common_receipt_properties
-                    .events
-                    .first()
-                    .and_then(|event| event.data.first())
+                if let Some(contract_address) =
+                    receipt.common_receipt_properties.events.first().and_then(|event| event.data.first())
                 {
                     *contract_address
                 } else {
-                    return Err(OpenRpcTestGenError::CallError(
-                        CallError::UnexpectedReceiptType,
-                    ));
+                    return Err(OpenRpcTestGenError::CallError(CallError::UnexpectedReceiptType));
                 }
             }
             _ => {
-                return Err(OpenRpcTestGenError::CallError(
-                    CallError::UnexpectedReceiptType,
-                ));
+                return Err(OpenRpcTestGenError::CallError(CallError::UnexpectedReceiptType));
             }
         };
 
@@ -407,5 +341,4 @@ impl SetupableTrait for TestSuiteKatana {
     }
 }
 
-#[cfg(not(feature = "rust-analyzer"))]
 include!(concat!(env!("OUT_DIR"), "/generated_tests_suite_katana.rs"));

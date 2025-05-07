@@ -12,9 +12,7 @@ use crate::{utils::v7::endpoints::errors::OpenRpcTestGenError, RunnableTrait};
 use rand::rngs::StdRng;
 use rand::{RngCore, SeedableRng};
 use starknet_types_core::felt::Felt;
-use starknet_types_rpc::{
-    BlockId, BlockTag, EventFilterWithPageRequest, MaybePendingBlockWithTxs, TxnReceipt,
-};
+use starknet_types_rpc::{BlockId, BlockTag, EventFilterWithPageRequest, MaybePendingBlockWithTxs, TxnReceipt};
 
 #[derive(Clone, Debug)]
 pub struct TestCase {}
@@ -24,12 +22,8 @@ impl RunnableTrait for TestCase {
 
     async fn run(test_input: &Self::Input) -> Result<Self, OpenRpcTestGenError> {
         let (flattened_sierra_class, compiled_class_hash) = get_compiled_contract(
-            PathBuf::from_str(
-                "target/dev/contracts_contracts_smpl14_HelloStarknet.contract_class.json",
-            )?,
-            PathBuf::from_str(
-                "target/dev/contracts_contracts_smpl14_HelloStarknet.compiled_contract_class.json",
-            )?,
+            PathBuf::from_str("target/dev/contracts_contracts_smpl14_HelloStarknet.contract_class.json")?,
+            PathBuf::from_str("target/dev/contracts_contracts_smpl14_HelloStarknet.compiled_contract_class.json")?,
         )
         .await?;
 
@@ -46,8 +40,7 @@ impl RunnableTrait for TestCase {
         .await?;
 
         let sender = test_input.random_paymaster_account.random_accounts()?;
-        let strk_address =
-            Felt::from_hex("0x4718F5A0FC34CC1AF16A1CDEE98FFB20C31F5CD61D6AB07201858F4287C938D")?;
+        let strk_address = Felt::from_hex("0x4718F5A0FC34CC1AF16A1CDEE98FFB20C31F5CD61D6AB07201858F4287C938D")?;
 
         let factory = ContractFactory::new(declaration_result.class_hash, sender.clone());
         let mut salt_buffer = [0u8; 32];
@@ -58,15 +51,9 @@ impl RunnableTrait for TestCase {
         let constructor_calldata = vec![];
         let salt = Felt::from_bytes_be(&salt_buffer);
 
-        let estimate_fee = factory
-            .deploy_v3(constructor_calldata.clone(), salt, unique)
-            .estimate_fee()
-            .await?;
+        let estimate_fee = factory.deploy_v3(constructor_calldata.clone(), salt, unique).estimate_fee().await?;
 
-        let deploy_result = factory
-            .deploy_v3(constructor_calldata.clone(), salt, unique)
-            .send()
-            .await?;
+        let deploy_result = factory.deploy_v3(constructor_calldata.clone(), salt, unique).send().await?;
 
         wait_for_sent_transaction(
             deploy_result.transaction_hash,
@@ -74,11 +61,7 @@ impl RunnableTrait for TestCase {
         )
         .await?;
 
-        let block_hash_and_number = test_input
-            .random_paymaster_account
-            .provider()
-            .block_hash_and_number()
-            .await?;
+        let block_hash_and_number = test_input.random_paymaster_account.provider().block_hash_and_number().await?;
 
         let filter = EventFilterWithPageRequest {
             address: None,
@@ -89,11 +72,7 @@ impl RunnableTrait for TestCase {
             continuation_token: None,
         };
 
-        let events = test_input
-            .random_paymaster_account
-            .provider()
-            .get_events(filter)
-            .await;
+        let events = test_input.random_paymaster_account.provider().get_events(filter).await;
 
         let result = events.is_ok();
 
@@ -110,47 +89,31 @@ impl RunnableTrait for TestCase {
         let deployed_contract_address = match &deployment_receipt {
             TxnReceipt::Deploy(receipt) => receipt.contract_address,
             TxnReceipt::Invoke(receipt) => {
-                if let Some(contract_address) = receipt
-                    .common_receipt_properties
-                    .events
-                    .first()
-                    .and_then(|event| event.data.first())
+                if let Some(contract_address) =
+                    receipt.common_receipt_properties.events.first().and_then(|event| event.data.first())
                 {
                     *contract_address
                 } else {
-                    return Err(OpenRpcTestGenError::CallError(
-                        CallError::UnexpectedReceiptType,
-                    ));
+                    return Err(OpenRpcTestGenError::CallError(CallError::UnexpectedReceiptType));
                 }
             }
             _ => {
-                return Err(OpenRpcTestGenError::CallError(
-                    CallError::UnexpectedReceiptType,
-                ));
+                return Err(OpenRpcTestGenError::CallError(CallError::UnexpectedReceiptType));
             }
         };
 
         assert_result!(
             events.continuation_token.is_none(),
-            format!(
-                "No continuation token expected. Expected None, got {:?}",
-                events.continuation_token
-            )
+            format!("No continuation token expected. Expected None, got {:?}", events.continuation_token)
         );
 
         assert_result!(
             events.events.len() == 2,
-            format!(
-                "Invalid events count, expected {}, got {}",
-                2,
-                events.events.len()
-            )
+            format!("Invalid events count, expected {}, got {}", 2, events.events.len())
         );
 
-        let first_event = events
-            .events
-            .first()
-            .ok_or_else(|| OpenRpcTestGenError::Other("Failed to get first event".to_string()))?;
+        let first_event =
+            events.events.first().ok_or_else(|| OpenRpcTestGenError::Other("Failed to get first event".to_string()))?;
 
         let udc_address = test_input.udc_address;
         assert_result!(
@@ -182,11 +145,7 @@ impl RunnableTrait for TestCase {
 
         assert_result!(
             first_event.event.data.get(2) == Some(&Felt::ONE),
-            format!(
-                "Invalid unique in event, expected {:?}, got {:?}",
-                Felt::ONE,
-                first_event.event.data.get(2)
-            )
+            format!("Invalid unique in event, expected {:?}, got {:?}", Felt::ONE, first_event.event.data.get(2))
         );
 
         assert_result!(
@@ -210,11 +169,7 @@ impl RunnableTrait for TestCase {
 
         assert_result!(
             first_event.event.data.get(5) == Some(&salt),
-            format!(
-                "Invalid salt in event, expected {:?}, got {:?}",
-                salt,
-                first_event.event.data.get(5)
-            )
+            format!("Invalid salt in event, expected {:?}, got {:?}", salt, first_event.event.data.get(5))
         );
 
         let keccak_contract_deployed = starknet_keccak("ContractDeployed".as_bytes());
@@ -254,10 +209,8 @@ impl RunnableTrait for TestCase {
         );
 
         // Second event
-        let second_event = events
-            .events
-            .get(1)
-            .ok_or_else(|| OpenRpcTestGenError::Other("Second event not found".to_string()))?;
+        let second_event =
+            events.events.get(1).ok_or_else(|| OpenRpcTestGenError::Other("Second event not found".to_string()))?;
 
         assert_result!(
             second_event.event.from_address == strk_address,
@@ -304,20 +257,11 @@ impl RunnableTrait for TestCase {
             )
         );
 
-        let maybe_pending_block_with_txs = test_input
-            .random_paymaster_account
-            .provider()
-            .get_block_with_txs(BlockId::Tag(BlockTag::Latest))
-            .await?;
+        let maybe_pending_block_with_txs =
+            test_input.random_paymaster_account.provider().get_block_with_txs(BlockId::Tag(BlockTag::Latest)).await?;
         let sequencer_address = match maybe_pending_block_with_txs {
-            MaybePendingBlockWithTxs::Block(block_with_txs) => {
-                block_with_txs.block_header.sequencer_address
-            }
-            _ => {
-                return Err(OpenRpcTestGenError::ProviderError(
-                    ProviderError::UnexpectedPendingBlock,
-                ))
-            }
+            MaybePendingBlockWithTxs::Block(block_with_txs) => block_with_txs.block_header.sequencer_address,
+            _ => return Err(OpenRpcTestGenError::ProviderError(ProviderError::UnexpectedPendingBlock)),
         };
         assert_result!(
             second_event.event.keys.get(2) == Some(&sequencer_address),

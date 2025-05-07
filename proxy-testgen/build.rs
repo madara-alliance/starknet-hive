@@ -13,7 +13,10 @@ fn main() -> io::Result<()> {
     let mut output = File::create(&dest_path)?;
 
     // Write the necessary imports and start the function definition
-    writeln!(output, "pub fn run_generated_state_machines(request_body: String, response_body: String, path: String) {{")?;
+    writeln!(
+        output,
+        "pub fn run_generated_state_machines(request_body: String, response_body: String, path: String) {{"
+    )?;
 
     // Traverse the state_machines directory for Rust files
     for entry in fs::read_dir(state_machines_dir)? {
@@ -21,12 +24,8 @@ fn main() -> io::Result<()> {
         let path = entry.path();
 
         // Only process Rust files that end with "_state_machine.rs"
-        if path.extension().map_or(false, |ext| ext == "rs")
-            && path
-                .file_name()
-                .unwrap()
-                .to_str()
-                .map_or(false, |name| name.ends_with("_state_machine.rs"))
+        if path.extension().is_some_and(|ext| ext == "rs")
+            && path.file_name().unwrap().to_str().is_some_and(|name| name.ends_with("_state_machine.rs"))
         {
             let file = File::open(&path)?;
             let reader = io::BufReader::new(file);
@@ -47,10 +46,7 @@ fn main() -> io::Result<()> {
             if let Some(enum_name) = enum_name {
                 let module_name = path.file_stem().unwrap().to_str().unwrap();
 
-                let fully_qualified_enum = format!(
-                    "proxy_testgen::state_machines::{}::{}",
-                    module_name, enum_name
-                );
+                let fully_qualified_enum = format!("proxy_testgen::state_machines::{}::{}", module_name, enum_name);
 
                 writeln!(output, "    // Generated code for enum: {}", enum_name)?;
                 writeln!(output, "    let result = proxy_testgen::StateMachine::run(")?;
@@ -69,10 +65,7 @@ fn main() -> io::Result<()> {
                     output,
                     "        proxy_testgen::StateMachineResult::Invalid(message) => info!(\"{{}}\", message.red().bold()),"
                 )?;
-                writeln!(
-                    output,
-                    "        proxy_testgen::StateMachineResult::Skipped => (),"
-                )?;
+                writeln!(output, "        proxy_testgen::StateMachineResult::Skipped => (),")?;
                 writeln!(output, "    }}")?;
             }
         }

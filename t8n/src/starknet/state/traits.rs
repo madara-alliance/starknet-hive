@@ -2,8 +2,7 @@ use std::path::Path;
 
 use blockifier::state::state_api::StateReader;
 use starknet_devnet_types::{
-    contract_address::ContractAddress, contract_class::ContractClass, felt::ClassHash,
-    rpc::state::Balance,
+    contract_address::ContractAddress, contract_class::ContractClass, felt::ClassHash, rpc::state::Balance,
 };
 
 use super::{
