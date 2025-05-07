@@ -1,9 +1,20 @@
 # yaml-language-server: $schema=https://raw.githubusercontent.com/SchemaStore/schemastore/refs/heads/master/src/schemas/json/github-workflow.json
 name: Task - Build And Publish Release Docker Image
 
+# This action will
+#
+# 1. Get the current version as specified by the root `Cargo.toml`
+# 2. Get the latest nightly tag
+# 3. Pull the latest nightly image
+# 4. Tag it with the current version
+# 5. Tag it as `latest`
+# 6. Push the updated tags to ghcr
+#
+# (Steps 1 and 2 will fail if the version has not been updated or there is no
+# nighlty release to build from)
+
 on:
   workflow_dispatch:
-  workflow_call:
     inputs:
       registry:
         description: Container registry domain
@@ -11,8 +22,9 @@ on:
         default: ghcr.io
         type: string
       image-name:
-        description: Name for the Docker image
+        description: Name for the Docker image (needs to correspond to an existing release)
         required: true
+        default: openrpc-testgen-runner
         type: string
 
 permissions:
